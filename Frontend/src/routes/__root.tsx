@@ -109,8 +109,8 @@ function RootShell({ children }: { children: ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body className="bg-background text-foreground antialiased">
-        <div id="root">{children}</div>
+      <body className="bg-background text-foreground antialiased min-h-screen flex flex-col">
+        {children}
         <Scripts />
       </body>
     </html>

@@ -152,10 +152,17 @@ function getFallbackHTML() {
   for (const assetDir of assetCandidates) {
     if (fs.existsSync(assetDir)) {
       const files = fs.readdirSync(assetDir);
-      const js = files.find(f => f.startsWith("index-") && f.endsWith(".js"));
-      const css = files.find(f => f.startsWith("styles-") && f.endsWith(".css"));
-      if (js) mainJs = `/assets/${js}`;
-      if (css) mainCss = `/assets/${css}`;
+      const jsFiles = files
+        .filter(f => f.startsWith("index-") && f.endsWith(".js"))
+        .map(f => ({ name: f, time: fs.statSync(path.join(assetDir, f)).mtimeMs }))
+        .sort((a, b) => b.time - a.time);
+      const cssFiles = files
+        .filter(f => f.startsWith("styles-") && f.endsWith(".css"))
+        .map(f => ({ name: f, time: fs.statSync(path.join(assetDir, f)).mtimeMs }))
+        .sort((a, b) => b.time - a.time);
+
+      if (jsFiles.length > 0) mainJs = `/assets/${jsFiles[0].name}`;
+      if (cssFiles.length > 0) mainCss = `/assets/${cssFiles[0].name}`;
       break;
     }
   }

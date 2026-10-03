@@ -1,10 +1,19 @@
 import { books as fallbackBooks, type Book } from "./books";
 
-const API_BASE = typeof window !== "undefined"
-  ? "/api"
-  : (typeof process !== "undefined" && process.env?.INTERNAL_API_URL
-      ? process.env.INTERNAL_API_URL
-      : `http://127.0.0.1:${typeof process !== "undefined" && process.env?.PORT ? process.env.PORT : 5000}/api`);
+function getApiUrl(path: string): URL {
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  if (typeof window !== "undefined") {
+    return new URL(cleanPath, window.location.origin);
+  }
+  const base = (typeof process !== "undefined" && process.env?.INTERNAL_API_URL)
+    ? process.env.INTERNAL_API_URL
+    : `http://127.0.0.1:${(typeof process !== "undefined" && process.env?.PORT) ? process.env.PORT : 5000}`;
+  return new URL(cleanPath, base);
+}
+
+function getApiEndpoint(path: string): string {
+  return getApiUrl(path).toString();
+}
 
 export type OrderItem = {
   id: number;
@@ -62,7 +71,7 @@ export const api = {
   // Fetch all books with optional filters
   async getBooks(params?: { category?: string; search?: string; sort?: string }): Promise<Book[]> {
     try {
-      const url = new URL(`${API_BASE}/books`);
+      const url = getApiUrl("/api/books");
       if (params?.category && params.category !== "All") {
         url.searchParams.set("category", params.category);
       }
@@ -73,7 +82,7 @@ export const api = {
         url.searchParams.set("sort", params.sort);
       }
 
-      const res = await fetch(url.toString(), { signal: AbortSignal.timeout(3500) });
+      const res = await fetch(url.toString(), { signal: AbortSignal.timeout(4000) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       return data.data;
@@ -102,7 +111,7 @@ export const api = {
   // Fetch single book details with reviews
   async getBook(id: number): Promise<BookDetail | null> {
     try {
-      const res = await fetch(`${API_BASE}/books/${id}`, { signal: AbortSignal.timeout(3500) });
+      const res = await fetch(getApiEndpoint(`/api/books/${id}`), { signal: AbortSignal.timeout(4000) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       return data.data;
@@ -115,7 +124,7 @@ export const api = {
 
   // Add review for a book
   async addReview(bookId: number, review: { userName: string; rating: number; comment: string }) {
-    const res = await fetch(`${API_BASE}/books/${bookId}/reviews`, {
+    const res = await fetch(getApiEndpoint(`/api/books/${bookId}/reviews`), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(review)
@@ -127,7 +136,7 @@ export const api = {
 
   // Place order
   async createOrder(payload: CreateOrderPayload): Promise<{ orderId: string; whatsappUrl: string; total: number }> {
-    const res = await fetch(`${API_BASE}/orders`, {
+    const res = await fetch(getApiEndpoint("/api/orders"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
@@ -139,7 +148,7 @@ export const api = {
 
   // Track order by tracking ID
   async trackOrder(orderId: string): Promise<OrderData> {
-    const res = await fetch(`${API_BASE}/orders/${encodeURIComponent(orderId)}`);
+    const res = await fetch(getApiEndpoint(`/api/orders/${encodeURIComponent(orderId)}`));
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Order not found");
     return data.data;
@@ -147,7 +156,7 @@ export const api = {
 
   // Admin: Get all orders
   async getAllOrders(): Promise<OrderData[]> {
-    const res = await fetch(`${API_BASE}/orders`);
+    const res = await fetch(getApiEndpoint("/api/orders"));
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Failed to fetch orders");
     return data.data;
@@ -155,7 +164,7 @@ export const api = {
 
   // Admin: Update order status
   async updateOrderStatus(orderId: string, status: string) {
-    const res = await fetch(`${API_BASE}/orders/${encodeURIComponent(orderId)}/status`, {
+    const res = await fetch(getApiEndpoint(`/api/orders/${encodeURIComponent(orderId)}/status`), {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status })
@@ -167,7 +176,7 @@ export const api = {
 
   // Admin: Add new book
   async createBook(book: Partial<Book> & { title: string; author: string; category: string; price: number }) {
-    const res = await fetch(`${API_BASE}/books`, {
+    const res = await fetch(getApiEndpoint("/api/books"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(book)
@@ -179,7 +188,7 @@ export const api = {
 
   // Admin: Delete book
   async deleteBook(id: number | string) {
-    const res = await fetch(`${API_BASE}/books/${id}`, {
+    const res = await fetch(getApiEndpoint(`/api/books/${id}`), {
       method: "DELETE"
     });
     const data = await res.json();
@@ -189,7 +198,7 @@ export const api = {
 
   // Contact form submission
   async sendContactMessage(payload: { name: string; email?: string; phone?: string; message: string }) {
-    const res = await fetch(`${API_BASE}/contact`, {
+    const res = await fetch(getApiEndpoint("/api/contact"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
@@ -201,7 +210,7 @@ export const api = {
 
   // Admin: Get contact messages
   async getContacts() {
-    const res = await fetch(`${API_BASE}/contact`);
+    const res = await fetch(getApiEndpoint("/api/contact"));
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Failed to fetch contact inquiries");
     return data.data || [];
@@ -209,7 +218,7 @@ export const api = {
 
   // Newsletter subscription
   async subscribeNewsletter(email: string) {
-    const res = await fetch(`${API_BASE}/newsletter`, {
+    const res = await fetch(getApiEndpoint("/api/newsletter"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email })
@@ -222,7 +231,7 @@ export const api = {
   // Store information
   async getStoreInfo() {
     try {
-      const res = await fetch(`${API_BASE}/store/info`, { signal: AbortSignal.timeout(3000) });
+      const res = await fetch(getApiEndpoint("/api/store/info"), { signal: AbortSignal.timeout(3000) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       return data.data;
@@ -234,7 +243,7 @@ export const api = {
   // Categories CRUD
   async getCategories(params?: { status?: string; search?: string }): Promise<Category[]> {
     try {
-      const url = new URL(`${API_BASE}/categories`);
+      const url = getApiUrl("/api/categories");
       if (params?.status && params.status !== "all") url.searchParams.set("status", params.status);
       if (params?.search) url.searchParams.set("search", params.search);
       const res = await fetch(url.toString(), { signal: AbortSignal.timeout(4000) });
@@ -248,7 +257,7 @@ export const api = {
   },
 
   async createCategory(payload: { name: string; description?: string; image?: string; status?: string }): Promise<Category> {
-    const res = await fetch(`${API_BASE}/categories`, {
+    const res = await fetch(getApiEndpoint("/api/categories"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
@@ -259,7 +268,7 @@ export const api = {
   },
 
   async updateCategory(id: number, payload: Partial<Category>): Promise<Category> {
-    const res = await fetch(`${API_BASE}/categories/${id}`, {
+    const res = await fetch(getApiEndpoint(`/api/categories/${id}`), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
@@ -270,7 +279,7 @@ export const api = {
   },
 
   async deleteCategory(id: number): Promise<{ success: boolean; message: string }> {
-    const res = await fetch(`${API_BASE}/categories/${id}`, { method: "DELETE" });
+    const res = await fetch(getApiEndpoint(`/api/categories/${id}`), { method: "DELETE" });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Failed to delete category");
     return data;
@@ -279,7 +288,7 @@ export const api = {
   // Sub-Categories CRUD
   async getSubCategories(params?: { category_id?: number | string; status?: string; search?: string }): Promise<SubCategory[]> {
     try {
-      const url = new URL(`${API_BASE}/subcategories`);
+      const url = getApiUrl("/api/subcategories");
       if (params?.category_id && params.category_id !== "all") url.searchParams.set("category_id", String(params.category_id));
       if (params?.status && params.status !== "all") url.searchParams.set("status", params.status);
       if (params?.search) url.searchParams.set("search", params.search);
@@ -294,7 +303,7 @@ export const api = {
   },
 
   async createSubCategory(payload: { category_id: number; name: string; description?: string; image?: string; status?: string }): Promise<SubCategory> {
-    const res = await fetch(`${API_BASE}/subcategories`, {
+    const res = await fetch(getApiEndpoint("/api/subcategories"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
@@ -305,7 +314,7 @@ export const api = {
   },
 
   async updateSubCategory(id: number, payload: Partial<SubCategory>): Promise<SubCategory> {
-    const res = await fetch(`${API_BASE}/subcategories/${id}`, {
+    const res = await fetch(getApiEndpoint(`/api/subcategories/${id}`), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
@@ -316,7 +325,7 @@ export const api = {
   },
 
   async deleteSubCategory(id: number): Promise<{ success: boolean; message: string }> {
-    const res = await fetch(`${API_BASE}/subcategories/${id}`, { method: "DELETE" });
+    const res = await fetch(getApiEndpoint(`/api/subcategories/${id}`), { method: "DELETE" });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Failed to delete sub-category");
     return data;
@@ -349,4 +358,3 @@ export type Category = {
   books_count?: number;
   subCategories?: SubCategory[];
 };
-
