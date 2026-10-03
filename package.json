@@ -1,0 +1,19 @@
+{
+  "name": "successbookhub",
+  "version": "1.0.0",
+  "description": "Success Book Hub - Fullstack Bookstore with React, TanStack, Express and MySQL",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node Backend/src/server.js",
+    "dev": "node --watch Backend/src/server.js",
+    "build": "cd Frontend && npm run build"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "morgan": "^1.10.0",
+    "mysql2": "^3.11.5"
+  }
+}
