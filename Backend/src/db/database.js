@@ -287,13 +287,8 @@ let pool = null;
 let sqliteDb = null;
 export let isMySQL = false;
 
-// Check if MySQL credentials are provided
-const hasMySQLConfig = Boolean(
-  process.env.DB_HOST ||
-  process.env.DB_NAME ||
-  process.env.DB_USER ||
-  process.env.MYSQL_URL
-);
+// Always attempt MySQL connection first using Hostinger credentials with SQLite fallback
+const hasMySQLConfig = true;
 
 // Unified Database Adapter
 export const db = {
