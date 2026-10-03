@@ -10,7 +10,7 @@ function generateOrderId() {
 }
 
 // POST create new order
-router.post("/", (req, res) => {
+router.post("/", async (req, res) => {
   try {
     const {
       customerName,
@@ -38,16 +38,14 @@ router.post("/", (req, res) => {
     const parsedDelivery = parseFloat(deliveryFee) || 0;
     const total = parsedSubtotal + parsedDelivery;
 
-    const stmt = db.prepare(`
+    await db.run(`
       INSERT INTO orders (
         id, customer_name, customer_phone, customer_email, 
         delivery_address, city, pincode, items_json, 
         subtotal, delivery_fee, total, payment_method, 
         status, order_notes
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)
-    `);
-
-    stmt.run(
+    `, [
       orderId,
       customerName.trim(),
       customerPhone.trim(),
@@ -61,7 +59,7 @@ router.post("/", (req, res) => {
       total,
       paymentMethod,
       orderNotes.trim()
-    );
+    ]);
 
     // Format WhatsApp message text
     const itemsText = items
@@ -105,7 +103,7 @@ router.post("/", (req, res) => {
 });
 
 // GET all orders (for store manager / admin view)
-router.get("/", (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const { status } = req.query;
     let query = "SELECT * FROM orders";
@@ -118,12 +116,12 @@ router.get("/", (req, res) => {
 
     query += " ORDER BY created_at DESC";
 
-    const orders = db.prepare(query).all(...params);
+    const orders = await db.all(query, params);
 
     const formatted = orders.map(o => {
       let items = [];
       try {
-        items = JSON.parse(o.items_json);
+        items = typeof o.items_json === "string" ? JSON.parse(o.items_json) : (o.items_json || []);
       } catch {
         items = [];
       }
@@ -136,9 +134,9 @@ router.get("/", (req, res) => {
         city: o.city,
         pincode: o.pincode,
         items,
-        subtotal: o.subtotal,
-        deliveryFee: o.delivery_fee,
-        total: o.total,
+        subtotal: Number(o.subtotal),
+        deliveryFee: Number(o.delivery_fee),
+        total: Number(o.total),
         paymentMethod: o.payment_method,
         status: o.status,
         orderNotes: o.order_notes,
@@ -153,10 +151,10 @@ router.get("/", (req, res) => {
 });
 
 // GET order by tracking ID
-router.get("/:orderId", (req, res) => {
+router.get("/:orderId", async (req, res) => {
   try {
     const orderId = req.params.orderId.toUpperCase();
-    const order = db.prepare("SELECT * FROM orders WHERE UPPER(id) = ?").get(orderId);
+    const order = await db.get("SELECT * FROM orders WHERE UPPER(id) = ?", [orderId]);
 
     if (!order) {
       return res.status(404).json({
@@ -167,7 +165,7 @@ router.get("/:orderId", (req, res) => {
 
     let items = [];
     try {
-      items = JSON.parse(order.items_json);
+      items = typeof order.items_json === "string" ? JSON.parse(order.items_json) : (order.items_json || []);
     } catch {
       items = [];
     }
@@ -182,9 +180,9 @@ router.get("/:orderId", (req, res) => {
         city: order.city,
         pincode: order.pincode,
         items,
-        subtotal: order.subtotal,
-        deliveryFee: order.delivery_fee,
-        total: order.total,
+        subtotal: Number(order.subtotal),
+        deliveryFee: Number(order.delivery_fee),
+        total: Number(order.total),
         paymentMethod: order.payment_method,
         status: order.status,
         orderNotes: order.order_notes,
@@ -197,7 +195,7 @@ router.get("/:orderId", (req, res) => {
 });
 
 // PATCH update order status
-router.patch("/:orderId/status", (req, res) => {
+router.patch("/:orderId/status", async (req, res) => {
   try {
     const { status } = req.body;
     const orderId = req.params.orderId.toUpperCase();
@@ -210,13 +208,13 @@ router.patch("/:orderId/status", (req, res) => {
       });
     }
 
-    const result = db.prepare(`
+    const result = await db.run(`
       UPDATE orders 
       SET status = ? 
       WHERE UPPER(id) = ?
-    `).run(status.toLowerCase(), orderId);
+    `, [status.toLowerCase(), orderId]);
 
-    if (result.changes === 0) {
+    if (result.changes === 0 && result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: "Order not found" });
     }
 

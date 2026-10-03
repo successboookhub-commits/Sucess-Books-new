@@ -17,7 +17,7 @@ function slugify(text) {
 }
 
 // GET /api/categories - Fetch all categories with sub-categories count & books count
-router.get("/", (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const { status, search } = req.query;
     let query = `
@@ -42,10 +42,10 @@ router.get("/", (req, res) => {
 
     query += " ORDER BY c.id ASC";
 
-    const categories = db.prepare(query).all(...params);
+    const categories = await db.all(query, params);
 
     // Also attach subcategories list to each category for convenience
-    const allSubs = db.prepare("SELECT * FROM sub_categories ORDER BY id ASC").all();
+    const allSubs = await db.all("SELECT * FROM sub_categories ORDER BY id ASC");
     const subMap = {};
     for (const sub of allSubs) {
       if (!subMap[sub.category_id]) {
@@ -56,6 +56,8 @@ router.get("/", (req, res) => {
 
     const result = categories.map((cat) => ({
       ...cat,
+      sub_categories_count: Number(cat.sub_categories_count || 0),
+      books_count: Number(cat.books_count || 0),
       subCategories: subMap[cat.id] || []
     }));
 
@@ -71,24 +73,24 @@ router.get("/", (req, res) => {
 });
 
 // GET /api/categories/:id - Fetch single category
-router.get("/:id", (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const category = db.prepare("SELECT * FROM categories WHERE id = ?").get(id);
+    const category = await db.get("SELECT * FROM categories WHERE id = ?", [id]);
 
     if (!category) {
       return res.status(404).json({ success: false, message: "Category not found" });
     }
 
-    const subCategories = db.prepare("SELECT * FROM sub_categories WHERE category_id = ? ORDER BY id ASC").all(id);
-    const booksCount = db.prepare("SELECT COUNT(*) as count FROM books WHERE LOWER(category) = LOWER(?)").get(category.name);
+    const subCategories = await db.all("SELECT * FROM sub_categories WHERE category_id = ? ORDER BY id ASC", [id]);
+    const booksCount = await db.get("SELECT COUNT(*) as count FROM books WHERE LOWER(category) = LOWER(?)", [category.name]);
 
     res.json({
       success: true,
       data: {
         ...category,
         sub_categories_count: subCategories.length,
-        books_count: booksCount.count,
+        books_count: Number(booksCount?.count || 0),
         subCategories
       }
     });
@@ -98,7 +100,7 @@ router.get("/:id", (req, res) => {
 });
 
 // POST /api/categories - Create new category
-router.post("/", (req, res) => {
+router.post("/", async (req, res) => {
   try {
     const { name, description, image, status } = req.body;
 
@@ -110,7 +112,7 @@ router.post("/", (req, res) => {
     let slug = req.body.slug ? slugify(req.body.slug) : slugify(trimmedName);
 
     // Check if category name already exists
-    const existing = db.prepare("SELECT id FROM categories WHERE LOWER(name) = LOWER(?)").get(trimmedName);
+    const existing = await db.get("SELECT id FROM categories WHERE LOWER(name) = LOWER(?)", [trimmedName]);
     if (existing) {
       return res.status(400).json({ success: false, message: `Category "${trimmedName}" already exists` });
     }
@@ -118,27 +120,25 @@ router.post("/", (req, res) => {
     // Ensure unique slug
     let baseSlug = slug;
     let counter = 1;
-    while (db.prepare("SELECT id FROM categories WHERE slug = ?").get(slug)) {
+    while (await db.get("SELECT id FROM categories WHERE slug = ?", [slug])) {
       slug = `${baseSlug}-${counter}`;
       counter++;
     }
 
     const defaultImg = "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=800&auto=format&fit=crop";
 
-    const insert = db.prepare(`
+    const result = await db.run(`
       INSERT INTO categories (name, slug, description, image, status)
       VALUES (?, ?, ?, ?, ?)
-    `);
-
-    const result = insert.run(
+    `, [
       trimmedName,
       slug,
       description ? description.trim() : "",
       image && image.trim() ? image.trim() : defaultImg,
       status || "active"
-    );
+    ]);
 
-    const newCategory = db.prepare("SELECT * FROM categories WHERE id = ?").get(result.lastInsertRowid);
+    const newCategory = await db.get("SELECT * FROM categories WHERE id = ?", [result.lastInsertRowid]);
 
     res.status(201).json({
       success: true,
@@ -157,12 +157,12 @@ router.post("/", (req, res) => {
 });
 
 // PUT /api/categories/:id - Update category
-router.put("/:id", (req, res) => {
+router.put("/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const { name, description, image, status } = req.body;
 
-    const category = db.prepare("SELECT * FROM categories WHERE id = ?").get(id);
+    const category = await db.get("SELECT * FROM categories WHERE id = ?", [id]);
     if (!category) {
       return res.status(404).json({ success: false, message: "Category not found" });
     }
@@ -172,30 +172,28 @@ router.put("/:id", (req, res) => {
 
     if (name && name.trim() !== category.name) {
       // Check if new name conflicts with another category
-      const conflict = db.prepare("SELECT id FROM categories WHERE LOWER(name) = LOWER(?) AND id != ?").get(updatedName, id);
+      const conflict = await db.get("SELECT id FROM categories WHERE LOWER(name) = LOWER(?) AND id != ?", [updatedName, id]);
       if (conflict) {
         return res.status(400).json({ success: false, message: `Another category named "${updatedName}" already exists` });
       }
       slug = slugify(updatedName);
     }
 
-    const update = db.prepare(`
+    await db.run(`
       UPDATE categories
       SET name = ?, slug = ?, description = ?, image = ?, status = ?
       WHERE id = ?
-    `);
-
-    update.run(
+    `, [
       updatedName,
       slug,
       description !== undefined ? description.trim() : category.description,
       image !== undefined && image.trim() ? image.trim() : category.image,
       status !== undefined ? status : category.status,
       id
-    );
+    ]);
 
-    const updated = db.prepare("SELECT * FROM categories WHERE id = ?").get(id);
-    const subCategories = db.prepare("SELECT * FROM sub_categories WHERE category_id = ?").all(id);
+    const updated = await db.get("SELECT * FROM categories WHERE id = ?", [id]);
+    const subCategories = await db.all("SELECT * FROM sub_categories WHERE category_id = ?", [id]);
 
     res.json({
       success: true,
@@ -213,18 +211,18 @@ router.put("/:id", (req, res) => {
 });
 
 // DELETE /api/categories/:id - Delete category
-router.delete("/:id", (req, res) => {
+router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const category = db.prepare("SELECT * FROM categories WHERE id = ?").get(id);
+    const category = await db.get("SELECT * FROM categories WHERE id = ?", [id]);
     if (!category) {
       return res.status(404).json({ success: false, message: "Category not found" });
     }
 
     // Delete sub-categories under this category
-    db.prepare("DELETE FROM sub_categories WHERE category_id = ?").run(id);
+    await db.run("DELETE FROM sub_categories WHERE category_id = ?", [id]);
     // Delete the category itself
-    db.prepare("DELETE FROM categories WHERE id = ?").run(id);
+    await db.run("DELETE FROM categories WHERE id = ?", [id]);
 
     res.json({
       success: true,

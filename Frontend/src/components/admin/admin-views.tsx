@@ -369,9 +369,13 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
                         className="h-7 text-xs text-destructive hover:bg-destructive/10"
                         onClick={async () => {
                           if (confirm(`Remove "${b.title}" from catalog?`)) {
-                            await fetch(`http://localhost:5000/api/books/${b.id}`, { method: "DELETE" });
-                            toast.success(`Removed "${b.title}"`);
-                            loadData();
+                            try {
+                              await api.deleteBook(b.id);
+                              toast.success(`Removed "${b.title}"`);
+                              loadData();
+                            } catch (err: unknown) {
+                              toast.error(err instanceof Error ? err.message : "Failed to delete book");
+                            }
                           }
                         }}
                       >

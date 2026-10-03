@@ -48,9 +48,8 @@ export function StoreManagerModal({ open, onOpenChange, trigger }: StoreManagerM
   const loadContacts = async () => {
     setLoadingContacts(true);
     try {
-      const res = await fetch("http://localhost:5000/api/contact");
-      const data = await res.json();
-      if (data.data) setContacts(data.data);
+      const data = await api.getContacts();
+      if (data) setContacts(data);
     } catch {
       // ignore
     } finally {

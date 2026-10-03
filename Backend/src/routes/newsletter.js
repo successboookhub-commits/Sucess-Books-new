@@ -4,7 +4,7 @@ import { db } from "../db/database.js";
 const router = Router();
 
 // POST subscribe email
-router.post("/", (req, res) => {
+router.post("/", async (req, res) => {
   try {
     const { email } = req.body;
     if (!email || !email.includes("@")) {
@@ -17,7 +17,7 @@ router.post("/", (req, res) => {
     const trimmed = email.trim().toLowerCase();
 
     // Check if already subscribed
-    const existing = db.prepare("SELECT id FROM newsletter WHERE email = ?").get(trimmed);
+    const existing = await db.get("SELECT id FROM newsletter WHERE email = ?", [trimmed]);
     if (existing) {
       return res.json({
         success: true,
@@ -25,12 +25,22 @@ router.post("/", (req, res) => {
       });
     }
 
-    db.prepare("INSERT INTO newsletter (email) VALUES (?)").run(trimmed);
+    await db.run("INSERT INTO newsletter (email) VALUES (?)", [trimmed]);
 
     res.status(201).json({
       success: true,
       message: "Welcome aboard! You have successfully subscribed to Success Book Hub updates."
     });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// GET all newsletter subscribers (for admin view)
+router.get("/", async (req, res) => {
+  try {
+    const subscribers = await db.all("SELECT * FROM newsletter ORDER BY created_at DESC");
+    res.json({ success: true, count: subscribers.length, data: subscribers });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

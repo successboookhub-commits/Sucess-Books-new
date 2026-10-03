@@ -173,6 +173,16 @@ export const api = {
     return data.data;
   },
 
+  // Admin: Delete book
+  async deleteBook(id: number | string) {
+    const res = await fetch(`${API_BASE}/books/${id}`, {
+      method: "DELETE"
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to delete book");
+    return data;
+  },
+
   // Contact form submission
   async sendContactMessage(payload: { name: string; email?: string; phone?: string; message: string }) {
     const res = await fetch(`${API_BASE}/contact`, {
@@ -183,6 +193,14 @@ export const api = {
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Failed to send message");
     return data;
+  },
+
+  // Admin: Get contact messages
+  async getContacts() {
+    const res = await fetch(`${API_BASE}/contact`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to fetch contact inquiries");
+    return data.data || [];
   },
 
   // Newsletter subscription

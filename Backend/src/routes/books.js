@@ -4,16 +4,17 @@ import { db } from "../db/database.js";
 const router = Router();
 
 // GET all categories with book counts
-router.get("/categories", (req, res) => {
+router.get("/categories", async (req, res) => {
   try {
-    const rows = db.prepare(`
+    const rows = await db.all(`
       SELECT category, COUNT(*) as count 
       FROM books 
       GROUP BY category 
       ORDER BY count DESC
-    `).all();
+    `);
 
-    const totalCount = db.prepare("SELECT COUNT(*) as count FROM books").get().count;
+    const countRow = await db.get("SELECT COUNT(*) as count FROM books");
+    const totalCount = countRow ? countRow.count : 0;
 
     res.json({
       success: true,
@@ -28,7 +29,7 @@ router.get("/categories", (req, res) => {
 });
 
 // GET all books with search, category, and sort filters
-router.get("/", (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const { category, search, sort, featured } = req.query;
 
@@ -61,7 +62,7 @@ router.get("/", (req, res) => {
       query += " ORDER BY featured DESC, id ASC";
     }
 
-    const books = db.prepare(query).all(...params);
+    const books = await db.all(query, params);
 
     // Format fields for frontend compatibility
     const formattedBooks = books.map(b => ({
@@ -69,14 +70,14 @@ router.get("/", (req, res) => {
       title: b.title,
       author: b.author,
       category: b.category,
-      price: b.price,
-      oldPrice: b.old_price,
-      rating: b.rating,
-      reviewsCount: b.reviews_count,
+      price: Number(b.price),
+      oldPrice: b.old_price ? Number(b.old_price) : null,
+      rating: Number(b.rating),
+      reviewsCount: Number(b.reviews_count),
       cover: b.cover,
       label: b.label,
       description: b.description,
-      stock: b.stock,
+      stock: Number(b.stock),
       featured: Boolean(b.featured)
     }));
 
@@ -87,19 +88,19 @@ router.get("/", (req, res) => {
 });
 
 // GET single book by ID with reviews
-router.get("/:id", (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
-    const book = db.prepare("SELECT * FROM books WHERE id = ?").get(req.params.id);
+    const book = await db.get("SELECT * FROM books WHERE id = ?", [req.params.id]);
     if (!book) {
       return res.status(404).json({ success: false, message: "Book not found" });
     }
 
-    const reviews = db.prepare(`
+    const reviews = await db.all(`
       SELECT id, user_name, rating, comment, created_at 
       FROM reviews 
       WHERE book_id = ? 
       ORDER BY created_at DESC
-    `).all(req.params.id);
+    `, [req.params.id]);
 
     res.json({
       success: true,
@@ -108,14 +109,14 @@ router.get("/:id", (req, res) => {
         title: book.title,
         author: book.author,
         category: book.category,
-        price: book.price,
-        oldPrice: book.old_price,
-        rating: book.rating,
-        reviewsCount: book.reviews_count,
+        price: Number(book.price),
+        oldPrice: book.old_price ? Number(book.old_price) : null,
+        rating: Number(book.rating),
+        reviewsCount: Number(book.reviews_count),
         cover: book.cover,
         label: book.label,
         description: book.description,
-        stock: book.stock,
+        stock: Number(book.stock),
         featured: Boolean(book.featured),
         reviews
       }
@@ -126,7 +127,7 @@ router.get("/:id", (req, res) => {
 });
 
 // POST create book (for store manager / admin)
-router.post("/", (req, res) => {
+router.post("/", async (req, res) => {
   try {
     const {
       title,
@@ -148,12 +149,10 @@ router.post("/", (req, res) => {
       });
     }
 
-    const stmt = db.prepare(`
+    const result = await db.run(`
       INSERT INTO books (title, author, category, price, old_price, rating, reviews_count, cover, label, description, stock, featured)
       VALUES (?, ?, ?, ?, ?, 5.0, 0, ?, ?, ?, ?, ?)
-    `);
-
-    const result = stmt.run(
+    `, [
       title,
       author,
       category,
@@ -164,9 +163,9 @@ router.post("/", (req, res) => {
       description || "",
       parseInt(stock) || 25,
       featured ? 1 : 0
-    );
+    ]);
 
-    const newBook = db.prepare("SELECT * FROM books WHERE id = ?").get(result.lastInsertRowid);
+    const newBook = await db.get("SELECT * FROM books WHERE id = ?", [result.lastInsertRowid]);
 
     res.status(201).json({
       success: true,
@@ -176,14 +175,14 @@ router.post("/", (req, res) => {
         title: newBook.title,
         author: newBook.author,
         category: newBook.category,
-        price: newBook.price,
-        oldPrice: newBook.old_price,
-        rating: newBook.rating,
-        reviewsCount: newBook.reviews_count,
+        price: Number(newBook.price),
+        oldPrice: newBook.old_price ? Number(newBook.old_price) : null,
+        rating: Number(newBook.rating),
+        reviewsCount: Number(newBook.reviews_count),
         cover: newBook.cover,
         label: newBook.label,
         description: newBook.description,
-        stock: newBook.stock,
+        stock: Number(newBook.stock),
         featured: Boolean(newBook.featured)
       }
     });
@@ -193,9 +192,9 @@ router.post("/", (req, res) => {
 });
 
 // PUT update book
-router.put("/:id", (req, res) => {
+router.put("/:id", async (req, res) => {
   try {
-    const existing = db.prepare("SELECT * FROM books WHERE id = ?").get(req.params.id);
+    const existing = await db.get("SELECT * FROM books WHERE id = ?", [req.params.id]);
     if (!existing) {
       return res.status(404).json({ success: false, message: "Book not found" });
     }
@@ -213,11 +212,11 @@ router.put("/:id", (req, res) => {
       featured = existing.featured
     } = req.body;
 
-    db.prepare(`
+    await db.run(`
       UPDATE books 
       SET title = ?, author = ?, category = ?, price = ?, old_price = ?, cover = ?, label = ?, description = ?, stock = ?, featured = ?
       WHERE id = ?
-    `).run(
+    `, [
       title,
       author,
       category,
@@ -229,9 +228,9 @@ router.put("/:id", (req, res) => {
       parseInt(stock),
       featured ? 1 : 0,
       req.params.id
-    );
+    ]);
 
-    const updated = db.prepare("SELECT * FROM books WHERE id = ?").get(req.params.id);
+    const updated = await db.get("SELECT * FROM books WHERE id = ?", [req.params.id]);
     res.json({ success: true, message: "Book updated successfully", data: updated });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -239,10 +238,10 @@ router.put("/:id", (req, res) => {
 });
 
 // DELETE book
-router.delete("/:id", (req, res) => {
+router.delete("/:id", async (req, res) => {
   try {
-    const result = db.prepare("DELETE FROM books WHERE id = ?").run(req.params.id);
-    if (result.changes === 0) {
+    const result = await db.run("DELETE FROM books WHERE id = ?", [req.params.id]);
+    if (result.changes === 0 && result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: "Book not found" });
     }
     res.json({ success: true, message: "Book deleted successfully" });
@@ -252,7 +251,7 @@ router.delete("/:id", (req, res) => {
 });
 
 // POST review for a book
-router.post("/:id/reviews", (req, res) => {
+router.post("/:id/reviews", async (req, res) => {
   try {
     const bookId = req.params.id;
     const { userName, rating, comment } = req.body;
@@ -264,36 +263,36 @@ router.post("/:id/reviews", (req, res) => {
       });
     }
 
-    const book = db.prepare("SELECT id FROM books WHERE id = ?").get(bookId);
+    const book = await db.get("SELECT id FROM books WHERE id = ?", [bookId]);
     if (!book) {
       return res.status(404).json({ success: false, message: "Book not found" });
     }
 
-    db.prepare(`
+    await db.run(`
       INSERT INTO reviews (book_id, user_name, rating, comment)
       VALUES (?, ?, ?, ?)
-    `).run(bookId, userName.trim(), Math.min(5, Math.max(1, parseInt(rating))), comment.trim());
+    `, [bookId, userName.trim(), Math.min(5, Math.max(1, parseInt(rating))), comment.trim()]);
 
     // Update book aggregate rating and count
-    const stats = db.prepare(`
+    const stats = await db.get(`
       SELECT AVG(rating) as avg_rating, COUNT(*) as count 
       FROM reviews 
       WHERE book_id = ?
-    `).get(bookId);
+    `, [bookId]);
 
-    const newRating = Math.round((stats.avg_rating || 5) * 10) / 10;
-    db.prepare(`
+    const newRating = Math.round((Number(stats.avg_rating) || 5) * 10) / 10;
+    await db.run(`
       UPDATE books 
       SET rating = ?, reviews_count = ? 
       WHERE id = ?
-    `).run(newRating, stats.count, bookId);
+    `, [newRating, stats.count, bookId]);
 
-    const allReviews = db.prepare(`
+    const allReviews = await db.all(`
       SELECT id, user_name, rating, comment, created_at 
       FROM reviews 
       WHERE book_id = ? 
       ORDER BY created_at DESC
-    `).all(bookId);
+    `, [bookId]);
 
     res.status(201).json({
       success: true,

@@ -4,11 +4,11 @@ import { db } from "../db/database.js";
 const router = Router();
 
 // GET store info and statistics
-router.get("/info", (req, res) => {
+router.get("/info", async (req, res) => {
   try {
-    const bookCount = db.prepare("SELECT COUNT(*) as count FROM books").get().count;
-    const orderCount = db.prepare("SELECT COUNT(*) as count FROM orders").get().count;
-    const reviewCount = db.prepare("SELECT COUNT(*) as count FROM reviews").get().count;
+    const bookCount = (await db.get("SELECT COUNT(*) as count FROM books"))?.count || 0;
+    const orderCount = (await db.get("SELECT COUNT(*) as count FROM orders"))?.count || 0;
+    const reviewCount = (await db.get("SELECT COUNT(*) as count FROM reviews"))?.count || 0;
 
     res.json({
       success: true,
@@ -22,9 +22,9 @@ router.get("/info", (req, res) => {
         hours: "Mon – Sat: 10:00 AM – 8:30 PM",
         announcement: "Free Pan-India Delivery on orders above ₹799 • Order directly online or via WhatsApp!",
         stats: {
-          booksCount: bookCount,
-          ordersCount: orderCount,
-          reviewsCount: reviewCount,
+          booksCount: Number(bookCount),
+          ordersCount: Number(orderCount),
+          reviewsCount: Number(reviewCount),
           happyReaders: "2,500+"
         }
       }

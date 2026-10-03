@@ -4,7 +4,7 @@ import { db } from "../db/database.js";
 const router = Router();
 
 // POST submit contact message
-router.post("/", (req, res) => {
+router.post("/", async (req, res) => {
   try {
     const { name, email = "", phone = "", message } = req.body;
 
@@ -15,12 +15,10 @@ router.post("/", (req, res) => {
       });
     }
 
-    const stmt = db.prepare(`
+    const result = await db.run(`
       INSERT INTO contacts (name, email, phone, message)
       VALUES (?, ?, ?, ?)
-    `);
-
-    const result = stmt.run(name.trim(), email.trim(), phone.trim(), message.trim());
+    `, [name.trim(), email.trim(), phone.trim(), message.trim()]);
 
     res.status(201).json({
       success: true,
@@ -33,9 +31,9 @@ router.post("/", (req, res) => {
 });
 
 // GET all contact inquiries (admin)
-router.get("/", (req, res) => {
+router.get("/", async (req, res) => {
   try {
-    const inquiries = db.prepare("SELECT * FROM contacts ORDER BY created_at DESC").all();
+    const inquiries = await db.all("SELECT * FROM contacts ORDER BY created_at DESC");
     res.json({ success: true, count: inquiries.length, data: inquiries });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

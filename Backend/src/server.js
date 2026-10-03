@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import morgan from "morgan";
 import dotenv from "dotenv";
-import { initDatabase } from "./db/database.js";
+import { initDatabase, db } from "./db/database.js";
 import booksRouter from "./routes/books.js";
 import ordersRouter from "./routes/orders.js";
 import contactsRouter from "./routes/contacts.js";
@@ -15,9 +15,6 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-
-// Initialize Database & Seed data
-initDatabase();
 
 // Middleware
 app.use(cors({
@@ -35,6 +32,7 @@ app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
     service: "Success Book Hub API",
+    dbEngine: db.isMySQL ? "MySQL (phpMyAdmin)" : "SQLite (Local)",
     timestamp: new Date().toISOString()
   });
 });
@@ -66,12 +64,24 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`===========================================`);
-  console.log(`  Success Book Hub Backend API is Running  `);
-  console.log(`  URL: http://localhost:${PORT}            `);
-  console.log(`  Health: http://localhost:${PORT}/api/health`);
-  console.log(`===========================================`);
-});
+// Async server bootstrapper
+async function startServer() {
+  try {
+    await initDatabase();
+    app.listen(PORT, () => {
+      console.log(`=======================================================`);
+      console.log(`  Success Book Hub Backend API is Running             `);
+      console.log(`  URL: http://localhost:${PORT}                       `);
+      console.log(`  Database Engine: ${db.isMySQL ? "MySQL" : "SQLite"} `);
+      console.log(`  Health: http://localhost:${PORT}/api/health         `);
+      console.log(`=======================================================`);
+    });
+  } catch (err) {
+    console.error("Fatal: Failed to bootstrap server:", err);
+    process.exit(1);
+  }
+}
+
+startServer();
 
 export default app;
