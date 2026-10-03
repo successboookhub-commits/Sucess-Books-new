@@ -1,4 +1,4 @@
-# Hostinger Business Hosting Deployment Guide (Git & MySQL / phpMyAdmin)
+# Hostinger Business Hosting Deployment Guide (successbookhub.com)
 
 This project is configured to automatically manage and migrate MySQL database tables on **Hostinger Business Hosting** with zero manual SQL imports needed.
 
@@ -6,7 +6,7 @@ This project is configured to automatically manage and migrate MySQL database ta
 
 ## 🌟 Key Features of the Database Setup
 
-1. **Auto-Table Creation**: When you deploy and the backend starts, it runs `CREATE TABLE IF NOT EXISTS` for all 7 tables:
+1. **Auto-Table Creation**: When you deploy and the backend starts, it runs `CREATE TABLE IF NOT EXISTS` for all 7 tables in MySQL:
    - `categories` (Main categories)
    - `sub_categories` (Sub-categories with Foreign Keys)
    - `books` (Catalog with ratings, stock, discounts)
@@ -16,20 +16,30 @@ This project is configured to automatically manage and migrate MySQL database ta
    - `newsletter` (Email subscribers)
 2. **Auto-Column Migration**: When you add new columns in code in the future and redeploy, the backend automatically detects missing columns using MySQL's `INFORMATION_SCHEMA` and executes `ALTER TABLE ... ADD COLUMN` without deleting or corrupting your existing data!
 3. **Auto-Seeding**: If the database is freshly created and empty, it automatically seeds default categories, subcategories, and books into your Hostinger phpMyAdmin database.
-4. **Zero-Config Local Fallback**: If MySQL credentials are not provided locally, it falls back to local SQLite automatically so you can test anytime without setup.
+4. **Zero-Config Local Fallback**: If MySQL server is offline locally, it falls back to local SQLite automatically so you can develop anytime without setup.
+
+---
+
+## 🔑 Your Hostinger MySQL Database Credentials
+
+| Setting | Value |
+| :--- | :--- |
+| **MySQL Host** | `localhost` |
+| **MySQL Port** | `3306` |
+| **Database Name** | `u803044110_Successbookhub` |
+| **Database User** | `u803044110_Successbookhub` |
+| **Database Password** | `Successbookhub@123` |
 
 ---
 
 ## 🛠️ Step-by-Step Hostinger Deployment Instructions
 
-### Step 1: Create MySQL Database in Hostinger hPanel
-1. Log in to your **Hostinger hPanel**.
-2. Go to **Databases** ➔ **MySQL Databases**.
-3. Create a new database:
-   - **Database Name**: e.g., `u123456789_successbooks`
-   - **Username**: e.g., `u123456789_dbuser`
-   - **Password**: Enter a strong password (copy this).
-4. Click **Create**. Note down the Database Name, User, and Password.
+### Step 1: Create Database in Hostinger hPanel
+*(As per your screenshot)*:
+1. Make sure you click the purple **Create** button in **Databases** ➔ **Management** with:
+   - Database name: `Successbookhub` (`u803044110_Successbookhub`)
+   - Username: `Successbookhub` (`u803044110_Successbookhub`)
+   - Password: `Successbookhub@123`
 
 ---
 
@@ -40,39 +50,39 @@ This project is configured to automatically manage and migrate MySQL database ta
    - **Branch**: `main`
    - **Install path**: e.g., `public_html` or `app`
 3. Click **Create** and **Deploy**.
-4. Whenever you push to GitHub, you just click **Auto-Deployment** or click **Deploy** in Hostinger Git to pull the latest changes.
+4. Enable **Auto-Deployment** or click **Deploy** whenever you push updates.
 
 ---
 
 ### Step 3: Configure Node.js Application in Hostinger
-1. In Hostinger hPanel, search and click on **Node.js** (or Node.js App Manager).
-2. Create/Configure Node.js Application:
+1. In Hostinger hPanel, search and open **Node.js** (or Node.js App Manager).
+2. Configure your Node.js application:
    - **Node.js Version**: 18.x, 20.x, or 22.x
-   - **Application Root**: `Backend` (or `/home/uXXXXXXX/public_html/Backend`)
+   - **Application Root**: `Backend` (or `/home/u803044110/public_html/Backend`)
    - **Application Startup File**: `src/server.js`
-   - **Application URL**: Select your domain or subdomain (e.g. `api.yourdomain.com` or `yourdomain.com`)
-3. Add **Environment Variables** in the Node.js settings or create `.env` inside `Backend/`:
+   - **Application URL**: `successbookhub.com` (or `api.successbookhub.com`)
+3. Add these **Environment Variables** in the Node.js settings (or inside `Backend/.env`):
    ```env
    PORT=5000
    NODE_ENV=production
-   FRONTEND_URL=https://yourdomain.com
+   FRONTEND_URL=https://successbookhub.com
    WHATSAPP_NUMBER=919876543210
 
    DB_HOST=localhost
    DB_PORT=3306
-   DB_NAME=u123456789_successbooks
-   DB_USER=u123456789_dbuser
-   DB_PASSWORD=your_mysql_password
+   DB_NAME=u803044110_Successbookhub
+   DB_USER=u803044110_Successbookhub
+   DB_PASSWORD=Successbookhub@123
    ```
-4. Click **NPM Install** (or run `npm install` in Terminal).
+4. Click **NPM Install** (or `npm install mysql2`).
 5. Click **Restart** Application.
 
 ---
 
 ### Step 4: Verify Tables in phpMyAdmin
-1. In Hostinger hPanel, go to **Databases** ➔ **phpMyAdmin** and open your database.
-2. You will see all tables (`categories`, `sub_categories`, `books`, `orders`, `reviews`, `contacts`, `newsletter`) already created and populated!
-3. Visit `https://your-api-domain.com/api/health` to confirm:
+1. In Hostinger hPanel, go to **Databases** ➔ **phpMyAdmin** and open `u803044110_Successbookhub`.
+2. All 7 tables will be created automatically with all seeded books, categories, and initial data!
+3. Visit `https://successbookhub.com/api/health` to confirm:
    ```json
    {
      "status": "ok",
@@ -80,16 +90,3 @@ This project is configured to automatically manage and migrate MySQL database ta
      "dbEngine": "MySQL (phpMyAdmin)"
    }
    ```
-
----
-
-## 🔄 Future Updates (Adding New Tables / Columns)
-1. Add new table or column in `Backend/src/db/database.js` under `SCHEMA_DEFINITIONS`.
-2. Commit and push:
-   ```bash
-   git add .
-   git commit -m "Add new table / column"
-   git push origin main
-   ```
-3. In Hostinger, pull/redeploy Git and restart Node.js.
-4. Hostinger MySQL will automatically create the new table or column without touching existing records!
