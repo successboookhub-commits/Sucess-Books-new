@@ -34,17 +34,57 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(morgan("dev"));
 
-// 1. Health check
+let ssrModule = null;
+let ssrModuleError = null;
+let ssrModulePath = null;
+
+// 1. In-Process Direct SSR Engine Loader
+async function getSSRModule() {
+  if (ssrModule) return ssrModule;
+  const candidatePaths = [
+    path.resolve(__dirname, "../../Frontend/.output/server/_ssr/ssr.mjs"),
+    path.resolve(__dirname, "../../.output/server/_ssr/ssr.mjs"),
+    path.resolve(__dirname, "../.output/server/_ssr/ssr.mjs"),
+    path.resolve(process.cwd(), "Frontend/.output/server/_ssr/ssr.mjs"),
+    path.resolve(process.cwd(), ".output/server/_ssr/ssr.mjs"),
+    path.resolve(process.cwd(), "Backend/.output/server/_ssr/ssr.mjs")
+  ];
+  
+  const foundPath = candidatePaths.find(p => fs.existsSync(p));
+  if (foundPath) {
+    try {
+      const mod = await import(pathToFileURL(foundPath).href);
+      ssrModule = mod.default || mod;
+      ssrModulePath = foundPath;
+      console.log(`[SSR] In-Process SSR Engine loaded from: ${foundPath}`);
+    } catch (err) {
+      ssrModuleError = err.stack || err.message;
+      console.error("[SSR] Failed to import SSR module:", err);
+    }
+  } else {
+    ssrModuleError = `No ssr.mjs found. Searched: ${candidatePaths.join(", ")}`;
+    console.warn("[SSR] Warning: " + ssrModuleError);
+  }
+  return ssrModule;
+}
+
+// 2. Health check
 app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
+    version: "2.5.0-direct-ssr",
     service: "Success Book Hub API",
     dbEngine: db.isMySQL ? "MySQL (phpMyAdmin)" : "SQLite (Local)",
+    ssrReady: Boolean(ssrModule),
+    ssrPath: ssrModulePath,
+    ssrError: ssrModuleError,
+    nodeVersion: process.version,
+    cwd: process.cwd(),
     timestamp: new Date().toISOString()
   });
 });
 
-// 2. API Routes
+// 3. API Routes
 app.use("/api/books", booksRouter);
 app.use("/api/orders", ordersRouter);
 app.use("/api/contact", contactsRouter);
@@ -54,7 +94,7 @@ app.use("/api/categories", categoriesRouter);
 app.use("/api/subcategories", subcategoriesRouter);
 app.use("/api/sub-categories", subcategoriesRouter);
 
-// 3. Static Asset Serving (Direct disk serving with strict MIME types)
+// 4. Static Asset Serving (Direct disk serving with strict MIME types)
 const staticOptions = {
   maxAge: "1d",
   index: false,
@@ -69,9 +109,11 @@ const staticOptions = {
 
 const candidateStaticDirs = [
   path.resolve(__dirname, "../../Frontend/.output/public"),
-  path.resolve(__dirname, "../Frontend/.output/public"),
+  path.resolve(__dirname, "../../.output/public"),
+  path.resolve(__dirname, "../.output/public"),
   path.resolve(process.cwd(), "Frontend/.output/public"),
   path.resolve(process.cwd(), ".output/public"),
+  path.resolve(process.cwd(), "Backend/.output/public"),
   path.resolve(__dirname, "../public"),
   path.resolve(process.cwd(), "public")
 ];
@@ -95,30 +137,6 @@ app.use((req, res, next) => {
   }
   next();
 });
-
-// 4. In-Process Direct SSR Engine
-let ssrModule = null;
-
-async function getSSRModule() {
-  if (ssrModule) return ssrModule;
-  const candidatePaths = [
-    path.resolve(__dirname, "../../Frontend/.output/server/_ssr/ssr.mjs"),
-    path.resolve(__dirname, "../Frontend/.output/server/_ssr/ssr.mjs"),
-    path.resolve(process.cwd(), "Frontend/.output/server/_ssr/ssr.mjs"),
-    path.resolve(process.cwd(), ".output/server/_ssr/ssr.mjs")
-  ];
-  const ssrPath = candidatePaths.find(p => fs.existsSync(p));
-  if (ssrPath) {
-    try {
-      const mod = await import(pathToFileURL(ssrPath).href);
-      ssrModule = mod.default || mod;
-      console.log(`[SSR] In-Process SSR Engine loaded from: ${ssrPath}`);
-    } catch (err) {
-      console.error("[SSR] Failed to load SSR module:", err);
-    }
-  }
-  return ssrModule;
-}
 
 // 5. Web Page Routing (Direct In-Memory SSR Execution)
 app.get("*", async (req, res) => {
@@ -166,8 +184,9 @@ app.get("*", async (req, res) => {
   // Fallback to static index.html if SSR module failed
   const fallbackPaths = [
     path.resolve(__dirname, "../../Frontend/.output/public/index.html"),
-    path.resolve(__dirname, "../Frontend/.output/public/index.html"),
+    path.resolve(__dirname, "../../.output/public/index.html"),
     path.resolve(process.cwd(), "Frontend/.output/public/index.html"),
+    path.resolve(process.cwd(), ".output/public/index.html"),
     path.resolve(process.cwd(), "public/index.html")
   ];
   const indexPath = fallbackPaths.find(p => fs.existsSync(p));
