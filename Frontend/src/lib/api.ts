@@ -1,6 +1,10 @@
 import { books as fallbackBooks, type Book } from "./books";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API_BASE = typeof window !== "undefined"
+  ? "/api"
+  : (typeof process !== "undefined" && process.env?.INTERNAL_API_URL
+      ? process.env.INTERNAL_API_URL
+      : `http://127.0.0.1:${typeof process !== "undefined" && process.env?.PORT ? process.env.PORT : 5000}/api`);
 
 export type OrderItem = {
   id: number;
