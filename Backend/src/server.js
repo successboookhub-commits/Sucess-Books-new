@@ -22,19 +22,39 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Helper to find directories/files regardless of Hostinger working directory
-function resolveLocation(...segments) {
-  const root = segments.join("/");
-  const candidates = [
-    path.resolve(__dirname, "../../Frontend", root),
-    path.resolve(__dirname, "../Frontend", root),
-    path.resolve(__dirname, "..", root),
-    path.resolve(__dirname, root),
-    path.resolve(process.cwd(), "Frontend", root),
-    path.resolve(process.cwd(), root)
-  ];
-  return candidates.find(c => fs.existsSync(c)) || null;
+// Helper to find existing directory
+function findExistingDir(...relativePaths) {
+  for (const rel of relativePaths) {
+    const candidates = [
+      path.resolve(__dirname, rel),
+      path.resolve(process.cwd(), rel)
+    ];
+    for (const c of candidates) {
+      if (fs.existsSync(c) && fs.statSync(c).isDirectory()) {
+        return c;
+      }
+    }
+  }
+  return null;
 }
+
+// Helper to set MIME types strictly
+const staticOptions = {
+  maxAge: "1d",
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith(".js") || filePath.endsWith(".mjs")) {
+      res.setHeader("Content-Type", "application/javascript; charset=utf-8");
+    } else if (filePath.endsWith(".css")) {
+      res.setHeader("Content-Type", "text/css; charset=utf-8");
+    } else if (filePath.endsWith(".svg")) {
+      res.setHeader("Content-Type", "image/svg+xml");
+    } else if (filePath.endsWith(".ico")) {
+      res.setHeader("Content-Type", "image/x-icon");
+    } else if (filePath.endsWith(".png")) {
+      res.setHeader("Content-Type", "image/png");
+    }
+  }
+};
 
 // Middleware
 app.use(cors({
@@ -47,17 +67,41 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(morgan("dev"));
 
-// 1. Static Assets Serving
-const publicDir = resolveLocation(".output/public") || resolveLocation("public");
-if (publicDir) {
-  console.log(`[Static] Serving public files from: ${publicDir}`);
-  app.use(express.static(publicDir, {
-    maxAge: "1d",
-    index: false
-  }));
+// 1. Explicit Assets Directory Serving with Strict JavaScript MIME types
+const possibleAssetsDirs = [
+  "../public/assets",
+  "../../Frontend/.output/public/assets",
+  "../../public/assets",
+  "Backend/public/assets",
+  "Frontend/.output/public/assets",
+  "public/assets"
+];
+for (const rel of possibleAssetsDirs) {
+  const dir = findExistingDir(rel);
+  if (dir) {
+    console.log(`[Static] Mounting /assets from: ${dir}`);
+    app.use("/assets", express.static(dir, staticOptions));
+  }
 }
 
-// 2. Health check
+// 2. Root Static Files (Favicons, Robots, etc.)
+const possiblePublicDirs = [
+  "../public",
+  "../../Frontend/.output/public",
+  "../../public",
+  "Backend/public",
+  "Frontend/.output/public",
+  "public"
+];
+for (const rel of possiblePublicDirs) {
+  const dir = findExistingDir(rel);
+  if (dir) {
+    console.log(`[Static] Mounting public root from: ${dir}`);
+    app.use(express.static(dir, staticOptions));
+  }
+}
+
+// 3. Health check
 app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
@@ -67,7 +111,7 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// 3. API Routes
+// 4. API Routes
 app.use("/api/books", booksRouter);
 app.use("/api/orders", ordersRouter);
 app.use("/api/contact", contactsRouter);
@@ -77,24 +121,30 @@ app.use("/api/categories", categoriesRouter);
 app.use("/api/subcategories", subcategoriesRouter);
 app.use("/api/sub-categories", subcategoriesRouter);
 
-// 4. In-Process SSR Loader
-let ssrHandler = null;
+// 5. In-Process SSR Module Loader
+let ssrModule = null;
 async function loadSSR() {
-  if (ssrHandler) return ssrHandler;
-  const ssrFile = resolveLocation(".output/server/_ssr/ssr.mjs") || resolveLocation(".output/server/index.mjs");
-  if (ssrFile) {
+  if (ssrModule) return ssrModule;
+  const possiblePaths = [
+    path.resolve(__dirname, "../../Frontend/.output/server/_ssr/ssr.mjs"),
+    path.resolve(__dirname, "../Frontend/.output/server/_ssr/ssr.mjs"),
+    path.resolve(process.cwd(), "Frontend/.output/server/_ssr/ssr.mjs"),
+    path.resolve(process.cwd(), ".output/server/_ssr/ssr.mjs")
+  ];
+  const ssrPath = possiblePaths.find(p => fs.existsSync(p));
+  if (ssrPath) {
     try {
-      const mod = await import(pathToFileURL(ssrFile).href);
-      ssrHandler = mod.default || mod;
-      console.log(`[SSR] Loaded in-process SSR handler from: ${ssrFile}`);
+      const mod = await import(pathToFileURL(ssrPath).href);
+      ssrModule = mod.default || mod;
+      console.log(`[SSR] In-Process SSR Engine ready from: ${ssrPath}`);
     } catch (err) {
-      console.error("[SSR] Error importing SSR module:", err.message);
+      console.error("[SSR] Failed to load SSR module:", err.message);
     }
   }
-  return ssrHandler;
+  return ssrModule;
 }
 
-// 5. Fallback HTML Generator
+// 6. Fallback HTML Generator
 function getFallbackHTML() {
   return `<!DOCTYPE html>
 <html lang="en">
@@ -122,9 +172,9 @@ function getFallbackHTML() {
 </html>`;
 }
 
-// 6. Web Page Router (Handles all pages: /, /shop, /about, /contact, /admin)
+// 7. Web Page Routing (Prevents any static file from returning HTML)
 app.get("*", async (req, res) => {
-  // If requesting an API endpoint that wasn't matched
+  // Never return HTML for API requests
   if (req.path.startsWith("/api")) {
     return res.status(404).json({
       success: false,
@@ -132,7 +182,12 @@ app.get("*", async (req, res) => {
     });
   }
 
-  // 1. Try In-Process SSR
+  // Never return HTML for missing asset requests (prevents MIME type script error)
+  if (req.path.startsWith("/assets/") || /\.(js|mjs|css|png|jpg|jpeg|svg|ico|json|woff2?|ttf|map)$/i.test(req.path)) {
+    return res.status(404).type("text/plain").send(`Asset ${req.path} not found`);
+  }
+
+  // Try In-Process SSR
   try {
     const handler = await loadSSR();
     if (handler?.fetch) {
@@ -164,16 +219,10 @@ app.get("*", async (req, res) => {
       }
     }
   } catch (err) {
-    console.error("[SSR] SSR render failed, falling back to static HTML:", err.message);
+    console.error("[SSR] SSR render fallback:", err.message);
   }
 
-  // 2. Try static index.html from .output/public
-  const indexFile = resolveLocation(".output/public/index.html");
-  if (indexFile && fs.existsSync(indexFile)) {
-    return res.sendFile(indexFile);
-  }
-
-  // 3. Guaranteed HTML Fallback
+  // Fallback HTML page
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   return res.send(getFallbackHTML());
 });
