@@ -4,6 +4,7 @@ import morgan from "morgan";
 import dotenv from "dotenv";
 import path from "node:path";
 import fs from "node:fs";
+import http from "node:http";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { initDatabase, db } from "./db/database.js";
 import booksRouter from "./routes/books.js";
@@ -19,42 +20,16 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const HOSTINGER_PORT = process.env.PORT || 5000;
+const SSR_INTERNAL_PORT = 3000;
+
+// Set Nitro environment variables before importing
+process.env.NITRO_PORT = String(SSR_INTERNAL_PORT);
+process.env.PORT = String(SSR_INTERNAL_PORT);
+process.env.HOST = "127.0.0.1";
+process.env.NITRO_HOST = "127.0.0.1";
+
 const app = express();
-const PORT = process.env.PORT || 5000;
-
-// Helper to find existing directory
-function findExistingDir(...relativePaths) {
-  for (const rel of relativePaths) {
-    const candidates = [
-      path.resolve(__dirname, rel),
-      path.resolve(process.cwd(), rel)
-    ];
-    for (const c of candidates) {
-      if (fs.existsSync(c) && fs.statSync(c).isDirectory()) {
-        return c;
-      }
-    }
-  }
-  return null;
-}
-
-// Helper to set MIME types strictly
-const staticOptions = {
-  maxAge: "1d",
-  setHeaders: (res, filePath) => {
-    if (filePath.endsWith(".js") || filePath.endsWith(".mjs")) {
-      res.setHeader("Content-Type", "application/javascript; charset=utf-8");
-    } else if (filePath.endsWith(".css")) {
-      res.setHeader("Content-Type", "text/css; charset=utf-8");
-    } else if (filePath.endsWith(".svg")) {
-      res.setHeader("Content-Type", "image/svg+xml");
-    } else if (filePath.endsWith(".ico")) {
-      res.setHeader("Content-Type", "image/x-icon");
-    } else if (filePath.endsWith(".png")) {
-      res.setHeader("Content-Type", "image/png");
-    }
-  }
-};
 
 // Middleware
 app.use(cors({
@@ -67,41 +42,7 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(morgan("dev"));
 
-// 1. Explicit Assets Directory Serving with Strict JavaScript MIME types
-const possibleAssetsDirs = [
-  "../public/assets",
-  "../../Frontend/.output/public/assets",
-  "../../public/assets",
-  "Backend/public/assets",
-  "Frontend/.output/public/assets",
-  "public/assets"
-];
-for (const rel of possibleAssetsDirs) {
-  const dir = findExistingDir(rel);
-  if (dir) {
-    console.log(`[Static] Mounting /assets from: ${dir}`);
-    app.use("/assets", express.static(dir, staticOptions));
-  }
-}
-
-// 2. Root Static Files (Favicons, Robots, etc.)
-const possiblePublicDirs = [
-  "../public",
-  "../../Frontend/.output/public",
-  "../../public",
-  "Backend/public",
-  "Frontend/.output/public",
-  "public"
-];
-for (const rel of possiblePublicDirs) {
-  const dir = findExistingDir(rel);
-  if (dir) {
-    console.log(`[Static] Mounting public root from: ${dir}`);
-    app.use(express.static(dir, staticOptions));
-  }
-}
-
-// 3. Health check
+// 1. Health check
 app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
@@ -111,7 +52,7 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// 4. API Routes
+// 2. API Routes
 app.use("/api/books", booksRouter);
 app.use("/api/orders", ordersRouter);
 app.use("/api/contact", contactsRouter);
@@ -121,60 +62,49 @@ app.use("/api/categories", categoriesRouter);
 app.use("/api/subcategories", subcategoriesRouter);
 app.use("/api/sub-categories", subcategoriesRouter);
 
-// 5. In-Process SSR Module Loader
-let ssrModule = null;
-async function loadSSR() {
-  if (ssrModule) return ssrModule;
-  const possiblePaths = [
-    path.resolve(__dirname, "../../Frontend/.output/server/_ssr/ssr.mjs"),
-    path.resolve(__dirname, "../Frontend/.output/server/_ssr/ssr.mjs"),
-    path.resolve(process.cwd(), "Frontend/.output/server/_ssr/ssr.mjs"),
-    path.resolve(process.cwd(), ".output/server/_ssr/ssr.mjs")
-  ];
-  const ssrPath = possiblePaths.find(p => fs.existsSync(p));
-  if (ssrPath) {
-    try {
-      const mod = await import(pathToFileURL(ssrPath).href);
-      ssrModule = mod.default || mod;
-      console.log(`[SSR] In-Process SSR Engine ready from: ${ssrPath}`);
-    } catch (err) {
-      console.error("[SSR] Failed to load SSR module:", err.message);
+// 3. Static Asset Serving (High performance direct disk serving with strict MIME types)
+const staticOptions = {
+  maxAge: "1d",
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith(".js") || filePath.endsWith(".mjs")) {
+      res.setHeader("Content-Type", "text/javascript; charset=utf-8");
+    } else if (filePath.endsWith(".css")) {
+      res.setHeader("Content-Type", "text/css; charset=utf-8");
     }
   }
-  return ssrModule;
+};
+
+const candidateStaticDirs = [
+  path.resolve(__dirname, "../../Frontend/.output/public"),
+  path.resolve(__dirname, "../Frontend/.output/public"),
+  path.resolve(process.cwd(), "Frontend/.output/public"),
+  path.resolve(process.cwd(), ".output/public"),
+  path.resolve(__dirname, "../public"),
+  path.resolve(process.cwd(), "public")
+];
+
+const mountedDirs = new Set();
+for (const dir of candidateStaticDirs) {
+  if (fs.existsSync(dir) && !mountedDirs.has(dir)) {
+    mountedDirs.add(dir);
+    app.use(express.static(dir, staticOptions));
+    const assetsSubDir = path.join(dir, "assets");
+    if (fs.existsSync(assetsSubDir)) {
+      app.use("/assets", express.static(assetsSubDir, staticOptions));
+    }
+  }
 }
 
-// 6. Fallback HTML Generator
-function getFallbackHTML() {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Success Book Hub — Curated Books & Timeless Stories</title>
-  <meta name="description" content="A thoughtfully curated online bookstore with direct checkout & WhatsApp ordering." />
-  <meta name="author" content="Success Book Hub" />
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-  <link rel="alternate icon" href="/favicon.ico" type="image/x-icon" />
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" />
-  <link rel="stylesheet" href="/assets/styles-BKSpHtNf.css" />
-  <link rel="modulepreload" href="/assets/index-BloPaMl4.js" />
-  <link rel="modulepreload" href="/assets/preload-helper-DSosWCtT.js" />
-  <link rel="modulepreload" href="/assets/routes-C5C_YdWf.js" />
-</head>
-<body class="bg-background text-foreground antialiased">
-  <div id="root"></div>
-  <script type="module" src="/assets/index-BloPaMl4.js"></script>
-</body>
-</html>`;
-}
+// Strict 404 handler for missing static assets (guarantees HTML is NEVER sent for .js/.css)
+app.use((req, res, next) => {
+  if (req.path.startsWith("/assets/") || /\.(js|mjs|css|png|jpg|jpeg|svg|ico|json|woff2?|ttf|map)$/i.test(req.path)) {
+    return res.status(404).type("text/plain").send(`Asset ${req.path} not found`);
+  }
+  next();
+});
 
-// 7. Web Page Routing (Prevents any static file from returning HTML)
-app.get("*", async (req, res) => {
-  // Never return HTML for API requests
+// 4. Web Page Forwarder to Internal In-Process SSR Engine
+app.use((req, res, next) => {
   if (req.path.startsWith("/api")) {
     return res.status(404).json({
       success: false,
@@ -182,49 +112,43 @@ app.get("*", async (req, res) => {
     });
   }
 
-  // Never return HTML for missing asset requests (prevents MIME type script error)
-  if (req.path.startsWith("/assets/") || /\.(js|mjs|css|png|jpg|jpeg|svg|ico|json|woff2?|ttf|map)$/i.test(req.path)) {
-    return res.status(404).type("text/plain").send(`Asset ${req.path} not found`);
-  }
-
-  // Try In-Process SSR
-  try {
-    const handler = await loadSSR();
-    if (handler?.fetch) {
-      const host = req.headers.host || "successbookhub.com";
-      const protocol = req.headers["x-forwarded-proto"] || req.protocol || "http";
-      const url = new URL(req.originalUrl || req.url, `${protocol}://${host}`);
-
-      const headers = new Headers();
-      for (const [k, v] of Object.entries(req.headers)) {
-        if (v) {
-          if (Array.isArray(v)) v.forEach(item => headers.append(k, item));
-          else headers.set(k, v);
-        }
-      }
-
-      const webReq = new Request(url.toString(), {
-        method: req.method,
-        headers
-      });
-
-      const webRes = await handler.fetch(webReq);
-      if (webRes && webRes.status < 500) {
-        res.status(webRes.status);
-        webRes.headers.forEach((val, key) => {
-          res.setHeader(key, val);
-        });
-        const arrayBuffer = await webRes.arrayBuffer();
-        return res.send(Buffer.from(arrayBuffer));
-      }
+  const options = {
+    hostname: "127.0.0.1",
+    port: SSR_INTERNAL_PORT,
+    path: req.originalUrl,
+    method: req.method,
+    headers: {
+      ...req.headers,
+      host: req.headers.host || "successbookhub.com",
+      "x-forwarded-for": req.ip
     }
-  } catch (err) {
-    console.error("[SSR] SSR render fallback:", err.message);
+  };
+
+  const proxyReq = http.request(options, (proxyRes) => {
+    res.writeHead(proxyRes.statusCode, proxyRes.headers);
+    proxyRes.pipe(res, { end: true });
+  });
+
+  proxyReq.on("error", (err) => {
+    console.error("[SSR Forwarder Error]:", err.message);
+    res.status(500).send(`
+      <!DOCTYPE html>
+      <html>
+      <head><title>Success Book Hub</title></head>
+      <body style="font-family:system-ui;padding:3rem;text-align:center;background:#0f172a;color:#f8fafc">
+        <h2>Success Book Hub Storefront Initializing</h2>
+        <p>Please refresh in a few seconds.</p>
+        <script>setTimeout(() => location.reload(), 2500);</script>
+      </body>
+      </html>
+    `);
+  });
+
+  if (["POST", "PUT", "PATCH"].includes(req.method) && req.body) {
+    proxyReq.write(typeof req.body === "string" ? req.body : JSON.stringify(req.body));
   }
 
-  // Fallback HTML page
-  res.setHeader("Content-Type", "text/html; charset=utf-8");
-  return res.send(getFallbackHTML());
+  proxyReq.end();
 });
 
 // Global Error Handler
@@ -236,18 +160,43 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Boot Frontend SSR engine in-process
+async function bootFrontendSSR() {
+  const possiblePaths = [
+    path.resolve(__dirname, "../../Frontend/.output/server/index.mjs"),
+    path.resolve(__dirname, "../Frontend/.output/server/index.mjs"),
+    path.resolve(process.cwd(), "Frontend/.output/server/index.mjs"),
+    path.resolve(process.cwd(), ".output/server/index.mjs")
+  ];
+  const ssrPath = possiblePaths.find(p => fs.existsSync(p));
+  if (ssrPath) {
+    console.log(`[Frontend] Booting in-process Nitro SSR server from: ${ssrPath}`);
+    try {
+      await import(pathToFileURL(ssrPath).href);
+      console.log(`[Frontend] Nitro SSR server is active on internal port ${SSR_INTERNAL_PORT}.`);
+    } catch (err) {
+      console.error("[Frontend] Error importing Nitro SSR server:", err.message);
+    }
+  } else {
+    console.warn("[Frontend] Warning: No Nitro SSR server build found at expected paths.");
+  }
+}
+
 // Async server bootstrapper
 async function startServer() {
   try {
     await initDatabase();
-    await loadSSR();
+    await bootFrontendSSR();
 
-    app.listen(PORT, () => {
+    // Give Nitro a brief tick to listen
+    await new Promise(r => setTimeout(r, 600));
+
+    app.listen(HOSTINGER_PORT, () => {
       console.log(`=======================================================`);
-      console.log(`  Success Book Hub Unified Server is Running          `);
-      console.log(`  Website URL: http://localhost:${PORT}               `);
+      console.log(`  Success Book Hub Unified Server is LIVE             `);
+      console.log(`  Website URL: http://localhost:${HOSTINGER_PORT}     `);
       console.log(`  Database Engine: ${db.isMySQL ? "MySQL" : "SQLite"} `);
-      console.log(`  Health Check: http://localhost:${PORT}/api/health   `);
+      console.log(`  Health Check: http://localhost:${HOSTINGER_PORT}/api/health`);
       console.log(`=======================================================`);
     });
   } catch (err) {
