@@ -1,27 +1,27 @@
-import { hydrateRoot, createRoot } from "react-dom/client";
-import { StartClient } from "@tanstack/react-start/client";
+import { createRoot, hydrateRoot } from "react-dom/client";
+import { RouterProvider } from "@tanstack/react-router";
 import { getRouter } from "./router";
 
 const router = getRouter();
 
-const rootElement = document.getElementById("root");
+function mountApp() {
+  const rootElement = document.getElementById("root") || document.body;
+  if (!rootElement) return;
 
-if (rootElement && rootElement.hasChildNodes()) {
-  try {
-    hydrateRoot(rootElement, <StartClient router={router} />);
-  } catch (err) {
-    console.warn("[Hydration Fallback] Mounting with createRoot:", err);
-    createRoot(rootElement).render(<StartClient router={router} />);
-  }
-} else if (rootElement) {
-  createRoot(rootElement).render(<StartClient router={router} />);
-} else {
-  try {
-    hydrateRoot(document, <StartClient router={router} />);
-  } catch (err) {
-    console.warn("[Document Hydration Fallback]:", err);
-    if (document.body) {
-      createRoot(document.body).render(<StartClient router={router} />);
+  if (rootElement.hasChildNodes() && rootElement.id === "root") {
+    try {
+      hydrateRoot(rootElement, <RouterProvider router={router} />);
+      return;
+    } catch (err) {
+      console.warn("[Hydration Warning - Falling back to createRoot]:", err);
     }
   }
+
+  createRoot(rootElement).render(<RouterProvider router={router} />);
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", mountApp);
+} else {
+  mountApp();
 }
