@@ -109,8 +109,8 @@ function RootShell({ children }: { children: ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body>
-        {children}
+      <body className="bg-background text-foreground antialiased">
+        <div id="root">{children}</div>
         <Scripts />
       </body>
     </html>
@@ -118,9 +118,10 @@ function RootShell({ children }: { children: ReactNode }) {
 }
 
 function RootComponent() {
-  const { queryClient } = Route.useRouteContext();
+  const context = Route.useRouteContext();
+  const queryClient = context?.queryClient || new QueryClient();
   const routerState = useRouterState();
-  const isAdmin = routerState.location.pathname.startsWith("/admin");
+  const isAdmin = Boolean(routerState?.location?.pathname?.startsWith("/admin"));
 
   return (
     <QueryClientProvider client={queryClient}>

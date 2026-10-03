@@ -168,13 +168,15 @@ app.get("*", async (req, res) => {
       });
 
       const webResponse = await handler.fetch(webRequest, {}, {});
-      if (webResponse) {
+      if (webResponse && webResponse.status < 500) {
         res.status(webResponse.status);
         webResponse.headers.forEach((val, key) => {
           res.setHeader(key, val);
         });
         const html = await webResponse.text();
         return res.send(html);
+      } else if (webResponse && webResponse.status >= 500) {
+        console.warn(`[SSR Warning] SSR returned status ${webResponse.status}. Falling back to client-side rendered SPA.`);
       }
     }
   } catch (err) {

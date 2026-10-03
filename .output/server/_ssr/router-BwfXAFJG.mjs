@@ -14,10 +14,10 @@ import { t as Route$5 } from "./shop-DpmHaCzj.mjs";
 import { t as QueryClientProvider } from "../_libs/tanstack__react-query.mjs";
 import { t as QueryClient } from "../_libs/tanstack__query-core.mjs";
 import { i as Trigger, n as List, r as Root2, t as Content } from "../_libs/radix-ui__react-tabs.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/router-DwAWxDVr.js
+//#region node_modules/.nitro/vite/services/ssr/assets/router-BwfXAFJG.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
-var styles_default = "/assets/styles-BKSpHtNf.css";
+var styles_default = "/assets/styles-CDeqP0g7.css";
 var Sheet = Dialog;
 var SheetTrigger = DialogTrigger;
 var SheetPortal = DialogPortal;
@@ -1687,12 +1687,19 @@ var Route$3 = createRootRouteWithContext()({
 function RootShell({ children }) {
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("html", {
 		lang: "en",
-		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("head", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(HeadContent, {}) }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("body", { children: [children, /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Scripts, {})] })]
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("head", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(HeadContent, {}) }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("body", {
+			className: "bg-background text-foreground antialiased",
+			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				id: "root",
+				children
+			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Scripts, {})]
+		})]
 	});
 }
 function RootComponent() {
-	const { queryClient } = Route$3.useRouteContext();
-	const isAdmin = useRouterState().location.pathname.startsWith("/admin");
+	const queryClient = Route$3.useRouteContext()?.queryClient || new QueryClient();
+	const routerState = useRouterState();
+	const isAdmin = Boolean(routerState?.location?.pathname?.startsWith("/admin"));
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(QueryClientProvider, {
 		client: queryClient,
 		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CartProvider, { children: [
