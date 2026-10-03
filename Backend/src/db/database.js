@@ -368,9 +368,9 @@ export async function initDatabase() {
       console.log("[Database] Connecting to MySQL server...");
       const poolConfig = {
         host: process.env.DB_HOST || "localhost",
-        user: process.env.DB_USER || "root",
-        password: process.env.DB_PASSWORD || "",
-        database: process.env.DB_NAME || "successbookhub",
+        user: process.env.DB_USER || "u803044110_Successbookhub",
+        password: process.env.DB_PASSWORD || "Successbookhub@123",
+        database: process.env.DB_NAME || "u803044110_Successbookhub",
         port: Number(process.env.DB_PORT) || 3306,
         waitForConnections: true,
         connectionLimit: 10,
