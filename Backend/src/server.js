@@ -27,6 +27,28 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(morgan("dev"));
 
+// Root Welcome & API Index
+app.get(["/", "/api"], (req, res) => {
+  res.json({
+    success: true,
+    message: "Welcome to Success Book Hub Backend API",
+    service: "Success Book Hub REST API",
+    status: "online",
+    dbEngine: db.isMySQL ? "MySQL (phpMyAdmin)" : "SQLite (Local)",
+    endpoints: {
+      health: "/api/health",
+      books: "/api/books",
+      categories: "/api/categories",
+      subcategories: "/api/subcategories",
+      orders: "/api/orders",
+      contact: "/api/contact",
+      newsletter: "/api/newsletter",
+      storeInfo: "/api/store/info"
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Health check
 app.get("/api/health", (req, res) => {
   res.json({
@@ -51,7 +73,17 @@ app.use("/api/sub-categories", subcategoriesRouter);
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: `API Route ${req.method} ${req.originalUrl} not found`
+    message: `API Route ${req.method} ${req.originalUrl} not found`,
+    availableEndpoints: [
+      "/api/health",
+      "/api/books",
+      "/api/categories",
+      "/api/subcategories",
+      "/api/orders",
+      "/api/contact",
+      "/api/newsletter",
+      "/api/store/info"
+    ]
   });
 });
 
