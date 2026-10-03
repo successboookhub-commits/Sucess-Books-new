@@ -13,7 +13,6 @@ pnpm-debug.log*
 # Build outputs
 dist/
 dist-ssr/
-.output/
 .vinxi/
 .tanstack/**
 .nitro/
