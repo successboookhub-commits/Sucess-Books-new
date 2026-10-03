@@ -15,19 +15,33 @@ import storeRouter from "./routes/store.js";
 import categoriesRouter from "./routes/categories.js";
 import subcategoriesRouter from "./routes/subcategories.js";
 
+import net from "node:net";
+
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const HOSTINGER_PORT = process.env.PORT || 5000;
-const SSR_INTERNAL_PORT = 3000;
+const HOSTINGER_PORT = Number(process.env.PORT) || 5000;
+let ssrInternalPort = 3000;
 
-// Set Nitro environment variables before importing
-process.env.NITRO_PORT = String(SSR_INTERNAL_PORT);
-process.env.PORT = String(SSR_INTERNAL_PORT);
-process.env.HOST = "127.0.0.1";
-process.env.NITRO_HOST = "127.0.0.1";
+// Dynamic port finder for Nitro SSR to avoid any EADDRINUSE conflict on shared hosting
+async function findFreePort(preferred = 3000) {
+  return new Promise((resolve) => {
+    const srv = net.createServer();
+    srv.listen(preferred, "127.0.0.1", () => {
+      const p = srv.address().port;
+      srv.close(() => resolve(p));
+    });
+    srv.on("error", () => {
+      const fallback = net.createServer();
+      fallback.listen(0, "127.0.0.1", () => {
+        const p = fallback.address().port;
+        fallback.close(() => resolve(p));
+      });
+    });
+  });
+}
 
 const app = express();
 
@@ -65,6 +79,7 @@ app.use("/api/sub-categories", subcategoriesRouter);
 // 3. Static Asset Serving (High performance direct disk serving with strict MIME types)
 const staticOptions = {
   maxAge: "1d",
+  index: false,
   setHeaders: (res, filePath) => {
     if (filePath.endsWith(".js") || filePath.endsWith(".mjs")) {
       res.setHeader("Content-Type", "text/javascript; charset=utf-8");
@@ -114,7 +129,7 @@ app.use((req, res, next) => {
 
   const options = {
     hostname: "127.0.0.1",
-    port: SSR_INTERNAL_PORT,
+    port: ssrInternalPort,
     path: req.originalUrl,
     method: req.method,
     headers: {
@@ -170,10 +185,16 @@ async function bootFrontendSSR() {
   ];
   const ssrPath = possiblePaths.find(p => fs.existsSync(p));
   if (ssrPath) {
-    console.log(`[Frontend] Booting in-process Nitro SSR server from: ${ssrPath}`);
+    ssrInternalPort = await findFreePort(3000);
+    process.env.NITRO_PORT = String(ssrInternalPort);
+    process.env.PORT = String(ssrInternalPort);
+    process.env.HOST = "127.0.0.1";
+    process.env.NITRO_HOST = "127.0.0.1";
+
+    console.log(`[Frontend] Booting in-process Nitro SSR server on port ${ssrInternalPort} from: ${ssrPath}`);
     try {
       await import(pathToFileURL(ssrPath).href);
-      console.log(`[Frontend] Nitro SSR server is active on internal port ${SSR_INTERNAL_PORT}.`);
+      console.log(`[Frontend] Nitro SSR server is active on internal port ${ssrInternalPort}.`);
     } catch (err) {
       console.error("[Frontend] Error importing Nitro SSR server:", err.message);
     }
