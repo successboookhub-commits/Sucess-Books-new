@@ -138,6 +138,52 @@ app.use((req, res, next) => {
   next();
 });
 
+// Fallback HTML Generator with dynamic active bundle detection
+function getFallbackHTML() {
+  const assetCandidates = [
+    path.resolve(__dirname, "../../Frontend/.output/public/assets"),
+    path.resolve(process.cwd(), ".output/public/assets"),
+    path.resolve(process.cwd(), "public/assets"),
+    path.resolve(__dirname, "../public/assets")
+  ];
+  let mainJs = "/assets/index-DkCLDKCT.js";
+  let mainCss = "/assets/styles-CDeqP0g7.css";
+
+  for (const assetDir of assetCandidates) {
+    if (fs.existsSync(assetDir)) {
+      const files = fs.readdirSync(assetDir);
+      const js = files.find(f => f.startsWith("index-") && f.endsWith(".js"));
+      const css = files.find(f => f.startsWith("styles-") && f.endsWith(".css"));
+      if (js) mainJs = `/assets/${js}`;
+      if (css) mainCss = `/assets/${css}`;
+      break;
+    }
+  }
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Success Book Hub — Curated Books & Timeless Stories</title>
+  <meta name="description" content="A thoughtfully curated online bookstore with direct checkout & WhatsApp ordering." />
+  <meta name="author" content="Success Book Hub" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="alternate icon" href="/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" />
+  <link rel="stylesheet" href="${mainCss}" />
+  <link rel="modulepreload" href="${mainJs}" />
+</head>
+<body class="bg-background text-foreground antialiased">
+  <div id="root"></div>
+  <script type="module" src="${mainJs}"></script>
+</body>
+</html>`;
+}
+
 // 5. Web Page Routing (Direct In-Memory SSR Execution)
 app.get("*", async (req, res) => {
   if (req.path.startsWith("/api")) {
@@ -183,20 +229,9 @@ app.get("*", async (req, res) => {
     console.error("[SSR Direct Render Error]:", err.message);
   }
 
-  // Fallback to static index.html if SSR module failed
-  const fallbackPaths = [
-    path.resolve(__dirname, "../../Frontend/.output/public/index.html"),
-    path.resolve(__dirname, "../../.output/public/index.html"),
-    path.resolve(process.cwd(), "Frontend/.output/public/index.html"),
-    path.resolve(process.cwd(), ".output/public/index.html"),
-    path.resolve(process.cwd(), "public/index.html")
-  ];
-  const indexPath = fallbackPaths.find(p => fs.existsSync(p));
-  if (indexPath) {
-    return res.sendFile(indexPath);
-  }
-
-  res.status(500).send("Storefront initializing...");
+  // Fallback to active HTML bundle
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  return res.send(getFallbackHTML());
 });
 
 // Global Error Handler
