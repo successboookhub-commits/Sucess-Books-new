@@ -761,6 +761,19 @@ var PanelLeftOpen = createLucideIcon("panel-left-open", [
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var PenLine = createLucideIcon("pen-line", [["path", {
+	d: "M13 21h8",
+	key: "1jsn5i"
+}], ["path", {
+	d: "M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z",
+	key: "1a8usu"
+}]]);
+/**
+* @license lucide-react v0.575.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var Pen = createLucideIcon("pen", [["path", {
 	d: "M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z",
 	key: "1a8usu"
@@ -1166,4 +1179,4 @@ var X = createLucideIcon("x", [["path", {
 	key: "d8bk6v"
 }]]);
 //#endregion
-export { ChartColumn as $, Menu as A, Funnel as B, PanelLeftOpen as C, Minus as D, Package as E, Lock as F, DollarSign as G, FolderOpen as H, Library as I, CircleCheck as J, Clock as K, LayoutDashboard as L, Mail as M, LogOut as N, MessageSquare as O, LogIn as P, Check as Q, Layers as R, Pen as S, Palette as T, Eye as U, FolderPlus as V, ExternalLink as W, ChevronRight as X, CircleAlert as Y, ChevronDown as Z, Send as _, Truck as a, ArrowLeft as at, Plus as b, Trash2 as c, SlidersVertical as d, BookPlus as et, ShoppingBag as f, Settings as g, ShieldAlert as h, Upload as i, ArrowRight as it, MapPin as j, MessageCircle as k, Star as l, ShieldCheck as m, Users as n, Bell as nt, TriangleAlert as o, Shield as p, Circle as q, User as r, ArrowUpRight as rt, TrendingUp as s, X as t, BookOpen as tt, Sparkles as u, Search as v, PanelLeftClose as w, Phone as x, RefreshCw as y, HeartHandshake as z };
+export { Check as $, MessageCircle as A, HeartHandshake as B, PenLine as C, Package as D, Palette as E, LogIn as F, ExternalLink as G, FolderPlus as H, Lock as I, Circle as J, DollarSign as K, Library as L, MapPin as M, Mail as N, Minus as O, LogOut as P, ChevronDown as Q, LayoutDashboard as R, Pen as S, PanelLeftClose as T, FolderOpen as U, Funnel as V, Eye as W, CircleAlert as X, CircleCheck as Y, ChevronRight as Z, Send as _, Truck as a, ArrowRight as at, Plus as b, Trash2 as c, SlidersVertical as d, ChartColumn as et, ShoppingBag as f, Settings as g, ShieldAlert as h, Upload as i, ArrowUpRight as it, Menu as j, MessageSquare as k, Star as l, ShieldCheck as m, Users as n, BookOpen as nt, TriangleAlert as o, ArrowLeft as ot, Shield as p, Clock as q, User as r, Bell as rt, TrendingUp as s, X as t, BookPlus as tt, Sparkles as u, Search as v, PanelLeftOpen as w, Phone as x, RefreshCw as y, Layers as z };

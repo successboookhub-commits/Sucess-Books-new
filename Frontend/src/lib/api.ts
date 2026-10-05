@@ -69,17 +69,24 @@ export type BookDetail = Book & {
 
 export const api = {
   // Fetch all books with optional filters
-  async getBooks(params?: { category?: string; search?: string; sort?: string }): Promise<Book[]> {
+  async getBooks(params?: { category?: string; subCategory?: string; sub_category?: string; search?: string; sort?: string; featured?: boolean }): Promise<Book[]> {
     try {
       const url = getApiUrl("/api/books");
       if (params?.category && params.category !== "All") {
         url.searchParams.set("category", params.category);
+      }
+      const subCat = params?.subCategory || params?.sub_category;
+      if (subCat && subCat !== "All") {
+        url.searchParams.set("subCategory", subCat);
       }
       if (params?.search) {
         url.searchParams.set("search", params.search);
       }
       if (params?.sort) {
         url.searchParams.set("sort", params.sort);
+      }
+      if (params?.featured) {
+        url.searchParams.set("featured", "true");
       }
 
       const res = await fetch(url.toString(), { signal: AbortSignal.timeout(4000) });
@@ -93,9 +100,13 @@ export const api = {
       if (params?.category && params.category !== "All") {
         result = result.filter(b => b.category === params.category);
       }
+      const subCat = params?.subCategory || params?.sub_category;
+      if (subCat && subCat !== "All") {
+        result = result.filter(b => (b.subCategory === subCat || b.sub_category === subCat));
+      }
       if (params?.search) {
         const q = params.search.toLowerCase();
-        result = result.filter(b => `${b.title} ${b.author}`.toLowerCase().includes(q));
+        result = result.filter(b => `${b.title} ${b.author} ${b.category}`.toLowerCase().includes(q));
       }
       if (params?.sort === "low") {
         result.sort((a, b) => a.price - b.price);
@@ -183,6 +194,18 @@ export const api = {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Failed to create book");
+    return data.data;
+  },
+
+  // Admin: Update book
+  async updateBook(id: number | string, book: Partial<Book>) {
+    const res = await fetch(getApiEndpoint(`/api/books/${id}`), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(book)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to update book");
     return data.data;
   },
 

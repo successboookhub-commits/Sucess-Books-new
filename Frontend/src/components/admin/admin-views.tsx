@@ -15,18 +15,22 @@ import {
   Mail,
   Shield,
   Trash2,
+  Edit3,
   RefreshCw,
   ExternalLink,
   MapPin,
   Star,
   Sliders,
-  FileText
+  FileText,
+  Image as ImageIcon,
+  Layers,
+  Sparkles
 } from "lucide-react";
 import { type AdminSection } from "./admin-types";
 import { CategoryManager } from "./category-manager";
 import { SubCategoryManager } from "./subcategory-manager";
 import { Button } from "@/components/ui/button";
-import { api, type OrderData, type Category } from "@/lib/api";
+import { api, type OrderData, type Category, type SubCategory } from "@/lib/api";
 import { categories as defaultCategories, type Book, STORE } from "@/lib/books";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -42,33 +46,42 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
   const [orders, setOrders] = useState<OrderData[]>([]);
   const [contacts, setContacts] = useState<any[]>([]);
   const [dbCategories, setDbCategories] = useState<Category[]>([]);
+  const [dbSubCategories, setDbSubCategories] = useState<SubCategory[]>([]);
   const [selectedSubCatParentId, setSelectedSubCatParentId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // New Book Dialog state inside Books view
+  // New / Edit Book Modal state
   const [showAddBook, setShowAddBook] = useState(false);
+  const [editingBookId, setEditingBookId] = useState<number | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const [newAuthor, setNewAuthor] = useState("");
   const [newCategory, setNewCategory] = useState("Classics");
+  const [newSubCategory, setNewSubCategory] = useState("");
   const [newPrice, setNewPrice] = useState("");
   const [newOldPrice, setNewOldPrice] = useState("");
   const [newDescription, setNewDescription] = useState("");
-  const [newCover, setNewCover] = useState("bg-primary");
-  const [addingBook, setAddingBook] = useState(false);
+  const [newCover, setNewCover] = useState("https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=600&auto=format&fit=crop");
+  const [newImage2, setNewImage2] = useState("");
+  const [newStock, setNewStock] = useState("50");
+  const [newLabel, setNewLabel] = useState("");
+  const [newFeatured, setNewFeatured] = useState(false);
+  const [savingBook, setSavingBook] = useState(false);
 
   // Load initial data from backend
   const loadData = async () => {
     setLoading(true);
     try {
-      const [fetchedBooks, fetchedOrders, fetchedCats] = await Promise.all([
+      const [fetchedBooks, fetchedOrders, fetchedCats, fetchedSubCats] = await Promise.all([
         api.getBooks(),
         api.getAllOrders().catch(() => []),
-        api.getCategories().catch(() => [])
+        api.getCategories().catch(() => []),
+        api.getSubCategories().catch(() => [])
       ]);
       setBooks(fetchedBooks || []);
       setOrders(fetchedOrders || []);
       setDbCategories(fetchedCats || []);
-      if (fetchedCats && fetchedCats.length > 0) {
+      setDbSubCategories(fetchedSubCats || []);
+      if (fetchedCats && fetchedCats.length > 0 && !newCategory) {
         setNewCategory(fetchedCats[0].name);
       }
     } catch (err) {
@@ -92,37 +105,91 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
     }
   };
 
-  const handleCreateBook = async (e: React.FormEvent) => {
+  const handleOpenAddBook = () => {
+    setEditingBookId(null);
+    setNewTitle("");
+    setNewAuthor("");
+    setNewCategory(dbCategories.length > 0 ? dbCategories[0].name : "Classics");
+    setNewSubCategory("");
+    setNewPrice("");
+    setNewOldPrice("");
+    setNewDescription("");
+    setNewCover("https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=600&auto=format&fit=crop");
+    setNewImage2("");
+    setNewStock("50");
+    setNewLabel("");
+    setNewFeatured(false);
+    setShowAddBook(true);
+  };
+
+  const handleOpenEditBook = (b: Book) => {
+    setEditingBookId(b.id);
+    setNewTitle(b.title || "");
+    setNewAuthor(b.author || "");
+    setNewCategory(b.category || (dbCategories.length > 0 ? dbCategories[0].name : "Classics"));
+    setNewSubCategory(b.subCategory || b.sub_category || "");
+    setNewPrice(b.price ? String(b.price) : "");
+    setNewOldPrice(b.oldPrice || b.old_price ? String(b.oldPrice || b.old_price) : "");
+    setNewDescription(b.description || "");
+    setNewCover(b.cover || "");
+    setNewImage2(b.image2 || b.image_2 || "");
+    setNewStock(b.stock ? String(b.stock) : "50");
+    setNewLabel(b.label || "");
+    setNewFeatured(Boolean(b.featured));
+    setShowAddBook(true);
+  };
+
+  const handleSaveBook = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim() || !newAuthor.trim() || !newPrice) {
-      toast.error("Title, Author, and Price are required.");
+      toast.error("Book Title, Author, and Selling Price are required.");
       return;
     }
 
-    setAddingBook(true);
+    setSavingBook(true);
     try {
-      const created = await api.createBook({
+      const priceNum = parseFloat(newPrice);
+      const oldPriceNum = newOldPrice ? parseFloat(newOldPrice) : undefined;
+      let discountPct = 0;
+      if (oldPriceNum && oldPriceNum > priceNum) {
+        discountPct = Math.round(((oldPriceNum - priceNum) / oldPriceNum) * 100);
+      }
+
+      const payload = {
         title: newTitle.trim(),
         author: newAuthor.trim(),
         category: newCategory,
-        price: parseFloat(newPrice),
-        oldPrice: newOldPrice ? parseFloat(newOldPrice) : undefined,
+        subCategory: newSubCategory.trim() || undefined,
+        sub_category: newSubCategory.trim() || undefined,
+        price: priceNum,
+        oldPrice: oldPriceNum,
+        old_price: oldPriceNum,
+        discountPercent: discountPct,
+        discount_percent: discountPct,
         description: newDescription.trim(),
-        cover: newCover,
-      });
+        cover: newCover.trim() || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=600&auto=format&fit=crop",
+        image2: newImage2.trim() || undefined,
+        image_2: newImage2.trim() || undefined,
+        stock: parseInt(newStock) || 50,
+        label: newLabel.trim() || (discountPct >= 20 ? `${discountPct}% OFF` : undefined),
+        featured: newFeatured
+      };
 
-      toast.success(`"${newTitle}" added to catalog!`);
+      if (editingBookId) {
+        await api.updateBook(editingBookId, payload);
+        toast.success(`"${newTitle}" updated successfully!`);
+      } else {
+        await api.createBook(payload);
+        toast.success(`"${newTitle}" added to catalog!`);
+      }
+
       setShowAddBook(false);
-      setNewTitle("");
-      setNewAuthor("");
-      setNewPrice("");
-      setNewOldPrice("");
-      setNewDescription("");
+      setEditingBookId(null);
       loadData();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to add book");
+      toast.error(err instanceof Error ? err.message : "Failed to save book");
     } finally {
-      setAddingBook(false);
+      setSavingBook(false);
     }
   };
 
@@ -310,17 +377,30 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
   }
 
   // 2. Catalog: Books View
-  if (activeSection === "books") {
+  if (activeSection === "books" || activeSection === "inventory") {
+    const selectedCatObj = dbCategories.find(c => c.name.toLowerCase() === newCategory.toLowerCase());
+    const modalSubCats = dbSubCategories.filter(s => selectedCatObj ? s.category_id === selectedCatObj.id : false);
+
+    const pNum = parseFloat(newPrice) || 0;
+    const oNum = parseFloat(newOldPrice) || 0;
+    const previewDiscount = oNum > pNum ? Math.round(((oNum - pNum) / oNum) * 100) : 0;
+    const previewSavings = oNum > pNum ? oNum - pNum : 0;
+
     return (
       <div className="space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h2 className="font-display text-2xl font-bold text-foreground">Books Inventory</h2>
-            <p className="text-xs text-muted-foreground">Manage your titles, stock, prices, and classifications.</p>
+            <p className="text-xs text-muted-foreground">Manage your book titles, 2-image galleries, categories, subcategories, MRP, selling prices &amp; discounts.</p>
           </div>
-          <Button onClick={() => setShowAddBook(true)} className="rounded-full gap-2 text-xs font-semibold">
-            <Plus className="h-4 w-4" /> Add New Book
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={loadData} className="gap-1.5 text-xs rounded-full">
+              <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} /> Refresh
+            </Button>
+            <Button onClick={handleOpenAddBook} className="rounded-full gap-2 text-xs font-semibold bg-primary text-primary-foreground">
+              <Plus className="h-4 w-4" /> Add New Book
+            </Button>
+          </div>
         </div>
 
         {/* Books Table */}
@@ -329,150 +409,424 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
             <table className="w-full text-xs text-left">
               <thead className="bg-secondary/60 text-muted-foreground font-semibold border-b border-border">
                 <tr>
-                  <th className="p-3.5">Title & Author</th>
-                  <th className="p-3.5">Category</th>
-                  <th className="p-3.5">Price</th>
+                  <th className="p-3.5">Cover</th>
+                  <th className="p-3.5">Title &amp; Author</th>
+                  <th className="p-3.5">Category / Sub-Genre</th>
+                  <th className="p-3.5">Cost &amp; MRP</th>
+                  <th className="p-3.5">Discount %</th>
                   <th className="p-3.5">Stock</th>
                   <th className="p-3.5">Rating</th>
                   <th className="p-3.5 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
-                {filteredBooks.map((b) => (
-                  <tr key={b.id} className="hover:bg-secondary/20">
-                    <td className="p-3.5 font-medium">
-                      <p className="font-bold text-foreground text-sm font-display">{b.title}</p>
-                      <p className="text-[11px] text-muted-foreground">by {b.author}</p>
-                    </td>
-                    <td className="p-3.5">
-                      <span className="px-2.5 py-0.5 rounded-full bg-secondary text-primary font-bold text-[10px]">
-                        {b.category}
-                      </span>
-                    </td>
-                    <td className="p-3.5">
-                      <span className="font-bold text-foreground">₹{b.price}</span>
-                      {b.oldPrice && <span className="ml-1.5 text-muted-foreground line-through">₹{b.oldPrice}</span>}
-                    </td>
-                    <td className="p-3.5">
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold text-[11px]">
-                        {b.stock ?? 30} copies
-                      </span>
-                    </td>
-                    <td className="p-3.5 flex items-center gap-1">
-                      <Star className="h-3.5 w-3.5 fill-gold text-gold" />
-                      <span className="font-bold text-foreground">{b.rating}</span>
-                    </td>
-                    <td className="p-3.5 text-right space-x-2">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-7 text-xs text-destructive hover:bg-destructive/10"
-                        onClick={async () => {
-                          if (confirm(`Remove "${b.title}" from catalog?`)) {
-                            try {
-                              await api.deleteBook(b.id);
-                              toast.success(`Removed "${b.title}"`);
-                              loadData();
-                            } catch (err: unknown) {
-                              toast.error(err instanceof Error ? err.message : "Failed to delete book");
-                            }
-                          }
-                        }}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                {filteredBooks.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="p-8 text-center text-muted-foreground">
+                      No books found. Click "Add New Book" to add your first title!
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredBooks.map((b) => {
+                    const isImg = b.cover && (b.cover.startsWith("http") || b.cover.startsWith("/"));
+                    const mrpVal = b.oldPrice || b.old_price;
+                    const disc = b.discountPercent || b.discount_percent || (mrpVal && mrpVal > b.price ? Math.round(((mrpVal - b.price) / mrpVal) * 100) : 0);
+                    const sub = b.subCategory || b.sub_category;
+
+                    return (
+                      <tr key={b.id} className="hover:bg-secondary/20 transition">
+                        {/* Cover Thumbnail */}
+                        <td className="p-3.5">
+                          <div className="relative h-12 w-9 rounded-md overflow-hidden bg-secondary border border-border/80 shadow-2xs shrink-0">
+                            {isImg ? (
+                              <img src={b.cover} alt={b.title} className="h-full w-full object-cover" />
+                            ) : (
+                              <div className={cn("h-full w-full flex items-center justify-center text-[7px] text-white font-bold p-0.5 text-center", b.cover || "bg-primary")}>
+                                {b.title.slice(0, 8)}
+                              </div>
+                            )}
+                            {(b.image2 || b.image_2) && (
+                              <span className="absolute bottom-0.5 right-0.5 bg-black/70 text-[7px] text-white px-0.5 rounded" title="2 Images">
+                                2🖼
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Title & Author */}
+                        <td className="p-3.5 font-medium max-w-[200px]">
+                          <p className="font-bold text-foreground text-sm font-display truncate">{b.title}</p>
+                          <p className="text-[11px] text-muted-foreground truncate">by {b.author}</p>
+                          {b.featured && (
+                            <span className="inline-block mt-0.5 text-[9px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200">
+                              ★ Featured
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Category & SubCategory */}
+                        <td className="p-3.5">
+                          <div className="flex flex-col gap-1">
+                            <span className="px-2 py-0.5 rounded-full bg-secondary text-primary font-bold text-[10px] w-fit">
+                              {b.category}
+                            </span>
+                            {sub && (
+                              <span className="text-[10px] text-muted-foreground font-medium pl-1">
+                                › {sub}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Cost & MRP */}
+                        <td className="p-3.5">
+                          <p className="font-bold text-foreground text-sm font-display">₹{b.price}</p>
+                          {mrpVal && (
+                            <p className="text-[10px] text-muted-foreground line-through">₹{mrpVal} MRP</p>
+                          )}
+                        </td>
+
+                        {/* Discount */}
+                        <td className="p-3.5">
+                          {disc > 0 ? (
+                            <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-extrabold text-[11px]">
+                              {disc}% OFF
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground text-[11px]">Regular</span>
+                          )}
+                        </td>
+
+                        {/* Stock */}
+                        <td className="p-3.5">
+                          <span className={cn(
+                            "px-2 py-0.5 rounded-full font-semibold text-[11px]",
+                            (b.stock ?? 30) > 10 ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
+                          )}>
+                            {b.stock ?? 30} in stock
+                          </span>
+                        </td>
+
+                        {/* Rating */}
+                        <td className="p-3.5">
+                          <div className="flex items-center gap-1">
+                            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                            <span className="font-bold text-foreground">{b.rating || 4.5}</span>
+                          </div>
+                        </td>
+
+                        {/* Actions */}
+                        <td className="p-3.5 text-right space-x-1 whitespace-nowrap">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 text-xs text-primary hover:bg-secondary rounded-lg"
+                            onClick={() => handleOpenEditBook(b)}
+                            title="Edit Book Details"
+                          >
+                            <Edit3 className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 text-xs text-destructive hover:bg-destructive/10 rounded-lg"
+                            onClick={async () => {
+                              if (confirm(`Remove "${b.title}" from bookstore catalog?`)) {
+                                try {
+                                  await api.deleteBook(b.id);
+                                  toast.success(`Removed "${b.title}"`);
+                                  loadData();
+                                } catch (err: unknown) {
+                                  toast.error(err instanceof Error ? err.message : "Failed to delete book");
+                                }
+                              }
+                            }}
+                            title="Delete Book"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
         </div>
 
-        {/* Add Book Inline Form Modal */}
+        {/* Add / Edit Book Modal */}
         {showAddBook && (
           <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
-            <form onSubmit={handleCreateBook} className="bg-card border border-border rounded-xl p-6 max-w-lg w-full shadow-2xl space-y-4 text-xs animate-in zoom-in-95">
+            <form
+              onSubmit={handleSaveBook}
+              className="bg-card border border-border rounded-2xl p-6 sm:p-7 max-w-2xl w-full shadow-2xl space-y-4 text-xs animate-in zoom-in-95 max-h-[92vh] overflow-y-auto"
+            >
               <div className="flex items-center justify-between border-b border-border pb-3">
-                <h3 className="font-display text-xl font-bold text-primary">Add Book to Inventory</h3>
-                <button type="button" onClick={() => setShowAddBook(false)} className="text-muted-foreground hover:text-foreground">✕</button>
-              </div>
-
-              <div>
-                <label className="font-bold block mb-1">Book Title *</label>
-                <input
-                  required
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="e.g. Meditations"
-                  className="w-full h-9 rounded-md border border-border bg-background px-3 outline-none focus:border-primary"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold block mb-1">Author *</label>
+                  <h3 className="font-display text-xl font-bold text-primary">
+                    {editingBookId ? "Edit Book Details" : "Add New Book to Catalogue"}
+                  </h3>
+                  <p className="text-[11px] text-muted-foreground">
+                    Fill in book details, multiple images, categories, MRP and discount prices.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddBook(false);
+                    setEditingBookId(null);
+                  }}
+                  className="text-muted-foreground hover:text-foreground text-sm font-bold p-1"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Title & Author */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold block mb-1">Book Title / Name *</label>
+                  <input
+                    required
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    placeholder="e.g. The Secret Garden"
+                    className="w-full h-9 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary text-foreground"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold block mb-1">Author Name *</label>
                   <input
                     required
                     value={newAuthor}
                     onChange={(e) => setNewAuthor(e.target.value)}
-                    placeholder="e.g. Marcus Aurelius"
-                    className="w-full h-9 rounded-md border border-border bg-background px-3 outline-none focus:border-primary"
+                    placeholder="e.g. Frances Hodgson Burnett"
+                    className="w-full h-9 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary text-foreground"
                   />
                 </div>
+              </div>
+
+              {/* Category & SubCategory (Connected Hierarchy) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold block mb-1">Category</label>
+                  <label className="font-bold block mb-1">Main Category *</label>
                   <select
                     value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value)}
-                    className="w-full h-9 rounded-md border border-border bg-background px-2 outline-none focus:border-primary"
+                    onChange={(e) => {
+                      setNewCategory(e.target.value);
+                      setNewSubCategory(""); // reset subcategory on category change
+                    }}
+                    className="w-full h-9 rounded-lg border border-border bg-background px-2.5 outline-none focus:border-primary text-foreground cursor-pointer"
                   >
                     {(dbCategories.length > 0 ? dbCategories.map((c) => c.name) : defaultCategories.filter((c) => c !== "All")).map((c) => (
                       <option key={c} value={c}>{c}</option>
                     ))}
                   </select>
                 </div>
+
+                <div>
+                  <label className="font-bold block mb-1">Sub-Category (Optional)</label>
+                  {modalSubCats.length > 0 ? (
+                    <select
+                      value={newSubCategory}
+                      onChange={(e) => setNewSubCategory(e.target.value)}
+                      className="w-full h-9 rounded-lg border border-border bg-background px-2.5 outline-none focus:border-primary text-foreground cursor-pointer"
+                    >
+                      <option value="">-- Select Sub-Category --</option>
+                      {modalSubCats.map((s) => (
+                        <option key={s.id} value={s.name}>{s.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      value={newSubCategory}
+                      onChange={(e) => setNewSubCategory(e.target.value)}
+                      placeholder="e.g. British Literature"
+                      className="w-full h-9 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary text-foreground"
+                    />
+                  )}
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              {/* Pricing, MRP & Live Discount Calculation */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="font-bold block mb-1">Selling Price (₹) *</label>
+                  <label className="font-bold block mb-1">Selling Price / Cost (₹) *</label>
                   <input
                     type="number"
                     required
+                    min="0"
+                    step="1"
                     value={newPrice}
                     onChange={(e) => setNewPrice(e.target.value)}
                     placeholder="349"
-                    className="w-full h-9 rounded-md border border-border bg-background px-3 outline-none focus:border-primary"
+                    className="w-full h-9 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary font-bold text-primary"
                   />
                 </div>
+
                 <div>
-                  <label className="font-bold block mb-1">Original Price (₹)</label>
+                  <label className="font-bold block mb-1">MRP / Original Price (₹)</label>
                   <input
                     type="number"
+                    min="0"
+                    step="1"
                     value={newOldPrice}
                     onChange={(e) => setNewOldPrice(e.target.value)}
-                    placeholder="449"
-                    className="w-full h-9 rounded-md border border-border bg-background px-3 outline-none focus:border-primary"
+                    placeholder="499"
+                    className="w-full h-9 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary text-muted-foreground"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold block mb-1">Stock Quantity</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={newStock}
+                    onChange={(e) => setNewStock(e.target.value)}
+                    placeholder="50"
+                    className="w-full h-9 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary"
                   />
                 </div>
               </div>
 
+              {/* Real-time Discount preview banner */}
+              {previewDiscount > 0 && (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-emerald-800">
+                  <span className="font-bold flex items-center gap-1.5">
+                    <Sparkles className="h-4 w-4 text-emerald-600" />
+                    Customer Discount: {previewDiscount}% OFF
+                  </span>
+                  <span className="font-semibold text-[11px]">
+                    Customer Saves: ₹{previewSavings}
+                  </span>
+                </div>
+              )}
+
+              {/* Images 1 & 2 Inputs + Previews */}
+              <div className="space-y-2 border-t border-border/60 pt-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Image 1: Main Cover */}
+                  <div className="space-y-1">
+                    <label className="font-bold block">Front Cover Image URL (Image 1) *</label>
+                    <input
+                      required
+                      value={newCover}
+                      onChange={(e) => setNewCover(e.target.value)}
+                      placeholder="https://images.unsplash.com/..."
+                      className="w-full h-9 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary text-foreground"
+                    />
+                    {newCover && (newCover.startsWith("http") || newCover.startsWith("/")) && (
+                      <div className="mt-1 h-20 w-16 rounded-md overflow-hidden border border-border shadow-xs">
+                        <img src={newCover} alt="Cover Preview" className="h-full w-full object-cover" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Image 2: Secondary / Inside Cover */}
+                  <div className="space-y-1">
+                    <label className="font-bold block">Second / Inside Image URL (Image 2 - Optional)</label>
+                    <input
+                      value={newImage2}
+                      onChange={(e) => setNewImage2(e.target.value)}
+                      placeholder="https://images.unsplash.com/..."
+                      className="w-full h-9 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary text-foreground"
+                    />
+                    {newImage2 && (newImage2.startsWith("http") || newImage2.startsWith("/")) && (
+                      <div className="mt-1 h-20 w-16 rounded-md overflow-hidden border border-border shadow-xs">
+                        <img src={newImage2} alt="Image 2 Preview" className="h-full w-full object-cover" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Quick Sample Presets */}
+                <div className="flex items-center gap-2 pt-1">
+                  <span className="text-[10px] text-muted-foreground font-semibold">Quick image presets:</span>
+                  <button
+                    type="button"
+                    onClick={() => setNewCover("https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=600&auto=format&fit=crop")}
+                    className="text-[10px] text-primary hover:underline"
+                  >
+                    Classic Book
+                  </button>
+                  <span className="text-muted-foreground">•</span>
+                  <button
+                    type="button"
+                    onClick={() => setNewCover("https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=600&auto=format&fit=crop")}
+                    className="text-[10px] text-primary hover:underline"
+                  >
+                    Novel
+                  </button>
+                  <span className="text-muted-foreground">•</span>
+                  <button
+                    type="button"
+                    onClick={() => setNewCover("https://images.unsplash.com/photo-1506784983877-45594efa4cbe?q=80&w=600&auto=format&fit=crop")}
+                    className="text-[10px] text-primary hover:underline"
+                  >
+                    Self Help
+                  </button>
+                </div>
+              </div>
+
+              {/* Description / Synopsis */}
               <div>
-                <label className="font-bold block mb-1">Synopsis</label>
+                <label className="font-bold block mb-1">Synopsis / Book Description</label>
                 <textarea
                   rows={3}
                   value={newDescription}
                   onChange={(e) => setNewDescription(e.target.value)}
-                  placeholder="Brief synopsis..."
-                  className="w-full rounded-md border border-border bg-background p-2 outline-none focus:border-primary"
+                  placeholder="A brief synopsis of the book, author highlights, and key takeaways..."
+                  className="w-full rounded-lg border border-border bg-background p-2.5 outline-none focus:border-primary text-foreground"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
-                <Button type="button" variant="outline" onClick={() => setShowAddBook(false)}>Cancel</Button>
-                <Button type="submit" disabled={addingBook}>
-                  {addingBook ? "Saving..." : "Save Book"}
+              {/* Label & Featured Switch */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center border-t border-border/60 pt-3">
+                <div>
+                  <label className="font-bold block mb-1">Custom Promotional Label</label>
+                  <input
+                    value={newLabel}
+                    onChange={(e) => setNewLabel(e.target.value)}
+                    placeholder="e.g. Bestseller, Editor's Pick, New"
+                    className="w-full h-9 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 pt-4">
+                  <input
+                    type="checkbox"
+                    id="featuredCheckbox"
+                    checked={newFeatured}
+                    onChange={(e) => setNewFeatured(e.target.checked)}
+                    className="h-4 w-4 rounded text-primary focus:ring-primary accent-primary"
+                  />
+                  <label htmlFor="featuredCheckbox" className="font-bold text-foreground cursor-pointer select-none">
+                    Feature on Homepage (Featured Showcase)
+                  </label>
+                </div>
+              </div>
+
+              {/* Footer Buttons */}
+              <div className="flex justify-end gap-2 pt-3 border-t border-border">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowAddBook(false);
+                    setEditingBookId(null);
+                  }}
+                  className="rounded-full"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={savingBook}
+                  className="rounded-full bg-primary text-primary-foreground font-bold px-6"
+                >
+                  {savingBook ? "Saving..." : editingBookId ? "Update Book" : "Save & Publish Book"}
                 </Button>
               </div>
             </form>
