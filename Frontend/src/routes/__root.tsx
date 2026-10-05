@@ -13,6 +13,7 @@ import { Toaster } from "sonner";
 
 import appCss from "../styles.css?url";
 import { CartProvider } from "@/lib/cart";
+import { AuthProvider } from "@/lib/auth";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
@@ -125,12 +126,14 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <CartProvider>
-        {!isAdmin && <SiteHeader />}
-        <Outlet />
-        {!isAdmin && <SiteFooter />}
-        <Toaster richColors position="top-right" closeButton />
-      </CartProvider>
+      <AuthProvider>
+        <CartProvider>
+          {!isAdmin && <SiteHeader />}
+          <Outlet />
+          {!isAdmin && <SiteFooter />}
+          <Toaster richColors position="top-right" closeButton />
+        </CartProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

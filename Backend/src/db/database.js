@@ -280,8 +280,39 @@ export const SCHEMA_DEFINITIONS = {
       { name: "email", mysqlType: "VARCHAR(255) NOT NULL UNIQUE", sqliteType: "TEXT NOT NULL UNIQUE" },
       { name: "created_at", mysqlType: "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", sqliteType: "TEXT DEFAULT (datetime('now'))" }
     ]
+  },
+  admin_otps: {
+    mysqlCreate: `
+      CREATE TABLE IF NOT EXISTS admin_otps (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        email VARCHAR(255) NOT NULL,
+        otp VARCHAR(10) NOT NULL,
+        expires_at TIMESTAMP NOT NULL,
+        used TINYINT(1) DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `,
+    sqliteCreate: `
+      CREATE TABLE IF NOT EXISTS admin_otps (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT NOT NULL,
+        otp TEXT NOT NULL,
+        expires_at TEXT NOT NULL,
+        used INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now'))
+      );
+    `,
+    columns: [
+      { name: "id", mysqlType: "INT AUTO_INCREMENT PRIMARY KEY", sqliteType: "INTEGER PRIMARY KEY AUTOINCREMENT" },
+      { name: "email", mysqlType: "VARCHAR(255) NOT NULL", sqliteType: "TEXT NOT NULL" },
+      { name: "otp", mysqlType: "VARCHAR(10) NOT NULL", sqliteType: "TEXT NOT NULL" },
+      { name: "expires_at", mysqlType: "TIMESTAMP NOT NULL", sqliteType: "TEXT NOT NULL" },
+      { name: "used", mysqlType: "TINYINT(1) DEFAULT 0", sqliteType: "INTEGER DEFAULT 0" },
+      { name: "created_at", mysqlType: "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", sqliteType: "TEXT DEFAULT (datetime('now'))" }
+    ]
   }
 };
+
 
 let pool = null;
 let sqliteDb = null;

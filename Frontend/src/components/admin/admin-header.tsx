@@ -29,6 +29,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useAdminAuth } from "@/lib/auth";
 import { toast } from "sonner";
 
 interface AdminHeaderProps {
@@ -122,6 +123,7 @@ export function AdminHeader({
   ordersCount = 0,
 }: AdminHeaderProps) {
   const navigate = useNavigate();
+  const { logout, adminUser } = useAdminAuth();
   const breadcrumb = getBreadcrumbs(activeSection);
   const [unreadCount, setUnreadCount] = useState(3);
 
@@ -153,8 +155,9 @@ export function AdminHeader({
   ];
 
   const handleLogout = () => {
+    logout();
     toast.success("Administrator logged out safely.");
-    navigate({ to: "/" });
+    navigate({ to: "/login" });
   };
 
   return (
@@ -271,7 +274,7 @@ export function AdminHeader({
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
                 <p className="text-xs font-bold text-foreground">Success Book Hub Admin</p>
-                <p className="text-[11px] text-muted-foreground">admin@successbookhub.com</p>
+                <p className="text-[11px] text-muted-foreground">{adminUser?.email || "successboookhub@gmail.com"}</p>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />

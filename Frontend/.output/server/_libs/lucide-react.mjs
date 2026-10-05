@@ -509,6 +509,44 @@ var Library = createLucideIcon("library", [
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var Lock = createLucideIcon("lock", [["rect", {
+	width: "18",
+	height: "11",
+	x: "3",
+	y: "11",
+	rx: "2",
+	ry: "2",
+	key: "1w4ew1"
+}], ["path", {
+	d: "M7 11V7a5 5 0 0 1 10 0v4",
+	key: "fwvmzm"
+}]]);
+/**
+* @license lucide-react v0.575.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var LogIn = createLucideIcon("log-in", [
+	["path", {
+		d: "m10 17 5-5-5-5",
+		key: "1bsop3"
+	}],
+	["path", {
+		d: "M15 12H3",
+		key: "6jk70r"
+	}],
+	["path", {
+		d: "M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4",
+		key: "u53s6r"
+	}]
+]);
+/**
+* @license lucide-react v0.575.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var LogOut = createLucideIcon("log-out", [
 	["path", {
 		d: "m16 17 5-5-5-5",
@@ -823,6 +861,26 @@ var Settings = createLucideIcon("settings", [["path", {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var ShieldAlert = createLucideIcon("shield-alert", [
+	["path", {
+		d: "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z",
+		key: "oel41y"
+	}],
+	["path", {
+		d: "M12 8v4",
+		key: "1got3b"
+	}],
+	["path", {
+		d: "M12 16h.01",
+		key: "1drbdi"
+	}]
+]);
+/**
+* @license lucide-react v0.575.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var ShieldCheck = createLucideIcon("shield-check", [["path", {
 	d: "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z",
 	key: "oel41y"
@@ -1108,4 +1166,4 @@ var X = createLucideIcon("x", [["path", {
 	key: "d8bk6v"
 }]]);
 //#endregion
-export { Bell as $, MapPin as A, Eye as B, PanelLeftClose as C, MessageSquare as D, Minus as E, Layers as F, CircleCheck as G, DollarSign as H, HeartHandshake as I, ChevronDown as J, CircleAlert as K, Funnel as L, LogOut as M, Library as N, MessageCircle as O, LayoutDashboard as P, BookOpen as Q, FolderPlus as R, PanelLeftOpen as S, Package as T, Clock as U, ExternalLink as V, Circle as W, ChartColumn as X, Check as Y, BookPlus as Z, Search as _, Truck as a, Phone as b, Trash2 as c, SlidersVertical as d, ArrowUpRight as et, ShoppingBag as f, Send as g, Settings as h, Upload as i, Mail as j, Menu as k, Star as l, ShieldCheck as m, Users as n, ArrowLeft as nt, TriangleAlert as o, Shield as p, ChevronRight as q, User as r, TrendingUp as s, X as t, ArrowRight as tt, Sparkles as u, RefreshCw as v, Palette as w, Pen as x, Plus as y, FolderOpen as z };
+export { ChartColumn as $, Menu as A, Funnel as B, PanelLeftOpen as C, Minus as D, Package as E, Lock as F, DollarSign as G, FolderOpen as H, Library as I, CircleCheck as J, Clock as K, LayoutDashboard as L, Mail as M, LogOut as N, MessageSquare as O, LogIn as P, Check as Q, Layers as R, Pen as S, Palette as T, Eye as U, FolderPlus as V, ExternalLink as W, ChevronRight as X, CircleAlert as Y, ChevronDown as Z, Send as _, Truck as a, ArrowLeft as at, Plus as b, Trash2 as c, SlidersVertical as d, BookPlus as et, ShoppingBag as f, Settings as g, ShieldAlert as h, Upload as i, ArrowRight as it, MapPin as j, MessageCircle as k, Star as l, ShieldCheck as m, Users as n, Bell as nt, TriangleAlert as o, Shield as p, Circle as q, User as r, ArrowUpRight as rt, TrendingUp as s, X as t, BookOpen as tt, Sparkles as u, Search as v, PanelLeftClose as w, Phone as x, RefreshCw as y, HeartHandshake as z };

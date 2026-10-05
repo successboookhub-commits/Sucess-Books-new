@@ -13,11 +13,23 @@ import newsletterRouter from "./routes/newsletter.js";
 import storeRouter from "./routes/store.js";
 import categoriesRouter from "./routes/categories.js";
 import subcategoriesRouter from "./routes/subcategories.js";
-
-dotenv.config();
+import authRouter from "./routes/auth.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Load .env reliably from multiple candidate paths
+const envCandidates = [
+  path.resolve(__dirname, "../.env"),
+  path.resolve(process.cwd(), "Backend/.env"),
+  path.resolve(process.cwd(), ".env"),
+  path.resolve(__dirname, "../../.env")
+];
+for (const envPath of envCandidates) {
+  if (fs.existsSync(envPath)) {
+    dotenv.config({ path: envPath });
+  }
+}
 
 const PORT = Number(process.env.PORT) || 5000;
 
@@ -93,6 +105,7 @@ app.use("/api/store", storeRouter);
 app.use("/api/categories", categoriesRouter);
 app.use("/api/subcategories", subcategoriesRouter);
 app.use("/api/sub-categories", subcategoriesRouter);
+app.use("/api/auth", authRouter);
 
 // 4. Static Asset Serving (Direct disk serving with strict MIME types)
 const staticOptions = {

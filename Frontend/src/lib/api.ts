@@ -329,6 +329,46 @@ export const api = {
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Failed to delete sub-category");
     return data;
+  },
+
+  // Admin Authentication
+  async sendAdminOtp(email: string): Promise<{ success: boolean; message: string; email?: string }> {
+    const res = await fetch(getApiEndpoint("/api/auth/send-otp"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to send OTP email");
+    return data;
+  },
+
+  async verifyAdminOtp(email: string, otp: string): Promise<{ success: boolean; token: string; user: { email: string; role: string; name: string }; message?: string }> {
+    const res = await fetch(getApiEndpoint("/api/auth/verify-otp"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, otp })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "OTP verification failed");
+    return data;
+  },
+
+  async getAdminMe(token: string) {
+    const res = await fetch(getApiEndpoint("/api/auth/me"), {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Session invalid");
+    return data;
+  },
+
+  async adminLogout() {
+    try {
+      await fetch(getApiEndpoint("/api/auth/logout"), { method: "POST" });
+    } catch {
+      // ignore network error
+    }
   }
 };
 

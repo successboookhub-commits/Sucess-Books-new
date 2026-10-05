@@ -1,13 +1,15 @@
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { BookOpen, Menu, Phone, ShoppingBag, X, Package, ShieldCheck } from "lucide-react";
+import { BookOpen, Menu, Phone, ShoppingBag, X, Package, ShieldCheck, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetTrigger } from "@/components/ui/sheet";
 import { useCart } from "@/lib/cart";
+import { useAdminAuth } from "@/lib/auth";
 import { STORE } from "@/lib/books";
 import { CartSheet } from "@/components/cart-sheet";
 import { OrderTrackerModal } from "@/components/order-tracker-modal";
 import { StoreManagerModal } from "@/components/store-manager-modal";
+import { toast } from "sonner";
 
 const navLinks = [
   { to: "/", label: "Home" },
@@ -18,9 +20,15 @@ const navLinks = [
 
 export function SiteHeader() {
   const { cartCount, cartOpen, setCartOpen } = useCart();
+  const { isAuthenticated, logout, adminUser } = useAdminAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [trackerOpen, setTrackerOpen] = useState(false);
   const [managerOpen, setManagerOpen] = useState(false);
+
+  const handleAdminLogout = () => {
+    logout();
+    toast.success("Administrator logged out successfully.");
+  };
 
   return (
     <>
@@ -79,17 +87,30 @@ export function SiteHeader() {
               <Package className="h-4 w-4" /> Track Order
             </Button>
 
-            {/* Store Admin Manager Button */}
-            <Button
-              variant="outline"
-              size="sm"
-              className="hidden md:inline-flex rounded-full gap-1.5 text-xs border-primary/20 text-primary hover:bg-secondary"
-              asChild
-            >
-              <Link to="/admin">
-                <ShieldCheck className="h-3.5 w-3.5" /> Store Admin
-              </Link>
-            </Button>
+            {/* Authenticated Admin Actions ONLY */}
+            {isAuthenticated && (
+              <div className="hidden md:flex items-center gap-1.5">
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="rounded-full gap-1.5 text-xs bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+                  asChild
+                >
+                  <Link to="/admin">
+                    <ShieldCheck className="h-3.5 w-3.5 text-amber-300" /> Admin Portal
+                  </Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleAdminLogout}
+                  className="rounded-full gap-1 text-xs text-destructive hover:bg-destructive/10"
+                  title="Logout Admin"
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            )}
 
             {/* Cart Sheet Button */}
             <Sheet open={cartOpen} onOpenChange={setCartOpen}>
@@ -142,17 +163,32 @@ export function SiteHeader() {
                   setMenuOpen(false);
                   setTrackerOpen(true);
                 }}
-                className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-muted-foreground hover:text-primary rounded-md"
+                className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-muted-foreground hover:text-primary rounded-md text-left"
               >
                 <Package className="h-4 w-4" /> Track Book Order
               </button>
-              <Link
-                to="/admin"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-primary rounded-md bg-secondary/50"
-              >
-                <ShieldCheck className="h-4 w-4" /> Store Admin Portal
-              </Link>
+
+              {/* Show in Mobile Menu ONLY when Logged In */}
+              {isAuthenticated && (
+                <>
+                  <Link
+                    to="/admin"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-primary rounded-md bg-secondary/70 font-bold"
+                  >
+                    <ShieldCheck className="h-4 w-4 text-primary" /> Store Admin Portal
+                  </Link>
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      handleAdminLogout();
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-destructive hover:bg-destructive/10 rounded-md text-left"
+                  >
+                    <LogOut className="h-4 w-4" /> Logout Admin ({adminUser?.email})
+                  </button>
+                </>
+              )}
             </div>
           </nav>
         )}
@@ -164,3 +200,4 @@ export function SiteHeader() {
     </>
   );
 }
+
