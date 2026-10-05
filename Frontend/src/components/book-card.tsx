@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Plus, Star, Eye, Layers } from "lucide-react";
+import { Plus, Star, Eye, Layers, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/lib/cart";
+import { useWishlist } from "@/lib/wishlist";
 import type { Book } from "@/lib/books";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -9,13 +10,21 @@ import { BookDetailModal } from "./book-detail-modal";
 
 export function BookCard({ book }: { book: Book }) {
   const { changeQuantity } = useCart();
+  const { isWishlisted, toggleWishlist } = useWishlist();
   const [modalOpen, setModalOpen] = useState(false);
   const [hovered, setHovered] = useState(false);
+
+  const wishlisted = isWishlisted(book.id);
 
   const handleAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
     changeQuantity(book.id, 1, book);
     toast.success(`Added "${book.title}" to bag!`);
+  };
+
+  const handleWishlistToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleWishlist(book);
   };
 
   const isImageCover = book.cover && (book.cover.startsWith("http") || book.cover.startsWith("/"));
@@ -47,15 +56,31 @@ export function BookCard({ book }: { book: Book }) {
             </span>
           )}
 
+          {/* Wishlist Heart Button */}
+          <button
+            type="button"
+            onClick={handleWishlistToggle}
+            className={cn(
+              "absolute right-2.5 top-2.5 z-20 rounded-full p-1.5 backdrop-blur-md transition shadow-md",
+              wishlisted
+                ? "bg-red-500/90 text-white hover:bg-red-600"
+                : "bg-background/80 text-muted-foreground hover:text-red-500 hover:bg-background"
+            )}
+            title={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+            aria-label="Wishlist toggle"
+          >
+            <Heart className={cn("h-3.5 w-3.5 transition-transform active:scale-125", wishlisted && "fill-current")} />
+          </button>
+
           {/* Custom Label (e.g. Bestseller / New) */}
           {book.label && !book.label.includes("%") && (
-            <span className="absolute right-2.5 top-2.5 z-10 rounded-md bg-background/95 backdrop-blur-xs px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary shadow-xs border border-border">
+            <span className="absolute right-2.5 bottom-2.5 z-10 rounded-md bg-background/95 backdrop-blur-xs px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary shadow-xs border border-border">
               {book.label}
             </span>
           )}
 
           {/* 2-Image Indicator Badge */}
-          {hasSecondImage && (
+          {hasSecondImage && !book.label && (
             <span className="absolute bottom-2.5 right-2.5 z-10 rounded-full bg-background/90 backdrop-blur-xs p-1 text-muted-foreground shadow-xs group-hover:text-primary transition" title="2 Views Available">
               <Layers className="h-3 w-3" />
             </span>

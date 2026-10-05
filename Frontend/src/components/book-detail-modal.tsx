@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { Star, MessageCircle, ShoppingBag, Truck, ShieldCheck, Check, Send, Layers, Image as ImageIcon } from "lucide-react";
+import { Star, MessageCircle, ShoppingBag, Truck, ShieldCheck, Check, Send, Layers, Image as ImageIcon, Heart } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/lib/cart";
+import { useWishlist } from "@/lib/wishlist";
 import { api, type BookDetail } from "@/lib/api";
 import { type Book, WHATSAPP_NUMBER } from "@/lib/books";
 import { cn } from "@/lib/utils";
@@ -16,9 +17,13 @@ interface BookDetailModalProps {
 
 export function BookDetailModal({ book, open, onOpenChange }: BookDetailModalProps) {
   const { changeQuantity, cart } = useCart();
+  const { isWishlisted, toggleWishlist } = useWishlist();
   const [details, setDetails] = useState<BookDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState<0 | 1>(0);
+
+  const wishlisted = book ? isWishlisted(book.id) : false;
+
 
   // Review Form state
   const [showReviewForm, setShowReviewForm] = useState(false);
@@ -258,7 +263,22 @@ export function BookDetailModal({ book, open, onOpenChange }: BookDetailModalPro
 
                 <Button
                   variant="outline"
-                  className="rounded-full flex-1 gap-2 h-11 bg-whatsapp/10 border-whatsapp/30 text-whatsapp hover:bg-whatsapp hover:text-white transition font-semibold"
+                  onClick={() => toggleWishlist(book)}
+                  className={cn(
+                    "rounded-full h-11 px-4 gap-1.5 transition font-semibold",
+                    wishlisted
+                      ? "bg-red-50 text-red-600 border-red-200 dark:bg-red-950/40 dark:border-red-900"
+                      : "text-muted-foreground hover:text-red-500"
+                  )}
+                  title={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                >
+                  <Heart className={cn("h-4 w-4", wishlisted && "fill-current text-red-500")} />
+                  <span className="hidden sm:inline">{wishlisted ? "Wishlisted" : "Wishlist"}</span>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="rounded-full flex-1 gap-2 h-11 bg-emerald-600/10 border-emerald-600/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-600 hover:text-white transition font-semibold"
                   asChild
                 >
                   <a href={whatsappDirectOrder} target="_blank" rel="noreferrer">
@@ -270,7 +290,7 @@ export function BookDetailModal({ book, open, onOpenChange }: BookDetailModalPro
 
               {/* Guarantees */}
               <div className="pt-1 grid grid-cols-2 gap-2 text-[11px] text-muted-foreground">
-                <span className="flex items-center gap-1.5"><Truck className="h-3.5 w-3.5 text-primary" /> Free delivery over ₹799</span>
+                <span className="flex items-center gap-1.5"><Truck className="h-3.5 w-3.5 text-primary" /> Free delivery over ₹499</span>
                 <span className="flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-primary" /> 100% Genuine Edition</span>
               </div>
             </div>

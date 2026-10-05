@@ -14,6 +14,9 @@ import storeRouter from "./routes/store.js";
 import categoriesRouter from "./routes/categories.js";
 import subcategoriesRouter from "./routes/subcategories.js";
 import authRouter from "./routes/auth.js";
+import userAuthRouter from "./routes/userAuth.js";
+import userAddressesRouter from "./routes/userAddresses.js";
+import wishlistRouter from "./routes/wishlist.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -106,6 +109,10 @@ app.use("/api/categories", categoriesRouter);
 app.use("/api/subcategories", subcategoriesRouter);
 app.use("/api/sub-categories", subcategoriesRouter);
 app.use("/api/auth", authRouter);
+app.use("/api/user/auth", userAuthRouter);
+app.use("/api/user/addresses", userAddressesRouter);
+app.use("/api/wishlist", wishlistRouter);
+
 
 // 4. Static Asset Serving (Direct disk serving with strict MIME types)
 const staticOptions = {

@@ -392,7 +392,254 @@ export const api = {
     } catch {
       // ignore network error
     }
+  },
+
+  // Customer / User Authentication
+  async sendUserOtp(email: string): Promise<{ success: boolean; message: string; email?: string; isExistingUser?: boolean }> {
+    const res = await fetch(getApiEndpoint("/api/user/auth/send-otp"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to send verification email");
+    return data;
+  },
+
+  async verifyUserOtp(email: string, otp: string, name?: string, phone?: string): Promise<{ success: boolean; token: string; user: UserProfile; message?: string }> {
+    const res = await fetch(getApiEndpoint("/api/user/auth/verify-otp"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, otp, name, phone })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "OTP verification failed");
+    return data;
+  },
+
+  async getUserProfile(token: string): Promise<{ success: boolean; user: UserProfile }> {
+    const res = await fetch(getApiEndpoint("/api/user/auth/profile"), {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Session invalid");
+    return data;
+  },
+
+  async updateUserProfile(token: string, profileData: { name?: string; phone?: string; avatar?: string }): Promise<{ success: boolean; user: UserProfile; message?: string }> {
+    const res = await fetch(getApiEndpoint("/api/user/auth/profile"), {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify(profileData)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to update profile");
+    return data;
+  },
+
+  // Multiple User Addresses Management
+  async getUserAddresses(token: string): Promise<UserAddress[]> {
+    const res = await fetch(getApiEndpoint("/api/user/addresses"), {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to load addresses");
+    return data.data || [];
+  },
+
+  async addUserAddress(token: string, addressData: AddressInput): Promise<UserAddress> {
+    const res = await fetch(getApiEndpoint("/api/user/addresses"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify(addressData)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to save address");
+    return data.data;
+  },
+
+  async updateUserAddress(token: string, id: number, addressData: AddressInput): Promise<UserAddress> {
+    const res = await fetch(getApiEndpoint(`/api/user/addresses/${id}`), {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify(addressData)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to update address");
+    return data.data;
+  },
+
+  async deleteUserAddress(token: string, id: number): Promise<{ success: boolean; message: string }> {
+    const res = await fetch(getApiEndpoint(`/api/user/addresses/${id}`), {
+      method: "DELETE",
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to delete address");
+    return data;
+  },
+
+  async setDefaultUserAddress(token: string, id: number): Promise<{ success: boolean; message: string }> {
+    const res = await fetch(getApiEndpoint(`/api/user/addresses/${id}/default`), {
+      method: "PATCH",
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to set default address");
+    return data;
+  },
+
+  // Wishlist API
+  async getWishlist(token: string): Promise<{ data: Book[]; bookIds: number[]; count: number }> {
+    const res = await fetch(getApiEndpoint("/api/wishlist"), {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to fetch wishlist");
+    return data;
+  },
+
+  async toggleWishlist(token: string, bookId: number): Promise<{ success: boolean; isWishlisted: boolean; message: string }> {
+    const res = await fetch(getApiEndpoint("/api/wishlist/toggle"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ bookId })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to update wishlist");
+    return data;
+  },
+
+  // Customer Orders & Invoice
+  async getMyOrders(token: string): Promise<OrderData[]> {
+    const res = await fetch(getApiEndpoint("/api/orders/my-orders"), {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to load orders");
+    return data.data || [];
+  },
+
+  async getOrderInvoice(orderId: string): Promise<TaxInvoiceData> {
+    const res = await fetch(getApiEndpoint(`/api/orders/${orderId}/invoice`));
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to generate invoice");
+    return data.data;
   }
+};
+
+export type UserProfile = {
+  id: number;
+  email: string;
+  name: string;
+  phone: string;
+  avatar?: string;
+  role?: string;
+  created_at?: string;
+  stats?: {
+    ordersCount: number;
+    wishlistCount: number;
+    addressesCount: number;
+  };
+};
+
+export type UserAddress = {
+  id: number;
+  fullName: string;
+  phone: string;
+  alternatePhone?: string;
+  pincode: string;
+  flatHouse: string;
+  areaStreet: string;
+  landmark?: string;
+  city: string;
+  state: string;
+  addressType: "Home" | "Work" | "Other";
+  isDefault: boolean;
+  formattedAddress?: string;
+  createdAt?: string;
+};
+
+export type AddressInput = {
+  fullName: string;
+  phone: string;
+  alternatePhone?: string;
+  pincode: string;
+  flatHouse: string;
+  areaStreet: string;
+  landmark?: string;
+  city: string;
+  state?: string;
+  addressType?: "Home" | "Work" | "Other";
+  isDefault?: boolean;
+};
+
+export type TaxInvoiceData = {
+  invoiceNo: string;
+  orderId: string;
+  orderDate: string;
+  invoiceDate: string;
+  status: string;
+  paymentMethod: string;
+  seller: {
+    name: string;
+    tagline: string;
+    address: string;
+    city: string;
+    state: string;
+    pincode: string;
+    country: string;
+    gstin: string;
+    pan: string;
+    email: string;
+    phone: string;
+    website: string;
+  };
+  buyer: {
+    name: string;
+    phone: string;
+    email: string;
+    address: string;
+    city: string;
+    state: string;
+    pincode: string;
+    addressType: string;
+  };
+  items: {
+    srNo: number;
+    id: number;
+    title: string;
+    author: string;
+    hsn: string;
+    quantity: number;
+    mrp: number;
+    unitPrice: number;
+    discount: number;
+    total: number;
+  }[];
+  pricing: {
+    mrpTotal: number;
+    discountTotal: number;
+    subtotal: number;
+    taxableAmount: number;
+    cgst: number;
+    sgst: number;
+    deliveryFee: number;
+    total: number;
+    totalInWords: string;
+  };
 };
 
 export type SubCategory = {
@@ -421,3 +668,4 @@ export type Category = {
   books_count?: number;
   subCategories?: SubCategory[];
 };
+

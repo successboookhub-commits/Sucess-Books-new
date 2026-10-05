@@ -7,11 +7,18 @@ type CartContextValue = {
   cartBooks: (Book & { quantity: number })[];
   cartCount: number;
   subtotal: number;
+  mrpTotal: number;
+  savingsTotal: number;
+  savingsPercent: number;
   deliveryFee: number;
+  freeDeliveryThreshold: number;
+  awayFromFreeDelivery: number;
+  freeDeliveryProgress: number;
   total: number;
   cartOpen: boolean;
   setCartOpen: (open: boolean) => void;
   changeQuantity: (id: number, change: number, bookItem?: Book) => void;
+  addToCart: (book: Book, quantity?: number) => void;
   clearCart: () => void;
   orderUrl: string;
   catalog: Book[];
@@ -56,6 +63,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const addToCart = (book: Book, quantity = 1) => {
+    if (!catalog.some(b => b.id === book.id)) {
+      setCatalog(prev => [...prev, book]);
+    }
+    setCart(current => ({
+      ...current,
+      [book.id]: (current[book.id] ?? 0) + quantity
+    }));
+    setCartOpen(true);
+  };
+
   const clearCart = () => {
     setCart({});
   };
@@ -74,13 +92,26 @@ export function CartProvider({ children }: { children: ReactNode }) {
       .filter((b): b is Book & { quantity: number } => b !== null);
 
     const cartCount = Object.values(cart).reduce((total, qty) => total + qty, 0);
-    const subtotal = cartBooks.reduce((total, book) => total + book.price * book.quantity, 0);
-    const deliveryFee = subtotal >= 799 || subtotal === 0 ? 0 : 60;
+    const subtotal = cartBooks.reduce((sum, book) => sum + book.price * book.quantity, 0);
+    
+    // Calculate total MRP based on original price or MRP
+    const mrpTotal = cartBooks.reduce((sum, book) => {
+      const itemMrp = book.mrp || book.old_price || book.oldPrice || book.originalPrice || book.price;
+      return sum + itemMrp * book.quantity;
+    }, 0);
+
+    const savingsTotal = Math.max(0, mrpTotal - subtotal);
+    const savingsPercent = mrpTotal > 0 && savingsTotal > 0 ? Math.round((savingsTotal / mrpTotal) * 100) : 0;
+
+    const freeDeliveryThreshold = 499;
+    const deliveryFee = subtotal >= freeDeliveryThreshold || subtotal === 0 ? 0 : 49;
+    const awayFromFreeDelivery = Math.max(0, freeDeliveryThreshold - subtotal);
+    const freeDeliveryProgress = Math.min(100, Math.round((subtotal / freeDeliveryThreshold) * 100));
     const total = subtotal + deliveryFee;
 
     const message = `Hello Success Book Hub! I would like to order:\n\n${cartBooks
       .map((book) => `• ${book.title} × ${book.quantity} — ₹${book.price * book.quantity}`)
-      .join("\n")}\n\nSubtotal: ₹${subtotal}${deliveryFee > 0 ? `\nDelivery: ₹${deliveryFee}` : "\nDelivery: FREE"}\nTotal: ₹${total}\n\nPlease confirm availability and payment details.`;
+      .join("\n")}\n\nMRP Total: ₹${mrpTotal}\nSavings: ₹${savingsTotal} (${savingsPercent}% OFF)\nSubtotal: ₹${subtotal}${deliveryFee > 0 ? `\nDelivery: ₹${deliveryFee}` : "\nDelivery: FREE"}\nTotal: ₹${total}\n\nPlease confirm availability and delivery schedule.`;
     
     const orderUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 
@@ -89,11 +120,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
       cartBooks,
       cartCount,
       subtotal,
+      mrpTotal,
+      savingsTotal,
+      savingsPercent,
       deliveryFee,
+      freeDeliveryThreshold,
+      awayFromFreeDelivery,
+      freeDeliveryProgress,
       total,
       cartOpen,
       setCartOpen,
       changeQuantity,
+      addToCart,
       clearCart,
       orderUrl,
       catalog,
@@ -109,3 +147,4 @@ export function useCart() {
   if (!ctx) throw new Error("useCart must be used inside CartProvider");
   return ctx;
 }
+

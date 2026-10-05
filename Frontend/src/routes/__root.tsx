@@ -14,8 +14,12 @@ import { Toaster } from "sonner";
 import appCss from "../styles.css?url";
 import { CartProvider } from "@/lib/cart";
 import { AuthProvider } from "@/lib/auth";
+import { UserAuthProvider } from "@/lib/user-auth";
+import { WishlistProvider } from "@/lib/wishlist";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { UserLoginModal } from "@/components/auth/user-login-modal";
+
 
 function NotFoundComponent() {
   return (
@@ -127,12 +131,17 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <CartProvider>
-          {!isAdmin && <SiteHeader />}
-          <Outlet />
-          {!isAdmin && <SiteFooter />}
-          <Toaster richColors position="top-right" closeButton />
-        </CartProvider>
+        <UserAuthProvider>
+          <WishlistProvider>
+            <CartProvider>
+              {!isAdmin && <SiteHeader />}
+              <Outlet />
+              {!isAdmin && <SiteFooter />}
+              <UserLoginModal />
+              <Toaster richColors position="top-right" closeButton />
+            </CartProvider>
+          </WishlistProvider>
+        </UserAuthProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

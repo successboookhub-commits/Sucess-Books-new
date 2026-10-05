@@ -1,1 +1,0 @@
-import{g as e,m as t}from"./button-_-DP0W4Y.js";import{r as n}from"./link-JFmMSCPm.js";var r=e(t(),1);function i(e){let t=n();return r.useCallback(n=>t.navigate({...n,from:n.from??e?.from}),[e?.from,t])}export{i as t};

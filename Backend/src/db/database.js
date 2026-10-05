@@ -150,18 +150,24 @@ export const SCHEMA_DEFINITIONS = {
     mysqlCreate: `
       CREATE TABLE IF NOT EXISTS orders (
         id VARCHAR(50) PRIMARY KEY,
+        user_id INT NULL,
         customer_name VARCHAR(255) NOT NULL,
         customer_phone VARCHAR(50) NOT NULL,
         customer_email VARCHAR(255),
         delivery_address TEXT NOT NULL,
         city VARCHAR(100),
+        state VARCHAR(100) DEFAULT 'Telangana',
         pincode VARCHAR(20),
+        address_type VARCHAR(50) DEFAULT 'Home',
         items_json LONGTEXT NOT NULL,
+        mrp_total DECIMAL(10,2) DEFAULT 0,
+        discount_total DECIMAL(10,2) DEFAULT 0,
         subtotal DECIMAL(10,2) NOT NULL,
         delivery_fee DECIMAL(10,2) DEFAULT 0,
         total DECIMAL(10,2) NOT NULL,
         payment_method VARCHAR(50) DEFAULT 'COD',
         status VARCHAR(50) DEFAULT 'pending',
+        invoice_no VARCHAR(100) NULL,
         order_notes TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -169,36 +175,48 @@ export const SCHEMA_DEFINITIONS = {
     sqliteCreate: `
       CREATE TABLE IF NOT EXISTS orders (
         id TEXT PRIMARY KEY,
+        user_id INTEGER,
         customer_name TEXT NOT NULL,
         customer_phone TEXT NOT NULL,
         customer_email TEXT,
         delivery_address TEXT NOT NULL,
         city TEXT,
+        state TEXT DEFAULT 'Telangana',
         pincode TEXT,
+        address_type TEXT DEFAULT 'Home',
         items_json TEXT NOT NULL,
+        mrp_total REAL DEFAULT 0,
+        discount_total REAL DEFAULT 0,
         subtotal REAL NOT NULL,
         delivery_fee REAL DEFAULT 0,
         total REAL NOT NULL,
         payment_method TEXT DEFAULT 'COD',
         status TEXT DEFAULT 'pending',
+        invoice_no TEXT,
         order_notes TEXT,
         created_at TEXT DEFAULT (datetime('now'))
       );
     `,
     columns: [
       { name: "id", mysqlType: "VARCHAR(50) PRIMARY KEY", sqliteType: "TEXT PRIMARY KEY" },
+      { name: "user_id", mysqlType: "INT NULL", sqliteType: "INTEGER" },
       { name: "customer_name", mysqlType: "VARCHAR(255) NOT NULL", sqliteType: "TEXT NOT NULL" },
       { name: "customer_phone", mysqlType: "VARCHAR(50) NOT NULL", sqliteType: "TEXT NOT NULL" },
       { name: "customer_email", mysqlType: "VARCHAR(255)", sqliteType: "TEXT" },
       { name: "delivery_address", mysqlType: "TEXT NOT NULL", sqliteType: "TEXT NOT NULL" },
       { name: "city", mysqlType: "VARCHAR(100)", sqliteType: "TEXT" },
+      { name: "state", mysqlType: "VARCHAR(100) DEFAULT 'Telangana'", sqliteType: "TEXT DEFAULT 'Telangana'" },
       { name: "pincode", mysqlType: "VARCHAR(20)", sqliteType: "TEXT" },
+      { name: "address_type", mysqlType: "VARCHAR(50) DEFAULT 'Home'", sqliteType: "TEXT DEFAULT 'Home'" },
       { name: "items_json", mysqlType: "LONGTEXT NOT NULL", sqliteType: "TEXT NOT NULL" },
+      { name: "mrp_total", mysqlType: "DECIMAL(10,2) DEFAULT 0", sqliteType: "REAL DEFAULT 0" },
+      { name: "discount_total", mysqlType: "DECIMAL(10,2) DEFAULT 0", sqliteType: "REAL DEFAULT 0" },
       { name: "subtotal", mysqlType: "DECIMAL(10,2) NOT NULL", sqliteType: "REAL NOT NULL" },
       { name: "delivery_fee", mysqlType: "DECIMAL(10,2) DEFAULT 0", sqliteType: "REAL DEFAULT 0" },
       { name: "total", mysqlType: "DECIMAL(10,2) NOT NULL", sqliteType: "REAL NOT NULL" },
       { name: "payment_method", mysqlType: "VARCHAR(50) DEFAULT 'COD'", sqliteType: "TEXT DEFAULT 'COD'" },
       { name: "status", mysqlType: "VARCHAR(50) DEFAULT 'pending'", sqliteType: "TEXT DEFAULT 'pending'" },
+      { name: "invoice_no", mysqlType: "VARCHAR(100) NULL", sqliteType: "TEXT" },
       { name: "order_notes", mysqlType: "TEXT", sqliteType: "TEXT" },
       { name: "created_at", mysqlType: "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", sqliteType: "TEXT DEFAULT (datetime('now'))" }
     ]
@@ -317,6 +335,159 @@ export const SCHEMA_DEFINITIONS = {
       { name: "otp", mysqlType: "VARCHAR(10) NOT NULL", sqliteType: "TEXT NOT NULL" },
       { name: "expires_at", mysqlType: "TIMESTAMP NOT NULL", sqliteType: "TEXT NOT NULL" },
       { name: "used", mysqlType: "TINYINT(1) DEFAULT 0", sqliteType: "INTEGER DEFAULT 0" },
+      { name: "created_at", mysqlType: "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", sqliteType: "TEXT DEFAULT (datetime('now'))" }
+    ]
+  },
+  users: {
+    mysqlCreate: `
+      CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NULL,
+        email VARCHAR(255) NOT NULL UNIQUE,
+        phone VARCHAR(50) NULL,
+        avatar TEXT NULL,
+        role VARCHAR(50) DEFAULT 'customer',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `,
+    sqliteCreate: `
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        email TEXT NOT NULL UNIQUE,
+        phone TEXT,
+        avatar TEXT,
+        role TEXT DEFAULT 'customer',
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      );
+    `,
+    columns: [
+      { name: "id", mysqlType: "INT AUTO_INCREMENT PRIMARY KEY", sqliteType: "INTEGER PRIMARY KEY AUTOINCREMENT" },
+      { name: "name", mysqlType: "VARCHAR(255) NULL", sqliteType: "TEXT" },
+      { name: "email", mysqlType: "VARCHAR(255) NOT NULL UNIQUE", sqliteType: "TEXT NOT NULL UNIQUE" },
+      { name: "phone", mysqlType: "VARCHAR(50) NULL", sqliteType: "TEXT" },
+      { name: "avatar", mysqlType: "TEXT NULL", sqliteType: "TEXT" },
+      { name: "role", mysqlType: "VARCHAR(50) DEFAULT 'customer'", sqliteType: "TEXT DEFAULT 'customer'" },
+      { name: "created_at", mysqlType: "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", sqliteType: "TEXT DEFAULT (datetime('now'))" },
+      { name: "updated_at", mysqlType: "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", sqliteType: "TEXT DEFAULT (datetime('now'))" }
+    ]
+  },
+  user_otps: {
+    mysqlCreate: `
+      CREATE TABLE IF NOT EXISTS user_otps (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        email VARCHAR(255) NOT NULL,
+        otp VARCHAR(10) NOT NULL,
+        expires_at TIMESTAMP NOT NULL,
+        used TINYINT(1) DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `,
+    sqliteCreate: `
+      CREATE TABLE IF NOT EXISTS user_otps (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT NOT NULL,
+        otp TEXT NOT NULL,
+        expires_at TEXT NOT NULL,
+        used INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now'))
+      );
+    `,
+    columns: [
+      { name: "id", mysqlType: "INT AUTO_INCREMENT PRIMARY KEY", sqliteType: "INTEGER PRIMARY KEY AUTOINCREMENT" },
+      { name: "email", mysqlType: "VARCHAR(255) NOT NULL", sqliteType: "TEXT NOT NULL" },
+      { name: "otp", mysqlType: "VARCHAR(10) NOT NULL", sqliteType: "TEXT NOT NULL" },
+      { name: "expires_at", mysqlType: "TIMESTAMP NOT NULL", sqliteType: "TEXT NOT NULL" },
+      { name: "used", mysqlType: "TINYINT(1) DEFAULT 0", sqliteType: "INTEGER DEFAULT 0" },
+      { name: "created_at", mysqlType: "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", sqliteType: "TEXT DEFAULT (datetime('now'))" }
+    ]
+  },
+  user_addresses: {
+    mysqlCreate: `
+      CREATE TABLE IF NOT EXISTS user_addresses (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NULL,
+        user_email VARCHAR(255) NOT NULL,
+        full_name VARCHAR(255) NOT NULL,
+        phone VARCHAR(50) NOT NULL,
+        alternate_phone VARCHAR(50) NULL,
+        pincode VARCHAR(20) NOT NULL,
+        flat_house VARCHAR(255) NOT NULL,
+        area_street TEXT NOT NULL,
+        landmark VARCHAR(255) NULL,
+        city VARCHAR(100) NOT NULL,
+        state VARCHAR(100) NOT NULL DEFAULT 'Telangana',
+        address_type VARCHAR(50) DEFAULT 'Home',
+        is_default TINYINT(1) DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `,
+    sqliteCreate: `
+      CREATE TABLE IF NOT EXISTS user_addresses (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        user_email TEXT NOT NULL,
+        full_name TEXT NOT NULL,
+        phone TEXT NOT NULL,
+        alternate_phone TEXT,
+        pincode TEXT NOT NULL,
+        flat_house TEXT NOT NULL,
+        area_street TEXT NOT NULL,
+        landmark TEXT,
+        city TEXT NOT NULL,
+        state TEXT NOT NULL DEFAULT 'Telangana',
+        address_type TEXT DEFAULT 'Home',
+        is_default INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now'))
+      );
+    `,
+    columns: [
+      { name: "id", mysqlType: "INT AUTO_INCREMENT PRIMARY KEY", sqliteType: "INTEGER PRIMARY KEY AUTOINCREMENT" },
+      { name: "user_id", mysqlType: "INT NULL", sqliteType: "INTEGER" },
+      { name: "user_email", mysqlType: "VARCHAR(255) NOT NULL", sqliteType: "TEXT NOT NULL" },
+      { name: "full_name", mysqlType: "VARCHAR(255) NOT NULL", sqliteType: "TEXT NOT NULL" },
+      { name: "phone", mysqlType: "VARCHAR(50) NOT NULL", sqliteType: "TEXT NOT NULL" },
+      { name: "alternate_phone", mysqlType: "VARCHAR(50) NULL", sqliteType: "TEXT" },
+      { name: "pincode", mysqlType: "VARCHAR(20) NOT NULL", sqliteType: "TEXT NOT NULL" },
+      { name: "flat_house", mysqlType: "VARCHAR(255) NOT NULL", sqliteType: "TEXT NOT NULL" },
+      { name: "area_street", mysqlType: "TEXT NOT NULL", sqliteType: "TEXT NOT NULL" },
+      { name: "landmark", mysqlType: "VARCHAR(255) NULL", sqliteType: "TEXT" },
+      { name: "city", mysqlType: "VARCHAR(100) NOT NULL", sqliteType: "TEXT NOT NULL" },
+      { name: "state", mysqlType: "VARCHAR(100) NOT NULL DEFAULT 'Telangana'", sqliteType: "TEXT NOT NULL DEFAULT 'Telangana'" },
+      { name: "address_type", mysqlType: "VARCHAR(50) DEFAULT 'Home'", sqliteType: "TEXT DEFAULT 'Home'" },
+      { name: "is_default", mysqlType: "TINYINT(1) DEFAULT 0", sqliteType: "INTEGER DEFAULT 0" },
+      { name: "created_at", mysqlType: "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", sqliteType: "TEXT DEFAULT (datetime('now'))" }
+    ]
+  },
+  wishlists: {
+    mysqlCreate: `
+      CREATE TABLE IF NOT EXISTS wishlists (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NULL,
+        user_email VARCHAR(255) NOT NULL,
+        book_id INT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY user_book_uniq (user_email, book_id),
+        INDEX idx_user_email (user_email)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `,
+    sqliteCreate: `
+      CREATE TABLE IF NOT EXISTS wishlists (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        user_email TEXT NOT NULL,
+        book_id INTEGER NOT NULL,
+        created_at TEXT DEFAULT (datetime('now')),
+        UNIQUE(user_email, book_id)
+      );
+    `,
+    columns: [
+      { name: "id", mysqlType: "INT AUTO_INCREMENT PRIMARY KEY", sqliteType: "INTEGER PRIMARY KEY AUTOINCREMENT" },
+      { name: "user_id", mysqlType: "INT NULL", sqliteType: "INTEGER" },
+      { name: "user_email", mysqlType: "VARCHAR(255) NOT NULL", sqliteType: "TEXT NOT NULL" },
+      { name: "book_id", mysqlType: "INT NOT NULL", sqliteType: "INTEGER NOT NULL" },
       { name: "created_at", mysqlType: "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", sqliteType: "TEXT DEFAULT (datetime('now'))" }
     ]
   }
