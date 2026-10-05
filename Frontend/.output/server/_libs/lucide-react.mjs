@@ -1015,6 +1015,26 @@ var QrCode = createLucideIcon("qr-code", [
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var Receipt = createLucideIcon("receipt", [
+	["path", {
+		d: "M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z",
+		key: "q3az6g"
+	}],
+	["path", {
+		d: "M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8",
+		key: "1h4pet"
+	}],
+	["path", {
+		d: "M12 17.5v-11",
+		key: "1jc1ny"
+	}]
+]);
+/**
+* @license lucide-react v0.575.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var RefreshCw = createLucideIcon("refresh-cw", [
 	["path", {
 		d: "M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8",
@@ -1137,50 +1157,6 @@ var ShoppingBag = createLucideIcon("shopping-bag", [
 	["path", {
 		d: "M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z",
 		key: "o988cm"
-	}]
-]);
-/**
-* @license lucide-react v0.575.0 - ISC
-*
-* This source code is licensed under the ISC license.
-* See the LICENSE file in the root directory of this source tree.
-*/
-var SlidersVertical = createLucideIcon("sliders-vertical", [
-	["path", {
-		d: "M10 8h4",
-		key: "1sr2af"
-	}],
-	["path", {
-		d: "M12 21v-9",
-		key: "17s77i"
-	}],
-	["path", {
-		d: "M12 8V3",
-		key: "13r4qs"
-	}],
-	["path", {
-		d: "M17 16h4",
-		key: "h1uq16"
-	}],
-	["path", {
-		d: "M19 12V3",
-		key: "o1uvq1"
-	}],
-	["path", {
-		d: "M19 21v-5",
-		key: "qua636"
-	}],
-	["path", {
-		d: "M3 14h4",
-		key: "bcjad9"
-	}],
-	["path", {
-		d: "M5 10V3",
-		key: "cb8scm"
-	}],
-	["path", {
-		d: "M5 21v-7",
-		key: "1w1uti"
 	}]
 ]);
 /**
@@ -1387,4 +1363,4 @@ var X = createLucideIcon("x", [["path", {
 	key: "d8bk6v"
 }]]);
 //#endregion
-export { Clock as $, Minus as A, Library as B, Phone as C, PanelLeftClose as D, PanelLeftOpen as E, Mail as F, Funnel as G, Layers as H, LogOut as I, FileText as J, FolderPlus as K, LogIn as L, MessageCircle as M, Menu as N, Palette as O, MapPin as P, CreditCard as Q, Lock as R, Plus as S, PenLine as T, Heart as U, LayoutDashboard as V, HeartHandshake as W, ExternalLink as X, Eye as Y, DollarSign as Z, Send as _, Truck as a, ChevronDown as at, QrCode as b, Trash2 as c, BookPlus as ct, SlidersVertical as d, Banknote as dt, Circle as et, ShoppingBag as f, ArrowUpRight as ft, Settings as g, ShieldAlert as h, Upload as i, ChevronRight as it, MessageSquare as j, Package as k, Star as l, BookOpen as lt, ShieldCheck as m, ArrowLeft as mt, Users as n, CircleCheck as nt, TriangleAlert as o, Check as ot, Shield as p, ArrowRight as pt, FolderOpen as q, User as r, CircleAlert as rt, TrendingUp as s, ChartColumn as st, X as t, CirclePlus as tt, Sparkles as u, Bell as ut, Search as v, Pen as w, Printer as x, RefreshCw as y, LoaderCircle as z };
+export { Clock as $, Minus as A, Library as B, Phone as C, PanelLeftClose as D, PanelLeftOpen as E, Mail as F, Funnel as G, Layers as H, LogOut as I, FileText as J, FolderPlus as K, LogIn as L, MessageCircle as M, Menu as N, Palette as O, MapPin as P, CreditCard as Q, Lock as R, Plus as S, PenLine as T, Heart as U, LayoutDashboard as V, HeartHandshake as W, ExternalLink as X, Eye as Y, DollarSign as Z, Search as _, Truck as a, ChevronDown as at, QrCode as b, Trash2 as c, BookPlus as ct, ShoppingBag as d, Banknote as dt, Circle as et, Shield as f, ArrowUpRight as ft, Send as g, Settings as h, Upload as i, ChevronRight as it, MessageSquare as j, Package as k, Star as l, BookOpen as lt, ShieldAlert as m, ArrowLeft as mt, Users as n, CircleCheck as nt, TriangleAlert as o, Check as ot, ShieldCheck as p, ArrowRight as pt, FolderOpen as q, User as r, CircleAlert as rt, TrendingUp as s, ChartColumn as st, X as t, CirclePlus as tt, Sparkles as u, Bell as ut, RefreshCw as v, Pen as w, Printer as x, Receipt as y, LoaderCircle as z };

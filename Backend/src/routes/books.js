@@ -408,6 +408,36 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+// PATCH quick stock update
+router.patch("/:id/stock", async (req, res) => {
+  try {
+    const bookId = req.params.id;
+    const { stock, delta } = req.body;
+
+    const existing = await db.get("SELECT id, stock FROM books WHERE id = ?", [bookId]);
+    if (!existing) {
+      return res.status(404).json({ success: false, message: "Book not found" });
+    }
+
+    let newStock = Number(existing.stock) || 0;
+    if (stock !== undefined) {
+      newStock = Math.max(0, parseInt(stock) || 0);
+    } else if (delta !== undefined) {
+      newStock = Math.max(0, newStock + (parseInt(delta) || 0));
+    }
+
+    await db.run("UPDATE books SET stock = ? WHERE id = ?", [newStock, bookId]);
+
+    return res.json({
+      success: true,
+      message: `Stock updated to ${newStock}`,
+      stock: newStock
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // POST review for a book
 router.post("/:id/reviews", async (req, res) => {
   try {

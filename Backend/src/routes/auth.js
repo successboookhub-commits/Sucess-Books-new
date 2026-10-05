@@ -150,7 +150,175 @@ router.get("/me", requireAdminAuth, (req, res) => {
 });
 
 /**
- * 4. POST /api/auth/logout
+ * 4. GET /api/auth/all-customers
+ * Returns all registered customer accounts with order and address counts
+ */
+router.get("/all-customers", async (req, res) => {
+  try {
+    const users = await db.all(`
+      SELECT u.id, u.name, u.email, u.phone, u.role, u.created_at,
+             (SELECT COUNT(*) FROM orders o WHERE o.customer_email = u.email OR o.user_id = u.id) as total_orders,
+             (SELECT COALESCE(SUM(o.total), 0) FROM orders o WHERE o.customer_email = u.email OR o.user_id = u.id) as total_spent,
+             (SELECT COUNT(*) FROM user_addresses a WHERE a.user_email = u.email OR a.user_id = u.id) as total_addresses
+      FROM users u
+      ORDER BY u.id DESC
+    `);
+
+    return res.json({
+      success: true,
+      count: users.length,
+      data: users.map(u => ({
+        id: u.id,
+        name: u.name || "Book Reader",
+        email: u.email,
+        phone: u.phone || "—",
+        role: u.role || "customer",
+        totalOrders: Number(u.total_orders) || 0,
+        totalSpent: Number(u.total_spent) || 0,
+        totalAddresses: Number(u.total_addresses) || 0,
+        createdAt: u.created_at
+      }))
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * 5. GET /api/auth/all-addresses
+ * Returns all saved customer addresses across the bookstore
+ */
+router.get("/all-addresses", async (req, res) => {
+  try {
+    const addresses = await db.all(`
+      SELECT a.*, u.name as user_name
+      FROM user_addresses a
+      LEFT JOIN users u ON a.user_email = u.email OR a.user_id = u.id
+      ORDER BY a.created_at DESC
+    `);
+
+    return res.json({
+      success: true,
+      count: addresses.length,
+      data: addresses.map(a => ({
+        id: a.id,
+        userEmail: a.user_email,
+        userName: a.user_name || a.full_name,
+        fullName: a.full_name,
+        phone: a.phone,
+        alternatePhone: a.alternate_phone || "",
+        pincode: a.pincode,
+        flatHouse: a.flat_house,
+        areaStreet: a.area_street,
+        landmark: a.landmark || "",
+        city: a.city,
+        state: a.state || "Telangana",
+        addressType: a.address_type || "Home",
+        isDefault: Boolean(a.is_default),
+        formattedAddress: `${a.flat_house}, ${a.area_street}${a.landmark ? `, Near ${a.landmark}` : ""}, ${a.city}, ${a.state} - ${a.pincode}`,
+        createdAt: a.created_at
+      }))
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * 6. GET /api/auth/all-reviews
+ * Returns all reader reviews across all books
+ */
+router.get("/all-reviews", async (req, res) => {
+  try {
+    const reviews = await db.all(`
+      SELECT r.id, r.book_id, r.user_name, r.rating, r.comment, r.created_at,
+             b.title as book_title, b.author as book_author, b.cover as book_cover
+      FROM reviews r
+      LEFT JOIN books b ON r.book_id = b.id
+      ORDER BY r.created_at DESC
+    `);
+
+    return res.json({
+      success: true,
+      count: reviews.length,
+      data: reviews.map(r => ({
+        id: r.id,
+        bookId: r.book_id,
+        bookTitle: r.book_title || "Unknown Book",
+        bookAuthor: r.book_author || "",
+        bookCover: r.book_cover || "",
+        userName: r.user_name,
+        rating: Number(r.rating) || 5,
+        comment: r.comment,
+        createdAt: r.created_at
+      }))
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * 7. DELETE /api/auth/reviews/:id
+ */
+router.delete("/reviews/:id", async (req, res) => {
+  try {
+    const review = await db.get("SELECT * FROM reviews WHERE id = ?", [req.params.id]);
+    if (!review) {
+      return res.status(404).json({ success: false, message: "Review not found" });
+    }
+
+    await db.run("DELETE FROM reviews WHERE id = ?", [req.params.id]);
+
+    // Recalculate book rating
+    const stats = await db.get(`
+      SELECT AVG(rating) as avg_rating, COUNT(*) as count 
+      FROM reviews 
+      WHERE book_id = ?
+    `, [review.book_id]);
+
+    const newRating = stats.count > 0 ? Math.round((Number(stats.avg_rating) || 5) * 10) / 10 : 4.5;
+    await db.run("UPDATE books SET rating = ?, reviews_count = ? WHERE id = ?", [newRating, stats.count, review.book_id]);
+
+    return res.json({ success: true, message: "Review deleted successfully." });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * 8. GET /api/auth/dashboard-stats
+ */
+router.get("/dashboard-stats", async (req, res) => {
+  try {
+    const ordersCountRow = await db.get("SELECT COUNT(*) as total_orders, COALESCE(SUM(total), 0) as total_revenue FROM orders");
+    const pendingOrdersRow = await db.get("SELECT COUNT(*) as pending_count FROM orders WHERE status = 'pending'");
+    const booksCountRow = await db.get("SELECT COUNT(*) as total_books, COALESCE(SUM(stock), 0) as total_stock, COALESCE(SUM(price * stock), 0) as inventory_value FROM books");
+    const lowStockRow = await db.get("SELECT COUNT(*) as low_stock_count FROM books WHERE stock < 20");
+    const usersCountRow = await db.get("SELECT COUNT(*) as total_users FROM users");
+    const reviewsCountRow = await db.get("SELECT COUNT(*) as total_reviews FROM reviews");
+
+    return res.json({
+      success: true,
+      stats: {
+        totalRevenue: Number(ordersCountRow?.total_revenue) || 0,
+        totalOrders: Number(ordersCountRow?.total_orders) || 0,
+        pendingOrders: Number(pendingOrdersRow?.pending_count) || 0,
+        totalBooks: Number(booksCountRow?.total_books) || 0,
+        totalStock: Number(booksCountRow?.total_stock) || 0,
+        inventoryValue: Number(booksCountRow?.inventory_value) || 0,
+        lowStockCount: Number(lowStockRow?.low_stock_count) || 0,
+        totalUsers: Number(usersCountRow?.total_users) || 0,
+        totalReviews: Number(reviewsCountRow?.total_reviews) || 0
+      }
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * 9. POST /api/auth/logout
  */
 router.post("/logout", (req, res) => {
   return res.json({

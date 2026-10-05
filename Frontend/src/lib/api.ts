@@ -537,6 +537,65 @@ export const api = {
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Failed to generate invoice");
     return data.data;
+  },
+
+  // Admin Management Endpoints
+  async getAllCustomers(): Promise<any[]> {
+    try {
+      const res = await fetch(getApiEndpoint("/api/auth/all-customers"));
+      const data = await res.json();
+      return data.data || [];
+    } catch {
+      return [];
+    }
+  },
+
+  async getAllCustomerAddresses(): Promise<any[]> {
+    try {
+      const res = await fetch(getApiEndpoint("/api/auth/all-addresses"));
+      const data = await res.json();
+      return data.data || [];
+    } catch {
+      return [];
+    }
+  },
+
+  async getAllReviews(): Promise<any[]> {
+    try {
+      const res = await fetch(getApiEndpoint("/api/auth/all-reviews"));
+      const data = await res.json();
+      return data.data || [];
+    } catch {
+      return [];
+    }
+  },
+
+  async deleteReview(reviewId: number): Promise<{ success: boolean; message: string }> {
+    const res = await fetch(getApiEndpoint(`/api/auth/reviews/${reviewId}`), { method: "DELETE" });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to delete review");
+    return data;
+  },
+
+  async getDashboardStats(): Promise<any> {
+    try {
+      const res = await fetch(getApiEndpoint("/api/auth/dashboard-stats"));
+      const data = await res.json();
+      return data.stats || null;
+    } catch {
+      return null;
+    }
+  },
+
+  async updateBookStock(bookId: number, stock: number): Promise<{ success: boolean; stock: number }> {
+    const res = await fetch(getApiEndpoint(`/api/books/${bookId}/stock`), {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ stock })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to update stock");
+    return data;
   }
 };
 
