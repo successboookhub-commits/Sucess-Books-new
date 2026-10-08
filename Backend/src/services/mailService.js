@@ -9,8 +9,8 @@ function getTransporter() {
   if (!transporter) {
     const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
     const smtpPort = Number(process.env.SMTP_PORT) || 465;
-    const smtpUser = process.env.SMTP_USER || "successboookhub@gmail.com";
-    const smtpPass = (process.env.SMTP_PASS || "").replace(/\s+/g, "");
+    const smtpUser = (process.env.SMTP_USER || "successboookhub@gmail.com").trim().toLowerCase();
+    const smtpPass = (process.env.SMTP_PASS || "").replace(/\s+/g, "").toLowerCase();
 
     transporter = nodemailer.createTransport({
       host: smtpHost,
