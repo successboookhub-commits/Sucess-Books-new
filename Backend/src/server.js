@@ -175,8 +175,8 @@ function getFallbackHTML() {
     path.resolve(process.cwd(), "public/assets"),
     path.resolve(__dirname, "../public/assets")
   ];
-  let mainJs = "/assets/index-DkCLDKCT.js";
-  let mainCss = "/assets/styles-CDeqP0g7.css";
+  let mainJs = "/assets/index-Cbod-kzG.js";
+  let mainCss = "/assets/styles-CNTOsDpc.css";
 
   for (const assetDir of assetCandidates) {
     if (fs.existsSync(assetDir)) {
