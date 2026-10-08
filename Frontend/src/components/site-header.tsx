@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
 import {
   BookOpen,
@@ -39,11 +39,19 @@ import { toast } from "sonner";
 const navLinks = [
   { to: "/", label: "Home" },
   { to: "/shop", label: "Shop" },
+  { to: "/faq", label: "FAQ" },
   { to: "/about", label: "About Us" },
   { to: "/contact", label: "Contact" },
 ] as const;
 
 export function SiteHeader() {
+  const routerState = useRouterState();
+  const currentPath = routerState?.location?.pathname || "/";
+  const isLinkActive = (to: string) => {
+    if (to === "/") return currentPath === "/";
+    return currentPath === to || currentPath.startsWith(`${to}/`);
+  };
+
   const { cartCount, cartOpen, setCartOpen } = useCart();
   const { wishlistCount, wishlistOpen, setWishlistOpen } = useWishlist();
   const { user, isAuthenticated: isUserLoggedIn, openLoginModal, logout: userLogout } = useUserAuth();
@@ -64,74 +72,91 @@ export function SiteHeader() {
 
   return (
     <>
-      {/* Announcement Banner */}
-      <div className="bg-primary px-4 py-2 text-center text-xs font-semibold text-primary-foreground sm:text-sm">
-        <span>Free delivery on orders above ₹499</span>
-        <span className="mx-2 opacity-50">•</span>
-        <span>Order directly online or via WhatsApp</span>
-        <span className="mx-2 hidden opacity-50 sm:inline">•</span>
-        <span className="mt-1 flex items-center justify-center gap-1.5 sm:mt-0 sm:inline-flex">
-          <Phone className="h-3 w-3" /> {STORE.phone}
-        </span>
+      {/* Top Announcement Banner (Scrolls away with page) */}
+      <div className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-400 px-3 py-1.5 sm:py-2 text-center text-xs font-bold text-slate-950 sm:text-sm shadow-xs border-b border-amber-300 overflow-hidden">
+        <div className="mx-auto flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 max-w-7xl text-[11px] sm:text-xs">
+          <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+            <Sparkles className="h-3.5 w-3.5 fill-slate-950 text-slate-950 shrink-0" />
+            Free delivery over ₹499
+          </span>
+          <span className="hidden sm:inline opacity-40">•</span>
+          <span className="hidden sm:inline whitespace-nowrap">Direct Online & WhatsApp Orders</span>
+          <span className="hidden sm:inline opacity-40">•</span>
+          <a href={`tel:${STORE.phone.replace(/[^\d+]/g, "")}`} className="inline-flex items-center gap-1 whitespace-nowrap hover:underline">
+            <Phone className="h-3 w-3 shrink-0" /> {STORE.phone}
+          </a>
+        </div>
       </div>
 
-      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+      {/* Main Navigation Header (Permanently Sticky at top on scroll) */}
+      <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-md shadow-sm">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-1.5 sm:gap-4 px-2.5 sm:px-6 lg:px-8 py-2 sm:py-3">
           {/* Logo & Branding */}
-          <Link to="/" className="flex min-w-0 items-center gap-2.5 sm:gap-3" aria-label="Success Book Hub home">
-            <span className="grid h-9 w-9 sm:h-10 sm:w-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow-sm">
+          <Link to="/" className="flex min-w-0 items-center gap-2 sm:gap-3 flex-shrink" aria-label="Success Book Hub home">
+            <span className="grid h-8 w-8 sm:h-10 sm:w-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow-xs font-bold ring-2 ring-primary/20">
               <BookOpen className="h-4 w-4 sm:h-5 sm:w-5" />
             </span>
-            <span className="min-w-0">
-              <strong className="block truncate font-display text-base text-primary sm:text-xl font-bold">
+            <span className="min-w-0 overflow-hidden">
+              <strong className="block truncate font-display text-sm sm:text-xl font-bold tracking-tight text-foreground leading-tight">
                 {STORE.name}
               </strong>
-              <span className="block text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              <span className="hidden sm:block text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 truncate">
                 {STORE.tagline}
               </span>
             </span>
           </Link>
 
-          {/* Navigation Links */}
-          <nav className="hidden items-center gap-1 lg:flex" aria-label="Main navigation">
-            {navLinks.map((link) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                activeOptions={{ exact: link.to === "/" }}
-                className="rounded-full px-3.5 py-1.5 text-xs sm:text-sm font-semibold text-muted-foreground transition hover:text-primary"
-                activeProps={{ className: "bg-secondary text-primary hover:text-primary" }}
-              >
-                {link.label}
-              </Link>
-            ))}
+          {/* Navigation Links with Hardcover Book Tab Aesthetic */}
+          <nav className="hidden items-center gap-1.5 lg:flex" aria-label="Main navigation">
+            {navLinks.map((link) => {
+              const active = isLinkActive(link.to);
+              return (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  activeOptions={{ exact: link.to === "/" }}
+                  className={`group relative inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm transition-all duration-200 select-none ${
+                    active
+                      ? "rounded-r-md rounded-l-xs bg-gradient-to-r from-amber-100 via-amber-50 to-amber-100 dark:from-amber-950/80 dark:via-amber-900/50 dark:to-amber-950/80 text-amber-950 dark:text-amber-100 font-bold border border-amber-300/90 dark:border-amber-700/60 border-l-[3.5px] border-l-amber-600 dark:border-l-amber-400 shadow-xs ring-1 ring-amber-400/20"
+                      : "rounded-md font-semibold text-muted-foreground hover:text-foreground hover:bg-amber-100/50 dark:hover:bg-amber-950/30"
+                  }`}
+                >
+                  {/* Silk Red Ribbon Bookmark peaking from top edge of book */}
+                  {active && (
+                    <span
+                      className="absolute -top-1 left-2.5 h-2.5 w-1.5 bg-red-600 dark:bg-red-500 rounded-b-xs shadow-2xs pointer-events-none"
+                      aria-hidden="true"
+                    />
+                  )}
+
+                  {/* Open Book Icon for active book tab */}
+                  {active ? (
+                    <BookOpen className="h-3.5 w-3.5 text-amber-700 dark:text-amber-400 shrink-0 animate-in zoom-in-75 duration-200" />
+                  ) : (
+                    <span className="h-1.5 w-1.5 rounded-full bg-border/80 group-hover:bg-amber-400 transition-colors" />
+                  )}
+
+                  <span className="tracking-tight">{link.label}</span>
+                </Link>
+              );
+            })}
           </nav>
 
           {/* Action Tools */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            {/* Track Order Button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setTrackerOpen(true)}
-              className="hidden sm:inline-flex rounded-full gap-1 text-xs text-muted-foreground hover:text-primary h-9 px-3"
-            >
-              <Package className="h-3.5 w-3.5" />
-              <span>Track</span>
-            </Button>
-
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             {/* Wishlist Button */}
             <Sheet open={wishlistOpen} onOpenChange={setWishlistOpen}>
               <SheetTrigger asChild>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="relative rounded-full h-9 px-2.5 text-muted-foreground hover:text-primary"
+                  className="relative rounded-full h-8.5 w-8.5 sm:h-9 sm:w-auto p-0 sm:px-2.5 text-muted-foreground hover:text-foreground hover:bg-secondary/60 justify-center"
                   title="My Wishlist"
+                  aria-label="View Wishlist"
                 >
                   <Heart className="h-4 w-4 text-red-500" />
                   {wishlistCount > 0 && (
-                    <span className="ml-1 grid h-4 min-w-4 place-items-center rounded-full bg-red-600 px-1 text-[9px] text-white font-bold">
+                    <span className="absolute -top-1 -right-1 sm:static sm:ml-1 grid h-4 min-w-4 place-items-center rounded-full bg-primary text-[9px] text-primary-foreground font-black shadow-xs px-1">
                       {wishlistCount}
                     </span>
                   )}
@@ -147,16 +172,17 @@ export function SiteHeader() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="rounded-full h-9 px-3 gap-1.5 text-xs font-semibold border-primary/30 bg-primary/5 text-primary hover:bg-primary/10"
+                    className="rounded-full h-8.5 w-8.5 sm:h-9 sm:w-auto p-0 sm:px-3 gap-1.5 text-xs font-bold border-amber-300 bg-amber-50/70 text-amber-950 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-700/50 justify-center"
+                    aria-label="User Account"
                   >
-                    <User className="h-3.5 w-3.5" />
-                    <span className="max-w-[80px] sm:max-w-[120px] truncate">
+                    <User className="h-3.5 w-3.5 text-amber-600" />
+                    <span className="hidden sm:inline max-w-[90px] truncate">
                       {user.name ? user.name.split(" ")[0] : "Account"}
                     </span>
-                    <ChevronDown className="h-3 w-3 opacity-60" />
+                    <ChevronDown className="h-3 w-3 opacity-60 hidden sm:inline" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 rounded-xl p-1.5 shadow-xl border-border">
+                <DropdownMenuContent align="end" className="w-56 rounded-xl p-1.5 shadow-xl border-border bg-card">
                   <DropdownMenuLabel className="font-normal px-2 py-1.5">
                     <div className="text-xs font-bold text-foreground truncate">{user.name || "Customer"}</div>
                     <div className="text-[11px] text-muted-foreground truncate">{user.email}</div>
@@ -164,19 +190,19 @@ export function SiteHeader() {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <Link to="/account" className="flex items-center gap-2 cursor-pointer text-xs py-2">
-                      <User className="h-3.5 w-3.5 text-primary" />
+                      <User className="h-3.5 w-3.5 text-amber-600" />
                       <span>My Dashboard & Profile</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link to="/account" search={{ tab: "orders" }} className="flex items-center gap-2 cursor-pointer text-xs py-2">
-                      <Package className="h-3.5 w-3.5 text-primary" />
+                      <Package className="h-3.5 w-3.5 text-amber-600" />
                       <span>My Orders & Invoices</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link to="/account" search={{ tab: "addresses" }} className="flex items-center gap-2 cursor-pointer text-xs py-2">
-                      <MapPin className="h-3.5 w-3.5 text-primary" />
+                      <MapPin className="h-3.5 w-3.5 text-amber-600" />
                       <span>Saved Addresses</span>
                     </Link>
                   </DropdownMenuItem>
@@ -202,10 +228,10 @@ export function SiteHeader() {
                 variant="outline"
                 size="sm"
                 onClick={openLoginModal}
-                className="rounded-full h-9 px-3 gap-1.5 text-xs font-semibold border-primary/20 text-primary hover:bg-primary/10"
+                className="hidden sm:inline-flex rounded-full h-9 px-3 gap-1.5 text-xs font-bold border-amber-300 bg-amber-50/50 text-amber-900 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-200"
               >
                 <User className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Sign In</span>
+                <span>Sign In</span>
               </Button>
             )}
 
@@ -215,11 +241,11 @@ export function SiteHeader() {
                 <Button
                   variant="default"
                   size="sm"
-                  className="rounded-full gap-1 text-xs bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 h-9 px-3"
+                  className="rounded-full gap-1 text-xs bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-9 px-3"
                   asChild
                 >
                   <Link to="/admin">
-                    <ShieldCheck className="h-3.5 w-3.5 text-amber-300" /> Admin
+                    <ShieldCheck className="h-3.5 w-3.5" /> Admin
                   </Link>
                 </Button>
                 <Button
@@ -237,11 +263,15 @@ export function SiteHeader() {
             {/* Cart Sheet Button */}
             <Sheet open={cartOpen} onOpenChange={setCartOpen}>
               <SheetTrigger asChild>
-                <Button variant="outline" className="relative h-9 rounded-full px-3.5 font-semibold text-xs gap-1.5">
+                <Button
+                  variant="default"
+                  className="relative h-8.5 sm:h-9 rounded-full px-2.5 sm:px-4 font-bold text-xs gap-1.5 bg-primary text-primary-foreground shadow-xs hover:bg-primary/90"
+                  aria-label="Shopping Bag"
+                >
                   <ShoppingBag className="h-4 w-4" />
                   <span className="hidden sm:inline">Bag</span>
                   {cartCount > 0 && (
-                    <span className="grid h-4.5 min-w-4.5 place-items-center rounded-full bg-primary px-1 text-[10px] text-primary-foreground font-bold">
+                    <span className="grid h-4.5 min-w-4.5 place-items-center rounded-full bg-slate-950 px-1 text-[10px] text-amber-300 font-black">
                       {cartCount}
                     </span>
                   )}
@@ -254,7 +284,7 @@ export function SiteHeader() {
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden h-9 w-9"
+              className="lg:hidden h-8.5 w-8.5 p-0 justify-center"
               onClick={() => setMenuOpen((open) => !open)}
               aria-label="Toggle menu"
             >
@@ -265,19 +295,33 @@ export function SiteHeader() {
 
         {/* Mobile Navigation Drawer */}
         {menuOpen && (
-          <nav className="border-t border-border px-4 py-3 lg:hidden space-y-1 bg-background" aria-label="Mobile navigation">
-            {navLinks.map((link) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                activeOptions={{ exact: link.to === "/" }}
-                onClick={() => setMenuOpen(false)}
-                className="block rounded-md px-3 py-2 text-sm font-semibold text-muted-foreground"
-                activeProps={{ className: "bg-secondary text-primary font-bold" }}
-              >
-                {link.label}
-              </Link>
-            ))}
+          <nav className="border-t border-border px-4 py-3 lg:hidden space-y-1.5 bg-background" aria-label="Mobile navigation">
+            {navLinks.map((link) => {
+              const active = isLinkActive(link.to);
+              return (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  activeOptions={{ exact: link.to === "/" }}
+                  onClick={() => setMenuOpen(false)}
+                  className={`relative flex items-center gap-2.5 px-3.5 py-2.5 text-sm transition-all select-none ${
+                    active
+                      ? "rounded-r-lg rounded-l-xs bg-gradient-to-r from-amber-100 via-yellow-50 to-amber-100 dark:from-amber-950/80 dark:via-amber-900/50 dark:to-amber-950/80 text-amber-950 dark:text-amber-100 font-bold border border-amber-300/90 dark:border-amber-700/60 border-l-[4px] border-l-amber-600 shadow-xs"
+                      : "rounded-md font-semibold text-muted-foreground hover:bg-amber-100/40 hover:text-foreground"
+                  }`}
+                >
+                  {active && (
+                    <span className="absolute -top-1 left-3 h-2.5 w-1.5 bg-red-600 rounded-b-xs shadow-2xs pointer-events-none" />
+                  )}
+                  {active ? (
+                    <BookOpen className="h-4 w-4 text-amber-700 dark:text-amber-400 shrink-0" />
+                  ) : (
+                    <span className="h-1.5 w-1.5 rounded-full bg-border" />
+                  )}
+                  <span>{link.label}</span>
+                </Link>
+              );
+            })}
 
             <div className="pt-2 border-t border-border/60 flex flex-col gap-1.5">
               {isUserLoggedIn ? (

@@ -275,7 +275,7 @@ function AccountPage() {
           </p>
           <Button
             onClick={openLoginModal}
-            className="w-full rounded-full py-6 text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg"
+            className="w-full rounded-full py-6 text-sm font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg btn-shimmer"
           >
             Sign In with Email & OTP
           </Button>
@@ -285,29 +285,29 @@ function AccountPage() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/20 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="min-h-screen bg-muted/20 py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto space-y-4">
         {/* User Greeting & Header Card */}
-        <div className="bg-gradient-to-r from-primary via-[#5a1224] to-[#3a0814] text-white p-6 sm:p-8 rounded-2xl shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-amber-400/30 text-white p-4 sm:p-6 rounded-2xl shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="h-16 w-16 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-amber-300 font-display text-2xl font-bold shadow-inner">
+            <div className="h-16 w-16 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center font-display text-2xl font-black shadow-md border-2 border-amber-300">
               {user.name ? user.name.charAt(0).toUpperCase() : "U"}
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="font-display text-2xl font-bold text-amber-100">
+                <h1 className="font-display text-2xl font-bold text-amber-300">
                   Hello, {user.name || "Book Lover"}!
                 </h1>
-                <span className="bg-white/20 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                <span className="bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
                   Verified Member
                 </span>
               </div>
-              <p className="text-white/80 text-xs mt-1 flex items-center gap-2">
-                <Mail className="h-3.5 w-3.5 opacity-70" /> {user.email}
+              <p className="text-slate-300 text-xs mt-1 flex items-center gap-2">
+                <Mail className="h-3.5 w-3.5 text-amber-400" /> {user.email}
                 {user.phone && (
                   <>
                     <span className="opacity-40">•</span>
-                    <Phone className="h-3.5 w-3.5 opacity-70" /> {user.phone}
+                    <Phone className="h-3.5 w-3.5 text-amber-400" /> {user.phone}
                   </>
                 )}
               </p>
@@ -318,14 +318,14 @@ function AccountPage() {
             variant="outline"
             size="sm"
             onClick={logout}
-            className="rounded-full bg-white/10 hover:bg-white/20 text-white border-white/30 text-xs gap-1.5"
+            className="rounded-full bg-white/10 hover:bg-white/20 text-white border-white/30 text-xs gap-1.5 font-bold"
           >
             <LogOut className="h-3.5 w-3.5" /> Sign Out
           </Button>
         </div>
 
         {/* Dashboard Navigation Tabs */}
-        <div className="flex items-center gap-2 border-b border-border pb-1 overflow-x-auto">
+        <div className="flex items-center gap-2 border-b border-border pb-1 overflow-x-auto scrollbar-none">
           {[
             { id: "orders", label: "My Orders & Invoices", icon: Package, count: orders.length },
             { id: "addresses", label: "Saved Addresses", icon: MapPin, count: addresses.length },
@@ -342,19 +342,19 @@ function AccountPage() {
                   navigate({ search: { tab: tab.id } });
                 }}
                 className={cn(
-                  "flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-xs sm:text-sm font-semibold transition border-b-2 whitespace-nowrap",
+                  "flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-xs sm:text-sm font-bold transition border-b-2 whitespace-nowrap",
                   isActive
-                    ? "border-primary text-primary bg-background shadow-sm"
+                    ? "border-primary text-slate-950 dark:text-amber-300 bg-amber-50/80 dark:bg-amber-950/30 shadow-2xs"
                     : "border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/40"
                 )}
               >
-                <Icon className={cn("h-4 w-4", isActive ? "text-primary" : "text-muted-foreground")} />
+                <Icon className={cn("h-4 w-4", isActive ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground")} />
                 <span>{tab.label}</span>
                 {tab.count !== undefined && (
                   <span
                     className={cn(
-                      "px-1.5 py-0.2 rounded-full text-[10px] font-bold",
-                      isActive ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                      "px-2 py-0.5 rounded-full text-[10px] font-black",
+                      isActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                     )}
                   >
                     {tab.count}

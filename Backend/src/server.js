@@ -38,6 +38,15 @@ const PORT = Number(process.env.PORT) || 5000;
 
 const app = express();
 
+// Security Headers (nosniff, frame protection, referrer policy)
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "SAMEORIGIN");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  next();
+});
+
 // Middleware
 app.use(cors({
   origin: "*",

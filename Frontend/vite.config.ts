@@ -8,6 +8,12 @@ import { nitro } from "nitro/vite";
 export default defineConfig(({ command }) => ({
   server: {
     port: 8080,
+    proxy: {
+      "/api": {
+        target: "http://localhost:5000",
+        changeOrigin: true,
+      },
+    },
   },
   plugins: [
     tailwindcss(),

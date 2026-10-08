@@ -100,9 +100,9 @@ export function WishlistSheet() {
                     <Button
                       size="sm"
                       onClick={() => handleMoveToCart(book)}
-                      className="flex-1 h-8 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium gap-1.5"
+                      className="flex-1 h-8.5 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold gap-1.5 whitespace-nowrap shadow-sm"
                     >
-                      <ShoppingBag className="h-3.5 w-3.5" />
+                      <ShoppingBag className="h-3.5 w-3.5 shrink-0" />
                       Move to Bag
                     </Button>
                     <button

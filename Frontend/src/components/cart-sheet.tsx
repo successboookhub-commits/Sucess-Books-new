@@ -252,20 +252,20 @@ export function CartSheet() {
 
         {/* Free Delivery Bar (Visible in Cart Step) */}
         {step === "cart" && cartBooks.length > 0 && (
-          <div className="bg-amber-500/10 border-b border-amber-500/20 px-5 py-2.5 flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2 text-amber-900 dark:text-amber-300">
-              <Truck className="h-4 w-4 text-amber-600" />
+          <div className="bg-gradient-to-r from-amber-100 via-yellow-100 to-amber-100 border-b border-amber-300/80 px-4 py-2.5 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2 text-slate-950 font-bold">
+              <Truck className="h-4 w-4 text-amber-700" />
               {awayFromFreeDelivery === 0 ? (
-                <span className="font-bold text-emerald-600">
+                <span className="font-black text-emerald-700">
                   🎉 Congratulations! You unlocked FREE Pan-India Delivery!
                 </span>
               ) : (
                 <span>
-                  Add <strong className="font-bold">₹{awayFromFreeDelivery}</strong> more for <strong className="text-primary font-bold">FREE Delivery</strong>
+                  Add <strong className="font-black text-amber-800">₹{awayFromFreeDelivery}</strong> more for <strong className="font-black text-slate-950 underline decoration-amber-500">FREE Delivery</strong>
                 </span>
               )}
             </div>
-            <span className="text-[10px] font-bold text-muted-foreground">
+            <span className="text-[10px] font-black text-amber-900 bg-amber-200/80 px-2 py-0.5 rounded-full">
               {freeDeliveryProgress}%
             </span>
           </div>
@@ -403,13 +403,13 @@ export function CartSheet() {
                     </div>
                     <div className="border-t border-border pt-2 flex justify-between font-bold text-base text-foreground">
                       <span>Final Payable Total:</span>
-                      <span className="text-primary font-mono text-lg">₹{total}</span>
+                      <span className="text-amber-700 dark:text-amber-400 font-mono text-xl font-black">₹{total}</span>
                     </div>
                   </div>
 
                   <Button
                     onClick={handleProceedToAddress}
-                    className="w-full rounded-xl py-6 text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg transition flex items-center justify-center gap-2"
+                    className="w-full rounded-xl py-6 text-sm font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-md transition flex items-center justify-center gap-2 btn-shimmer active:scale-[0.99]"
                   >
                     Proceed to Buy ({cartCount} {cartCount === 1 ? "Book" : "Books"})
                     <ChevronRight className="h-4 w-4" />
@@ -675,7 +675,7 @@ export function CartSheet() {
             {!showNewAddressForm && savedAddresses.length > 0 && (
               <Button
                 onClick={handleProceedToPayment}
-                className="w-full rounded-xl py-6 text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg transition flex items-center justify-center gap-2 mt-4"
+                className="w-full rounded-xl py-6 text-sm font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg transition flex items-center justify-center gap-2 mt-4 btn-shimmer"
               >
                 Continue to Payment
                 <ChevronRight className="h-4 w-4" />
@@ -793,7 +793,7 @@ export function CartSheet() {
             <Button
               onClick={handlePlaceOrder}
               disabled={submitting}
-              className="w-full rounded-xl py-6 text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg transition flex items-center justify-center gap-2"
+              className="w-full rounded-xl py-6 text-sm font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg transition flex items-center justify-center gap-2 btn-shimmer"
             >
               {submitting ? (
                 "Confirming Your Order..."

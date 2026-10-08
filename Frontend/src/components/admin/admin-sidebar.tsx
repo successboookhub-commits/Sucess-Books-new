@@ -151,10 +151,10 @@ export function AdminSidebar({
           </span>
           {!collapsed && (
             <div className="min-w-0">
-              <span className="block font-display font-bold text-sm tracking-tight text-primary truncate">
+              <span className="block font-display font-bold text-sm tracking-tight text-foreground truncate">
                 {STORE.name}
               </span>
-              <span className="block text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              <span className="block text-[10px] font-bold uppercase tracking-widest text-amber-600">
                 Admin Portal
               </span>
             </div>

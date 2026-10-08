@@ -69,84 +69,85 @@
 }
 
 :root {
-  --radius: 0.375rem;
-  --background: oklch(0.975 0.018 85);
-  --foreground: oklch(0.22 0.03 32);
+  --radius: 0.5rem;
+  --background: oklch(0.995 0.003 95);
+  --foreground: oklch(0.18 0.02 260);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
+  --card-foreground: oklch(0.18 0.02 260);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.31 0.12 20);
-  --primary-foreground: oklch(0.985 0.01 85);
-  --secondary: oklch(0.93 0.04 83);
-  --secondary-foreground: oklch(0.31 0.12 20);
-  --muted: oklch(0.94 0.025 82);
-  --muted-foreground: oklch(0.47 0.035 37);
-  --accent: oklch(0.84 0.105 78);
-  --accent-foreground: oklch(0.25 0.07 25);
+  --popover-foreground: oklch(0.18 0.02 260);
+  --primary: oklch(0.78 0.17 78);
+  --primary-foreground: oklch(0.14 0.02 260);
+  --secondary: oklch(0.96 0.04 95);
+  --secondary-foreground: oklch(0.28 0.10 75);
+  --muted: oklch(0.975 0.01 90);
+  --muted-foreground: oklch(0.48 0.02 260);
+  --accent: oklch(0.92 0.08 92);
+  --accent-foreground: oklch(0.18 0.02 260);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.84 0.038 74);
-  --input: oklch(0.84 0.038 74);
-  --ring: oklch(0.42 0.13 20);
-  --cream: oklch(0.975 0.018 85);
-  --cream-deep: oklch(0.915 0.048 79);
-  --maroon-soft: oklch(0.42 0.13 20);
+  --border: oklch(0.92 0.025 85);
+  --input: oklch(0.92 0.025 85);
+  --ring: oklch(0.78 0.17 78);
+  --cream: oklch(1 0 0);
+  --cream-deep: oklch(0.95 0.05 88);
+  --maroon-soft: oklch(0.70 0.15 70);
   --whatsapp: oklch(0.57 0.16 145);
-  --gold: oklch(0.71 0.13 75);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
+  --gold: oklch(0.80 0.18 85);
+  --chart-1: oklch(0.78 0.17 78);
+  --chart-2: oklch(0.70 0.15 70);
+  --chart-3: oklch(0.88 0.12 85);
+  --chart-4: oklch(0.60 0.14 60);
+  --chart-5: oklch(0.94 0.06 90);
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.18 0.02 260);
+  --sidebar-primary: oklch(0.78 0.17 78);
+  --sidebar-primary-foreground: oklch(0.14 0.02 260);
+  --sidebar-accent: oklch(0.96 0.04 95);
+  --sidebar-accent-foreground: oklch(0.18 0.02 260);
+  --sidebar-border: oklch(0.92 0.025 85);
+  --sidebar-ring: oklch(0.78 0.17 78);
 }
 
 .dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
+  --background: oklch(0.13 0.01 260);
+  --foreground: oklch(0.98 0.005 260);
+  --card: oklch(0.17 0.015 260);
+  --card-foreground: oklch(0.98 0.005 260);
+  --popover: oklch(0.17 0.015 260);
+  --popover-foreground: oklch(0.98 0.005 260);
+  --primary: oklch(0.82 0.18 85);
+  --primary-foreground: oklch(0.12 0.01 260);
+  --secondary: oklch(0.24 0.03 85);
+  --secondary-foreground: oklch(0.96 0.04 95);
+  --muted: oklch(0.22 0.015 260);
+  --muted-foreground: oklch(0.72 0.02 260);
+  --accent: oklch(0.26 0.035 85);
+  --accent-foreground: oklch(0.98 0.005 260);
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  --border: oklch(0.28 0.02 85 / 40%);
+  --input: oklch(0.28 0.02 85 / 40%);
+  --ring: oklch(0.82 0.18 85);
+  --chart-1: oklch(0.82 0.18 85);
+  --chart-2: oklch(0.70 0.15 70);
+  --chart-3: oklch(0.88 0.12 85);
+  --chart-4: oklch(0.60 0.14 60);
+  --chart-5: oklch(0.94 0.06 90);
+  --sidebar: oklch(0.17 0.015 260);
+  --sidebar-foreground: oklch(0.98 0.005 260);
+  --sidebar-primary: oklch(0.82 0.18 85);
+  --sidebar-primary-foreground: oklch(0.12 0.01 260);
+  --sidebar-accent: oklch(0.24 0.03 85);
+  --sidebar-accent-foreground: oklch(0.98 0.005 260);
+  --sidebar-border: oklch(0.28 0.02 85 / 40%);
+  --sidebar-ring: oklch(0.82 0.18 85);
 }
 
 @layer base {
   * {
     border-color: var(--color-border);
+    box-sizing: border-box;
   }
 
   body {
@@ -154,18 +155,195 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     letter-spacing: 0;
+    overflow-x: clip;
+    width: 100%;
   }
 
-  html { scroll-behavior: smooth; }
+  html {
+    scroll-behavior: smooth;
+    overflow-x: clip;
+  }
 
-  button, a, input, select { letter-spacing: 0; }
+  button, a, input, select, textarea {
+    letter-spacing: 0;
+  }
+
+  /* Prevent button squishing or overlapping across all viewports */
+  button, .btn {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
 }
 
 @utility paper-texture {
-  background-image: radial-gradient(circle at 1px 1px, color-mix(in oklab, var(--foreground) 8%, transparent) 1px, transparent 0);
-  background-size: 18px 18px;
+  background-image: radial-gradient(circle at 1px 1px, color-mix(in oklab, var(--primary) 12%, transparent) 1px, transparent 0);
+  background-size: 20px 20px;
 }
 
 @utility book-shadow {
-  box-shadow: 10px 12px 0 color-mix(in oklab, var(--primary) 13%, transparent);
+  box-shadow: 0 14px 28px -6px rgba(245, 158, 11, 0.22), 0 6px 14px -3px rgba(0, 0, 0, 0.06);
 }
+
+@utility gold-glow {
+  box-shadow: 0 0 25px -4px rgba(245, 158, 11, 0.35);
+}
+
+@utility yellow-gradient {
+  background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 50%, #F59E0B 100%);
+}
+
+@keyframes gold-shimmer {
+  0% { transform: skewX(-20deg) translateX(-150%); }
+  100% { transform: skewX(-20deg) translateX(350%); }
+}
+
+@keyframes float-gentle {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-7px); }
+}
+
+@keyframes pulse-gold {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+  50% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+}
+
+.btn-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-shimmer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  transform: skewX(-20deg) translateX(-150%);
+  pointer-events: none;
+}
+
+.btn-shimmer:hover::after {
+  animation: gold-shimmer 1.25s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float-gentle 4s ease-in-out infinite;
+}
+
+.pulse-gold {
+  animation: pulse-gold 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.book-card-hover {
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.28s ease;
+}
+
+.book-card-hover:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 16px 32px -8px rgba(245, 158, 11, 0.22), 0 6px 14px -3px rgba(0, 0, 0, 0.05);
+  border-color: rgba(245, 158, 11, 0.45);
+}
+
+.glass-gold {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+button:active, .btn:active {
+  transform: scale(0.975);
+  transition: transform 0.08s ease;
+}
+
+/* Accessibility: Visible focus rings on keyboard navigation */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Requirement 11: Support prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* 3D Realistic Book Flip System */
+.perspective-book {
+  perspective: 1600px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.origin-left-spine {
+  transform-origin: left center;
+}
+
+.origin-right-spine {
+  transform-origin: right center;
+}
+
+.book-gutter-shadow {
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.22) 0%, rgba(0, 0, 0, 0.08) 35%, transparent 100%);
+}
+
+.book-gutter-shadow-right {
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.22) 0%, rgba(0, 0, 0, 0.08) 35%, transparent 100%);
+}
+
+.page-stack-left {
+  box-shadow: -3px 4px 0 #e2e8f0, -6px 7px 0 #cbd5e1, -9px 10px 18px rgba(0, 0, 0, 0.12);
+}
+
+.dark .page-stack-left {
+  box-shadow: -3px 4px 0 #334155, -6px 7px 0 #1e293b, -9px 10px 18px rgba(0, 0, 0, 0.4);
+}
+
+.page-stack-right {
+  box-shadow: 3px 4px 0 #e2e8f0, 6px 7px 0 #cbd5e1, 9px 10px 18px rgba(0, 0, 0, 0.12);
+}
+
+.dark .page-stack-right {
+  box-shadow: 3px 4px 0 #334155, 6px 7px 0 #1e293b, 9px 10px 18px rgba(0, 0, 0, 0.4);
+}
+
+.ribbon-swallowtail {
+  clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 50% 88%, 0% 100%);
+}
+
+@keyframes pageFlipForward {
+  0% {
+    transform: rotateY(0deg);
+  }
+  100% {
+    transform: rotateY(-180deg);
+  }
+}
+
+@keyframes pageFlipBackward {
+  0% {
+    transform: rotateY(-180deg);
+  }
+  100% {
+    transform: rotateY(0deg);
+  }
+}
+
+
+
+

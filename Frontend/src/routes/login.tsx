@@ -151,12 +151,12 @@ function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-secondary/40 via-background to-background">
-      <div className="w-full max-w-md space-y-8">
+    <div className="min-h-[85vh] flex items-center justify-center py-6 sm:py-8 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-secondary/40 via-background to-background">
+      <div className="w-full max-w-md space-y-5 sm:space-y-6">
         {/* Top Branding Card */}
-        <div className="text-center space-y-3">
-          <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20 ring-4 ring-primary/10 mb-2">
-            <ShieldCheck className="h-8 w-8" />
+        <div className="text-center space-y-2.5">
+          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20 ring-4 ring-primary/10 mb-1">
+            <ShieldCheck className="h-7 w-7" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold font-display tracking-tight text-foreground">
             Admin Authentication
