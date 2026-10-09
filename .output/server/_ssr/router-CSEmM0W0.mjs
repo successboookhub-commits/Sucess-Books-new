@@ -20,7 +20,7 @@ import { t as Route$10 } from "./shop-CsDskRXS.mjs";
 import { t as QueryClientProvider } from "../_libs/tanstack__react-query.mjs";
 import { t as QueryClient } from "../_libs/tanstack__query-core.mjs";
 import { i as Trigger, n as List, r as Root2, t as Content } from "../_libs/radix-ui__react-tabs.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/router-CtR2Xyd4.js
+//#region node_modules/.nitro/vite/services/ssr/assets/router-CSEmM0W0.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 var styles_default = "/assets/styles-zOq_YHtb.css";
@@ -2514,7 +2514,8 @@ function UserLoginModal() {
 		setLoading(false);
 	};
 	(0, import_react.useEffect)(() => {
-		if (!loginModalOpen) {
+		if (loginModalOpen) setActiveTab("login");
+		else {
 			resetForms();
 			setActiveTab("login");
 		}

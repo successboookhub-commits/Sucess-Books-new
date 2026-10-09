@@ -77,9 +77,11 @@ export function UserLoginModal() {
     setLoading(false);
   };
 
-  // Clear all input data whenever modal opens/closes
+  // Clear all input data and guarantee Sign In tab whenever modal opens/closes
   useEffect(() => {
-    if (!loginModalOpen) {
+    if (loginModalOpen) {
+      setActiveTab("login");
+    } else {
       resetForms();
       setActiveTab("login");
     }
