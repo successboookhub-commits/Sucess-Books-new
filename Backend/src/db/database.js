@@ -882,8 +882,23 @@ async function setupSchema() {
     await autoMigrateColumns(tableName, def);
   }
 
-  // 3. Upgrade existing MySQL columns storing media/images to MEDIUMTEXT
+  // 3. Upgrade existing MySQL columns storing media/images to MEDIUMTEXT and apply direct column patches
   if (isMySQL && pool) {
+    const directColumnPatches = [
+      "ALTER TABLE `books` ADD COLUMN `publisher` VARCHAR(255) NULL",
+      "ALTER TABLE `orders` ADD COLUMN `user_id` INT NULL",
+      "ALTER TABLE `user_addresses` ADD COLUMN `user_id` INT NULL",
+      "ALTER TABLE `users` ADD COLUMN `status` VARCHAR(50) DEFAULT 'active'",
+      "ALTER TABLE `users` ADD COLUMN `role` VARCHAR(50) DEFAULT 'customer'"
+    ];
+    for (const q of directColumnPatches) {
+      try {
+        await pool.query(q);
+      } catch (err) {
+        // Column likely already exists
+      }
+    }
+
     const mediumTextUpgrades = [
       { table: "categories", column: "image" },
       { table: "sub_categories", column: "image" },
@@ -907,10 +922,9 @@ async function setupSchema() {
 async function autoMigrateColumns(tableName, def) {
   try {
     if (isMySQL && pool) {
-      const dbName = process.env.DB_NAME || "successbookhub";
       const [existingCols] = await pool.query(
-        `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?`,
-        [dbName, tableName]
+        `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?`,
+        [tableName]
       );
       const existingColNames = new Set(existingCols.map((c) => c.COLUMN_NAME.toLowerCase()));
 
@@ -918,8 +932,12 @@ async function autoMigrateColumns(tableName, def) {
         if (!existingColNames.has(col.name.toLowerCase())) {
           console.log(`[Auto-Migration] Adding missing column '${col.name}' to table '${tableName}' in MySQL...`);
           const cleanType = col.mysqlType.replace(/AUTO_INCREMENT|PRIMARY KEY/gi, "").trim();
-          await pool.query(`ALTER TABLE \`${tableName}\` ADD COLUMN \`${col.name}\` ${cleanType}`);
-          console.log(`[Auto-Migration] Successfully added column '${col.name}' to '${tableName}'.`);
+          try {
+            await pool.query(`ALTER TABLE \`${tableName}\` ADD COLUMN \`${col.name}\` ${cleanType}`);
+            console.log(`[Auto-Migration] Successfully added column '${col.name}' to '${tableName}'.`);
+          } catch (colErr) {
+            console.warn(`[Auto-Migration] MySQL note on '${col.name}' for '${tableName}':`, colErr.message);
+          }
         }
       }
     } else if (sqliteDb) {

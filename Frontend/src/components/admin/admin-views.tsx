@@ -54,8 +54,10 @@ import {
   Save,
   ToggleLeft,
   ToggleRight,
+  Upload,
   X
 } from "lucide-react";
+import { uploadImageToServer } from "@/lib/image-compress";
 import { type AdminSection } from "./admin-types";
 import { CategoryManager } from "./category-manager";
 import { SubCategoryManager } from "./subcategory-manager";
@@ -143,6 +145,8 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
   const [newLabel, setNewLabel] = useState("");
   const [newFeatured, setNewFeatured] = useState(false);
   const [savingBook, setSavingBook] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [uploadingImage2, setUploadingImage2] = useState(false);
 
   // Category, Author & Publisher filter states for Books Catalog
   const [catalogFilterCategory, setCatalogFilterCategory] = useState("All");
@@ -236,6 +240,54 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
       toast.success("Review deleted successfully.");
     } catch {
       toast.error("Failed to delete review.");
+    }
+  };
+
+  const handleCoverFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error("File size is too large (max 15MB)");
+      return;
+    }
+    setUploadingCover(true);
+    const toastId = toast.loading("Optimizing and uploading cover image...");
+    try {
+      const prefix = newTitle ? newTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 25) : "book-cover";
+      const uploadedUrl = await uploadImageToServer(file, prefix);
+      if (uploadedUrl) {
+        setNewCover(uploadedUrl);
+        toast.success("Cover image uploaded successfully!", { id: toastId });
+      }
+    } catch (err: any) {
+      toast.error("Failed to upload image: " + (err.message || "Unknown error"), { id: toastId });
+    } finally {
+      setUploadingCover(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleImage2FileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error("File size is too large (max 15MB)");
+      return;
+    }
+    setUploadingImage2(true);
+    const toastId = toast.loading("Optimizing and uploading secondary image...");
+    try {
+      const prefix = newTitle ? `${newTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 20)}-back` : "book-image2";
+      const uploadedUrl = await uploadImageToServer(file, prefix);
+      if (uploadedUrl) {
+        setNewImage2(uploadedUrl);
+        toast.success("Secondary image uploaded successfully!", { id: toastId });
+      }
+    } catch (err: any) {
+      toast.error("Failed to upload image: " + (err.message || "Unknown error"), { id: toastId });
+    } finally {
+      setUploadingImage2(false);
+      e.target.value = "";
     }
   };
 
@@ -1583,38 +1635,122 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
                   </div>
                 )}
 
-                {/* Images 1 & 2 Inputs + Previews */}
-                <div className="space-y-2 border-t border-border/60 pt-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Images 1 & 2 Inputs + Device File Upload & Previews */}
+                <div className="space-y-3 border-t border-border/60 pt-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Image 1: Main Cover */}
-                    <div className="space-y-1">
-                      <label className="font-bold block">Front Cover Image URL (Image 1) *</label>
-                      <input
-                        required
-                        value={newCover}
-                        onChange={(e) => setNewCover(e.target.value)}
-                        placeholder="https://images.unsplash.com/..."
-                        className="w-full h-9 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary text-foreground"
-                      />
-                      {newCover && (newCover.startsWith("http") || newCover.startsWith("/")) && (
-                        <div className="mt-1 h-20 w-16 rounded-md overflow-hidden border border-border shadow-xs">
-                          <img src={newCover} alt="Cover Preview" className="h-full w-full object-cover" />
+                    <div className="space-y-2 p-3 rounded-xl border border-border bg-secondary/30">
+                      <div className="flex items-center justify-between">
+                        <label className="font-bold text-foreground block">Front Cover Image (Image 1) *</label>
+                        {newCover && (
+                          <button
+                            type="button"
+                            onClick={() => setNewCover("")}
+                            className="text-[10px] text-destructive hover:underline font-semibold"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Device File Upload Button */}
+                      <div>
+                        <label className={cn(
+                          "w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary cursor-pointer transition text-xs font-bold shadow-2xs",
+                          uploadingCover && "opacity-50 pointer-events-none"
+                        )}>
+                          <Upload className={cn("h-4 w-4", uploadingCover && "animate-bounce")} />
+                          <span>{uploadingCover ? "Optimizing & Uploading..." : "Upload from Computer / Device"}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            disabled={uploadingCover}
+                            onChange={handleCoverFileUpload}
+                          />
+                        </label>
+                      </div>
+
+                      {/* Or URL input */}
+                      <div className="space-y-1">
+                        <span className="text-[10px] text-muted-foreground font-semibold block">Or paste direct image URL:</span>
+                        <input
+                          required
+                          value={newCover}
+                          onChange={(e) => setNewCover(e.target.value)}
+                          placeholder="https://images.unsplash.com/... or /uploads/..."
+                          className="w-full h-8 rounded-lg border border-border bg-background px-2.5 outline-none focus:border-primary text-foreground text-xs"
+                        />
+                      </div>
+
+                      {/* Live Cover Preview */}
+                      {newCover && (newCover.startsWith("http") || newCover.startsWith("/") || newCover.startsWith("data:image")) && (
+                        <div className="mt-1 flex items-center gap-3 p-2 rounded-lg bg-background border border-border/70">
+                          <div className="h-16 w-12 rounded-md overflow-hidden border border-border shadow-2xs shrink-0">
+                            <img src={newCover} alt="Cover Preview" className="h-full w-full object-cover" />
+                          </div>
+                          <div className="text-[10px] text-muted-foreground truncate">
+                            <p className="font-bold text-foreground">Front Cover Active</p>
+                            <p className="truncate">{newCover.slice(0, 45)}...</p>
+                          </div>
                         </div>
                       )}
                     </div>
 
                     {/* Image 2: Secondary / Inside Cover */}
-                    <div className="space-y-1">
-                      <label className="font-bold block">Second / Inside Image URL (Image 2 - Optional)</label>
-                      <input
-                        value={newImage2}
-                        onChange={(e) => setNewImage2(e.target.value)}
-                        placeholder="https://images.unsplash.com/..."
-                        className="w-full h-9 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary text-foreground"
-                      />
-                      {newImage2 && (newImage2.startsWith("http") || newImage2.startsWith("/")) && (
-                        <div className="mt-1 h-20 w-16 rounded-md overflow-hidden border border-border shadow-xs">
-                          <img src={newImage2} alt="Image 2 Preview" className="h-full w-full object-cover" />
+                    <div className="space-y-2 p-3 rounded-xl border border-border bg-secondary/30">
+                      <div className="flex items-center justify-between">
+                        <label className="font-bold text-foreground block">Inside / Secondary Image (Optional)</label>
+                        {newImage2 && (
+                          <button
+                            type="button"
+                            onClick={() => setNewImage2("")}
+                            className="text-[10px] text-destructive hover:underline font-semibold"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Device File Upload Button */}
+                      <div>
+                        <label className={cn(
+                          "w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-dashed border-border hover:border-primary/40 bg-background hover:bg-secondary text-foreground cursor-pointer transition text-xs font-semibold shadow-2xs",
+                          uploadingImage2 && "opacity-50 pointer-events-none"
+                        )}>
+                          <Upload className={cn("h-4 w-4 text-primary", uploadingImage2 && "animate-bounce")} />
+                          <span>{uploadingImage2 ? "Optimizing & Uploading..." : "Upload from Computer / Device"}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            disabled={uploadingImage2}
+                            onChange={handleImage2FileUpload}
+                          />
+                        </label>
+                      </div>
+
+                      {/* Or URL input */}
+                      <div className="space-y-1">
+                        <span className="text-[10px] text-muted-foreground font-semibold block">Or paste direct image URL:</span>
+                        <input
+                          value={newImage2}
+                          onChange={(e) => setNewImage2(e.target.value)}
+                          placeholder="https://images.unsplash.com/... or /uploads/..."
+                          className="w-full h-8 rounded-lg border border-border bg-background px-2.5 outline-none focus:border-primary text-foreground text-xs"
+                        />
+                      </div>
+
+                      {/* Live Image 2 Preview */}
+                      {newImage2 && (newImage2.startsWith("http") || newImage2.startsWith("/") || newImage2.startsWith("data:image")) && (
+                        <div className="mt-1 flex items-center gap-3 p-2 rounded-lg bg-background border border-border/70">
+                          <div className="h-16 w-12 rounded-md overflow-hidden border border-border shadow-2xs shrink-0">
+                            <img src={newImage2} alt="Image 2 Preview" className="h-full w-full object-cover" />
+                          </div>
+                          <div className="text-[10px] text-muted-foreground truncate">
+                            <p className="font-bold text-foreground">Secondary Image Active</p>
+                            <p className="truncate">{newImage2.slice(0, 45)}...</p>
+                          </div>
                         </div>
                       )}
                     </div>

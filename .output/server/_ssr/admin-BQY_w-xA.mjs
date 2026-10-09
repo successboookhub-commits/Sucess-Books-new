@@ -9,9 +9,9 @@ import { $ as Image$1, C as Save, Dt as BookOpen, E as Receipt, F as PanelLeftOp
 import { n as toast } from "../_libs/sonner.mjs";
 import { t as TaxInvoiceModal } from "./tax-invoice-modal-CfeHJugp.mjs";
 import { n as useAdminAuth } from "./auth-Bx5IPpeH.mjs";
-import { a as DropdownMenuSeparator, i as DropdownMenuLabel, n as DropdownMenuContent, o as DropdownMenuTrigger, r as DropdownMenuItem, s as Route, t as DropdownMenu } from "./admin-Dp8r0cTc.mjs";
+import { a as DropdownMenuSeparator, i as DropdownMenuLabel, n as DropdownMenuContent, o as DropdownMenuTrigger, r as DropdownMenuItem, s as Route, t as DropdownMenu } from "./admin-Bit5mkp3.mjs";
 import { i as Trigger, n as Portal, r as Root2, t as Content2 } from "../_libs/radix-ui__react-popover.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/admin-Bj5dGFPw.js
+//#region node_modules/.nitro/vite/services/ssr/assets/admin-BQY_w-xA.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 function AdminSidebar({ activeSection, onSelectSection, mobileOpen, onMobileClose, collapsed, onToggleCollapse, ordersCount = 0 }) {
@@ -2159,6 +2159,8 @@ function AdminViews({ activeSection, searchQuery, onNavigateSection }) {
 	const [newLabel, setNewLabel] = (0, import_react.useState)("");
 	const [newFeatured, setNewFeatured] = (0, import_react.useState)(false);
 	const [savingBook, setSavingBook] = (0, import_react.useState)(false);
+	const [uploadingCover, setUploadingCover] = (0, import_react.useState)(false);
+	const [uploadingImage2, setUploadingImage2] = (0, import_react.useState)(false);
 	const [catalogFilterCategory, setCatalogFilterCategory] = (0, import_react.useState)("All");
 	const [catalogActiveTab, setCatalogActiveTab] = (0, import_react.useState)("books");
 	const [catalogFilterAuthor, setCatalogFilterAuthor] = (0, import_react.useState)("All");
@@ -2234,6 +2236,50 @@ function AdminViews({ activeSection, searchQuery, onNavigateSection }) {
 			toast.success("Review deleted successfully.");
 		} catch {
 			toast.error("Failed to delete review.");
+		}
+	};
+	const handleCoverFileUpload = async (e) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+		if (file.size > 15728640) {
+			toast.error("File size is too large (max 15MB)");
+			return;
+		}
+		setUploadingCover(true);
+		const toastId = toast.loading("Optimizing and uploading cover image...");
+		try {
+			const uploadedUrl = await uploadImageToServer(file, newTitle ? newTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 25) : "book-cover");
+			if (uploadedUrl) {
+				setNewCover(uploadedUrl);
+				toast.success("Cover image uploaded successfully!", { id: toastId });
+			}
+		} catch (err) {
+			toast.error("Failed to upload image: " + (err.message || "Unknown error"), { id: toastId });
+		} finally {
+			setUploadingCover(false);
+			e.target.value = "";
+		}
+	};
+	const handleImage2FileUpload = async (e) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+		if (file.size > 15728640) {
+			toast.error("File size is too large (max 15MB)");
+			return;
+		}
+		setUploadingImage2(true);
+		const toastId = toast.loading("Optimizing and uploading secondary image...");
+		try {
+			const uploadedUrl = await uploadImageToServer(file, newTitle ? `${newTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 20)}-back` : "book-image2");
+			if (uploadedUrl) {
+				setNewImage2(uploadedUrl);
+				toast.success("Secondary image uploaded successfully!", { id: toastId });
+			}
+		} catch (err) {
+			toast.error("Failed to upload image: " + (err.message || "Unknown error"), { id: toastId });
+		} finally {
+			setUploadingImage2(false);
+			e.target.value = "";
 		}
 	};
 	const handleOpenAddBook = () => {
@@ -3744,52 +3790,132 @@ function AdminViews({ activeSection, searchQuery, onNavigateSection }) {
 									})]
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-									className: "space-y-2 border-t border-border/60 pt-3",
+									className: "space-y-3 border-t border-border/60 pt-3",
 									children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										className: "grid grid-cols-1 sm:grid-cols-2 gap-3",
+										className: "grid grid-cols-1 sm:grid-cols-2 gap-4",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											className: "space-y-1",
+											className: "space-y-2 p-3 rounded-xl border border-border bg-secondary/30",
 											children: [
-												/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
-													className: "font-bold block",
-													children: "Front Cover Image URL (Image 1) *"
+												/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+													className: "flex items-center justify-between",
+													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
+														className: "font-bold text-foreground block",
+														children: "Front Cover Image (Image 1) *"
+													}), newCover && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+														type: "button",
+														onClick: () => setNewCover(""),
+														className: "text-[10px] text-destructive hover:underline font-semibold",
+														children: "Clear"
+													})]
 												}),
-												/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-													required: true,
-													value: newCover,
-													onChange: (e) => setNewCover(e.target.value),
-													placeholder: "https://images.unsplash.com/...",
-													className: "w-full h-9 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary text-foreground"
+												/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+													className: cn("w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary cursor-pointer transition text-xs font-bold shadow-2xs", uploadingCover && "opacity-50 pointer-events-none"),
+													children: [
+														/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Upload, { className: cn("h-4 w-4", uploadingCover && "animate-bounce") }),
+														/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: uploadingCover ? "Optimizing & Uploading..." : "Upload from Computer / Device" }),
+														/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+															type: "file",
+															accept: "image/*",
+															className: "hidden",
+															disabled: uploadingCover,
+															onChange: handleCoverFileUpload
+														})
+													]
+												}) }),
+												/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+													className: "space-y-1",
+													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+														className: "text-[10px] text-muted-foreground font-semibold block",
+														children: "Or paste direct image URL:"
+													}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+														required: true,
+														value: newCover,
+														onChange: (e) => setNewCover(e.target.value),
+														placeholder: "https://images.unsplash.com/... or /uploads/...",
+														className: "w-full h-8 rounded-lg border border-border bg-background px-2.5 outline-none focus:border-primary text-foreground text-xs"
+													})]
 												}),
-												newCover && (newCover.startsWith("http") || newCover.startsWith("/")) && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-													className: "mt-1 h-20 w-16 rounded-md overflow-hidden border border-border shadow-xs",
-													children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
-														src: newCover,
-														alt: "Cover Preview",
-														className: "h-full w-full object-cover"
-													})
+												newCover && (newCover.startsWith("http") || newCover.startsWith("/") || newCover.startsWith("data:image")) && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+													className: "mt-1 flex items-center gap-3 p-2 rounded-lg bg-background border border-border/70",
+													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+														className: "h-16 w-12 rounded-md overflow-hidden border border-border shadow-2xs shrink-0",
+														children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
+															src: newCover,
+															alt: "Cover Preview",
+															className: "h-full w-full object-cover"
+														})
+													}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+														className: "text-[10px] text-muted-foreground truncate",
+														children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+															className: "font-bold text-foreground",
+															children: "Front Cover Active"
+														}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+															className: "truncate",
+															children: [newCover.slice(0, 45), "..."]
+														})]
+													})]
 												})
 											]
 										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											className: "space-y-1",
+											className: "space-y-2 p-3 rounded-xl border border-border bg-secondary/30",
 											children: [
-												/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
-													className: "font-bold block",
-													children: "Second / Inside Image URL (Image 2 - Optional)"
+												/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+													className: "flex items-center justify-between",
+													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
+														className: "font-bold text-foreground block",
+														children: "Inside / Secondary Image (Optional)"
+													}), newImage2 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+														type: "button",
+														onClick: () => setNewImage2(""),
+														className: "text-[10px] text-destructive hover:underline font-semibold",
+														children: "Clear"
+													})]
 												}),
-												/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-													value: newImage2,
-													onChange: (e) => setNewImage2(e.target.value),
-													placeholder: "https://images.unsplash.com/...",
-													className: "w-full h-9 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary text-foreground"
+												/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+													className: cn("w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-dashed border-border hover:border-primary/40 bg-background hover:bg-secondary text-foreground cursor-pointer transition text-xs font-semibold shadow-2xs", uploadingImage2 && "opacity-50 pointer-events-none"),
+													children: [
+														/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Upload, { className: cn("h-4 w-4 text-primary", uploadingImage2 && "animate-bounce") }),
+														/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: uploadingImage2 ? "Optimizing & Uploading..." : "Upload from Computer / Device" }),
+														/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+															type: "file",
+															accept: "image/*",
+															className: "hidden",
+															disabled: uploadingImage2,
+															onChange: handleImage2FileUpload
+														})
+													]
+												}) }),
+												/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+													className: "space-y-1",
+													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+														className: "text-[10px] text-muted-foreground font-semibold block",
+														children: "Or paste direct image URL:"
+													}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+														value: newImage2,
+														onChange: (e) => setNewImage2(e.target.value),
+														placeholder: "https://images.unsplash.com/... or /uploads/...",
+														className: "w-full h-8 rounded-lg border border-border bg-background px-2.5 outline-none focus:border-primary text-foreground text-xs"
+													})]
 												}),
-												newImage2 && (newImage2.startsWith("http") || newImage2.startsWith("/")) && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-													className: "mt-1 h-20 w-16 rounded-md overflow-hidden border border-border shadow-xs",
-													children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
-														src: newImage2,
-														alt: "Image 2 Preview",
-														className: "h-full w-full object-cover"
-													})
+												newImage2 && (newImage2.startsWith("http") || newImage2.startsWith("/") || newImage2.startsWith("data:image")) && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+													className: "mt-1 flex items-center gap-3 p-2 rounded-lg bg-background border border-border/70",
+													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+														className: "h-16 w-12 rounded-md overflow-hidden border border-border shadow-2xs shrink-0",
+														children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
+															src: newImage2,
+															alt: "Image 2 Preview",
+															className: "h-full w-full object-cover"
+														})
+													}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+														className: "text-[10px] text-muted-foreground truncate",
+														children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+															className: "font-bold text-foreground",
+															children: "Secondary Image Active"
+														}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+															className: "truncate",
+															children: [newImage2.slice(0, 45), "..."]
+														})]
+													})]
 												})
 											]
 										})]

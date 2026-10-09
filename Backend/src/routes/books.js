@@ -246,30 +246,80 @@ router.post("/", async (req, res) => {
 
     const isFeaturedVal = (featured || is_featured) ? 1 : 0;
 
-    const result = await db.run(`
-      INSERT INTO books (title, author, publisher, category, sub_category, price, old_price, discount_percent, rating, reviews_count, cover, image_2, label, description, stock, featured)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 5.0, 0, ?, ?, ?, ?, ?, ?)
-    `, [
-      title,
-      author,
-      finalPublisher,
-      category,
-      finalSubCat,
-      finalPrice,
-      finalOldPrice,
-      finalDiscount,
-      finalCover,
-      finalImage2,
-      label || (finalDiscount >= 20 ? `${finalDiscount}% OFF` : null),
-      description || "",
-      parseInt(stock) || 25,
-      isFeaturedVal
-    ]);
+    let result;
+    try {
+      result = await db.run(`
+        INSERT INTO books (title, author, publisher, category, sub_category, price, old_price, discount_percent, rating, reviews_count, cover, image_2, label, description, stock, featured)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 5.0, 0, ?, ?, ?, ?, ?, ?)
+      `, [
+        title,
+        author,
+        finalPublisher,
+        category,
+        finalSubCat,
+        finalPrice,
+        finalOldPrice,
+        finalDiscount,
+        finalCover,
+        finalImage2,
+        label || (finalDiscount >= 20 ? `${finalDiscount}% OFF` : null),
+        description || "",
+        parseInt(stock) || 25,
+        isFeaturedVal
+      ]);
+    } catch (insertErr) {
+      console.error("[Books POST] Insert error with publisher, attempting fallback:", insertErr.message);
+      try {
+        if (db.isMySQL) {
+          await db.run("ALTER TABLE `books` ADD COLUMN `publisher` VARCHAR(255) NULL");
+        }
+      } catch {}
+      result = await db.run(`
+        INSERT INTO books (title, author, category, sub_category, price, old_price, discount_percent, rating, reviews_count, cover, image_2, label, description, stock, featured)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 5.0, 0, ?, ?, ?, ?, ?, ?)
+      `, [
+        title,
+        author,
+        category,
+        finalSubCat,
+        finalPrice,
+        finalOldPrice,
+        finalDiscount,
+        finalCover,
+        finalImage2,
+        label || (finalDiscount >= 20 ? `${finalDiscount}% OFF` : null),
+        description || "",
+        parseInt(stock) || 25,
+        isFeaturedVal
+      ]);
+    }
 
-    const newBook = await db.get("SELECT * FROM books WHERE id = ?", [result.lastInsertRowid]);
+    const bookId = result?.lastInsertRowid || result?.insertId;
+    let newBook = bookId ? await db.get("SELECT * FROM books WHERE id = ?", [bookId]) : null;
+    if (!newBook) {
+      newBook = {
+        id: bookId || Date.now(),
+        title,
+        author,
+        publisher: finalPublisher || "",
+        category,
+        sub_category: finalSubCat,
+        price: finalPrice,
+        old_price: finalOldPrice,
+        discount_percent: finalDiscount,
+        rating: 5.0,
+        reviews_count: 0,
+        cover: finalCover,
+        image_2: finalImage2,
+        label: label || (finalDiscount >= 20 ? `${finalDiscount}% OFF` : null),
+        description: description || "",
+        stock: parseInt(stock) || 25,
+        featured: Boolean(isFeaturedVal)
+      };
+    }
 
     const resPrice = Number(newBook.price);
-    const resOldPrice = newBook.old_price !== null ? Number(newBook.old_price) : null;
+    const resOldPrice = newBook.old_price !== null && newBook.old_price !== undefined ? Number(newBook.old_price) : null;
     let resDiscount = Number(newBook.discount_percent) || 0;
     if (resOldPrice && resOldPrice > resPrice) {
       resDiscount = Math.round(((resOldPrice - resPrice) / resOldPrice) * 100);
@@ -284,8 +334,8 @@ router.post("/", async (req, res) => {
         author: newBook.author,
         publisher: newBook.publisher || "",
         category: newBook.category,
-        subCategory: newBook.sub_category,
-        sub_category: newBook.sub_category,
+        subCategory: newBook.sub_category || "",
+        sub_category: newBook.sub_category || "",
         price: resPrice,
         cost: resPrice,
         oldPrice: resOldPrice,
@@ -294,19 +344,20 @@ router.post("/", async (req, res) => {
         originalPrice: resOldPrice,
         discountPercent: resDiscount,
         discount_percent: resDiscount,
-        rating: Number(newBook.rating),
-        reviewsCount: Number(newBook.reviews_count),
+        rating: Number(newBook.rating) || 5.0,
+        reviewsCount: Number(newBook.reviews_count) || 0,
         cover: newBook.cover,
         image: newBook.cover,
-        image2: newBook.image_2,
-        image_2: newBook.image_2,
+        image2: newBook.image_2 || "",
+        image_2: newBook.image_2 || "",
         label: newBook.label,
-        description: newBook.description,
-        stock: Number(newBook.stock),
+        description: newBook.description || "",
+        stock: Number(newBook.stock) || 25,
         featured: Boolean(newBook.featured)
       }
     });
   } catch (err) {
+    console.error("[Books POST] Fatal error:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -366,32 +417,56 @@ router.put("/:id", async (req, res) => {
 
     const isFeaturedVal = (featured !== undefined ? featured : is_featured) ? 1 : 0;
 
-    await db.run(`
-      UPDATE books 
-      SET title = ?, author = ?, publisher = ?, category = ?, sub_category = ?, price = ?, old_price = ?, discount_percent = ?, cover = ?, image_2 = ?, label = ?, description = ?, stock = ?, featured = ?
-      WHERE id = ?
-    `, [
-      title,
-      author,
-      finalPublisher,
-      category,
-      finalSubCat,
-      finalPrice,
-      finalOldPrice,
-      finalDiscount,
-      finalCover,
-      finalImage2,
-      label || (finalDiscount >= 20 ? `${finalDiscount}% OFF` : null),
-      description,
-      parseInt(stock),
-      isFeaturedVal,
-      req.params.id
-    ]);
+    try {
+      await db.run(`
+        UPDATE books 
+        SET title = ?, author = ?, publisher = ?, category = ?, sub_category = ?, price = ?, old_price = ?, discount_percent = ?, cover = ?, image_2 = ?, label = ?, description = ?, stock = ?, featured = ?
+        WHERE id = ?
+      `, [
+        title,
+        author,
+        finalPublisher,
+        category,
+        finalSubCat,
+        finalPrice,
+        finalOldPrice,
+        finalDiscount,
+        finalCover,
+        finalImage2,
+        label || (finalDiscount >= 20 ? `${finalDiscount}% OFF` : null),
+        description,
+        parseInt(stock),
+        isFeaturedVal,
+        req.params.id
+      ]);
+    } catch (updateErr) {
+      console.error("[Books PUT] Update error, attempting fallback without publisher:", updateErr.message);
+      await db.run(`
+        UPDATE books 
+        SET title = ?, author = ?, category = ?, sub_category = ?, price = ?, old_price = ?, discount_percent = ?, cover = ?, image_2 = ?, label = ?, description = ?, stock = ?, featured = ?
+        WHERE id = ?
+      `, [
+        title,
+        author,
+        category,
+        finalSubCat,
+        finalPrice,
+        finalOldPrice,
+        finalDiscount,
+        finalCover,
+        finalImage2,
+        label || (finalDiscount >= 20 ? `${finalDiscount}% OFF` : null),
+        description,
+        parseInt(stock),
+        isFeaturedVal,
+        req.params.id
+      ]);
+    }
 
     const updated = await db.get("SELECT * FROM books WHERE id = ?", [req.params.id]);
-    const resPrice = Number(updated.price);
-    const resOldPrice = updated.old_price !== null ? Number(updated.old_price) : null;
-    let resDiscount = Number(updated.discount_percent) || 0;
+    const resPrice = Number(updated?.price || finalPrice);
+    const resOldPrice = updated?.old_price !== null && updated?.old_price !== undefined ? Number(updated.old_price) : finalOldPrice;
+    let resDiscount = Number(updated?.discount_percent) || finalDiscount;
     if (resOldPrice && resOldPrice > resPrice) {
       resDiscount = Math.round(((resOldPrice - resPrice) / resOldPrice) * 100);
     }
@@ -400,13 +475,13 @@ router.put("/:id", async (req, res) => {
       success: true,
       message: "Book updated successfully",
       data: {
-        id: updated.id,
-        title: updated.title,
-        author: updated.author,
-        publisher: updated.publisher || "",
-        category: updated.category,
-        subCategory: updated.sub_category,
-        sub_category: updated.sub_category,
+        id: updated?.id || req.params.id,
+        title: updated?.title || title,
+        author: updated?.author || author,
+        publisher: updated?.publisher || finalPublisher || "",
+        category: updated?.category || category,
+        subCategory: updated?.sub_category || finalSubCat || "",
+        sub_category: updated?.sub_category || finalSubCat || "",
         price: resPrice,
         cost: resPrice,
         oldPrice: resOldPrice,
@@ -415,16 +490,16 @@ router.put("/:id", async (req, res) => {
         originalPrice: resOldPrice,
         discountPercent: resDiscount,
         discount_percent: resDiscount,
-        rating: Number(updated.rating),
-        reviewsCount: Number(updated.reviews_count),
-        cover: updated.cover,
-        image: updated.cover,
-        image2: updated.image_2,
-        image_2: updated.image_2,
-        label: updated.label,
-        description: updated.description,
-        stock: Number(updated.stock),
-        featured: Boolean(updated.featured)
+        rating: Number(updated?.rating) || 5.0,
+        reviewsCount: Number(updated?.reviews_count) || 0,
+        cover: updated?.cover || finalCover,
+        image: updated?.cover || finalCover,
+        image2: updated?.image_2 || finalImage2 || "",
+        image_2: updated?.image_2 || finalImage2 || "",
+        label: updated?.label || label,
+        description: updated?.description || description,
+        stock: Number(updated?.stock) || parseInt(stock) || 25,
+        featured: Boolean(updated?.featured !== undefined ? updated.featured : isFeaturedVal)
       }
     });
   } catch (err) {

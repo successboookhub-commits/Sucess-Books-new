@@ -118,7 +118,7 @@ async function getSSRModule() {
 app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
-    version: "2.8.0-catalog-author-publisher-integration",
+    version: "2.9.0-fix-books-post-image-upload",
     service: "Success Book Hub API",
     dbEngine: db.isMySQL ? "MySQL (phpMyAdmin)" : "SQLite (Local)",
     dbHost: db.activeHost || null,
