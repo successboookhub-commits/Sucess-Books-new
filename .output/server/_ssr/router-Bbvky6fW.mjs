@@ -20,7 +20,7 @@ import { t as Route$10 } from "./shop-CsDskRXS.mjs";
 import { t as QueryClientProvider } from "../_libs/tanstack__react-query.mjs";
 import { t as QueryClient } from "../_libs/tanstack__query-core.mjs";
 import { i as Trigger, n as List, r as Root2, t as Content } from "../_libs/radix-ui__react-tabs.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/router-DFH8-9JC.js
+//#region node_modules/.nitro/vite/services/ssr/assets/router-Bbvky6fW.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 var styles_default = "/assets/styles-zOq_YHtb.css";
@@ -2493,6 +2493,32 @@ function UserLoginModal() {
 	const [isExistingOtpUser, setIsExistingOtpUser] = (0, import_react.useState)(false);
 	const [countdown, setCountdown] = (0, import_react.useState)(0);
 	const [loading, setLoading] = (0, import_react.useState)(false);
+	const resetForms = () => {
+		setLoginEmail("");
+		setLoginPassword("");
+		setShowLoginPassword(false);
+		setRegName("");
+		setRegPhone("");
+		setRegEmail("");
+		setRegPassword("");
+		setRegConfirmPassword("");
+		setShowRegPassword(false);
+		setShowRegConfirmPassword(false);
+		setOtpStep("email");
+		setOtpEmail("");
+		setOtpCode("");
+		setOtpName("");
+		setOtpPhone("");
+		setIsExistingOtpUser(false);
+		setCountdown(0);
+		setLoading(false);
+	};
+	(0, import_react.useEffect)(() => {
+		if (!loginModalOpen) {
+			resetForms();
+			setActiveTab("login");
+		}
+	}, [loginModalOpen]);
 	(0, import_react.useEffect)(() => {
 		let timer;
 		if (countdown > 0) timer = setTimeout(() => setCountdown((c) => c - 1), 1e3);
@@ -2501,19 +2527,8 @@ function UserLoginModal() {
 	const handleOpenChange = (open) => {
 		if (!open) {
 			closeLoginModal();
-			setTimeout(() => {
-				setActiveTab("login");
-				setLoginEmail("");
-				setLoginPassword("");
-				setRegName("");
-				setRegPhone("");
-				setRegEmail("");
-				setRegPassword("");
-				setRegConfirmPassword("");
-				setOtpStep("email");
-				setOtpCode("");
-				setLoading(false);
-			}, 300);
+			resetForms();
+			setActiveTab("login");
 		}
 	};
 	const handlePasswordLogin = async (e) => {
@@ -2532,6 +2547,7 @@ function UserLoginModal() {
 				email: loginEmail.trim().toLowerCase(),
 				password: loginPassword
 			});
+			resetForms();
 		} catch (err) {
 			toast.error(err instanceof Error ? err.message : "Invalid email or password.");
 		} finally {
@@ -2569,6 +2585,7 @@ function UserLoginModal() {
 				password: regPassword,
 				confirmPassword: regConfirmPassword
 			});
+			resetForms();
 		} catch (err) {
 			toast.error(err instanceof Error ? err.message : "Registration failed. Please try again.");
 		} finally {
@@ -2607,6 +2624,7 @@ function UserLoginModal() {
 		setLoading(true);
 		try {
 			await verifyOtp(otpEmail.trim().toLowerCase(), otpCode.trim(), otpName.trim(), otpPhone.trim());
+			resetForms();
 		} catch (err) {
 			toast.error(err instanceof Error ? err.message : "Invalid or expired OTP code.");
 		} finally {

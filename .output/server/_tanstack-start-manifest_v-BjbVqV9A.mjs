@@ -1,4 +1,4 @@
-//#region node_modules/.nitro/vite/services/ssr/assets/_tanstack-start-manifest_v-BfVrMSeD.js
+//#region node_modules/.nitro/vite/services/ssr/assets/_tanstack-start-manifest_v-BjbVqV9A.js
 var tsrStartManifest = () => ({ routes: {
 	__root__: {
 		filePath: "D:/Freelancing/Sucessbookhub/Frontend/src/routes/__root.tsx",
@@ -15,7 +15,7 @@ var tsrStartManifest = () => ({ routes: {
 			"/terms"
 		],
 		preloads: [
-			"/assets/index-Djah4i65.js",
+			"/assets/index-C-Bw3DI3.js",
 			"/assets/createLucideIcon-B0PJLGQl.js",
 			"/assets/link-C0Ue2dSg.js",
 			"/assets/preload-helper-iHvirpW0.js",
@@ -51,7 +51,7 @@ var tsrStartManifest = () => ({ routes: {
 		scripts: [{ attrs: {
 			type: "module",
 			async: !0,
-			src: "/assets/index-Djah4i65.js"
+			src: "/assets/index-C-Bw3DI3.js"
 		} }]
 	},
 	"/": {

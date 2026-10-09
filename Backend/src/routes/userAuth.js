@@ -267,6 +267,21 @@ router.post("/send-otp", async (req, res) => {
     }
 
     const existingUser = await db.get("SELECT * FROM users WHERE email = ?", [rawEmail]);
+    if (!existingUser) {
+      return res.status(404).json({
+        success: false,
+        notRegistered: true,
+        message: "No registered account found with this email. Please create an account first."
+      });
+    }
+
+    if (existingUser.status === "blocked" || existingUser.status === "suspended") {
+      return res.status(403).json({
+        success: false,
+        message: "Your account is inactive or suspended. Please contact customer support."
+      });
+    }
+
     const userName = existingUser?.name || "";
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -285,7 +300,7 @@ router.post("/send-otp", async (req, res) => {
       success: true,
       message: `A 6-digit verification code has been sent to ${rawEmail}. Please check your inbox.`,
       email: rawEmail,
-      isExistingUser: Boolean(existingUser && existingUser.name)
+      isExistingUser: true
     });
   } catch (err) {
     console.error("[User Auth Error] Failed to send OTP:", err);
@@ -298,19 +313,33 @@ router.post("/send-otp", async (req, res) => {
 
 /**
  * 5. POST /api/user/auth/verify-otp
- * Verifies OTP and registers or logs in customer, issuing a 30-day JWT token
+ * Verifies OTP and logs in existing customer, issuing a 30-day JWT token
  */
 router.post("/verify-otp", async (req, res) => {
   try {
     const rawEmail = req.body.email ? String(req.body.email).trim().toLowerCase() : "";
     const otp = req.body.otp ? String(req.body.otp).trim() : "";
-    const providedName = req.body.name ? String(req.body.name).trim() : "";
-    const providedPhone = req.body.phone ? String(req.body.phone).trim() : "";
 
     if (!rawEmail || !otp) {
       return res.status(400).json({
         success: false,
         message: "Email and OTP code are required."
+      });
+    }
+
+    const user = await db.get("SELECT * FROM users WHERE email = ?", [rawEmail]);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        notRegistered: true,
+        message: "No registered account found with this email. Please create an account first."
+      });
+    }
+
+    if (user.status === "blocked" || user.status === "suspended") {
+      return res.status(403).json({
+        success: false,
+        message: "Your account is inactive or suspended. Please contact customer support."
       });
     }
 
@@ -338,21 +367,6 @@ router.post("/verify-otp", async (req, res) => {
     }
 
     await db.run("UPDATE user_otps SET used = 1 WHERE id = ?", [record.id]);
-
-    let user = await db.get("SELECT * FROM users WHERE email = ?", [rawEmail]);
-    if (!user) {
-      const result = await db.run(
-        "INSERT INTO users (name, email, phone, role, status) VALUES (?, ?, ?, 'customer', 'active')",
-        [providedName || null, rawEmail, providedPhone || null]
-      );
-      user = await db.get("SELECT * FROM users WHERE id = ?", [result.lastInsertRowid]);
-    } else if ((providedName && !user.name) || (providedPhone && !user.phone)) {
-      await db.run(
-        "UPDATE users SET name = COALESCE(?, name), phone = COALESCE(?, phone) WHERE id = ?",
-        [providedName || user.name, providedPhone || user.phone, user.id]
-      );
-      user = await db.get("SELECT * FROM users WHERE id = ?", [user.id]);
-    }
 
     const token = generateUserToken({
       id: user.id,

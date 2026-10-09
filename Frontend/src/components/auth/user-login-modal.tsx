@@ -56,6 +56,35 @@ export function UserLoginModal() {
 
   const [loading, setLoading] = useState(false);
 
+  const resetForms = () => {
+    setLoginEmail("");
+    setLoginPassword("");
+    setShowLoginPassword(false);
+    setRegName("");
+    setRegPhone("");
+    setRegEmail("");
+    setRegPassword("");
+    setRegConfirmPassword("");
+    setShowRegPassword(false);
+    setShowRegConfirmPassword(false);
+    setOtpStep("email");
+    setOtpEmail("");
+    setOtpCode("");
+    setOtpName("");
+    setOtpPhone("");
+    setIsExistingOtpUser(false);
+    setCountdown(0);
+    setLoading(false);
+  };
+
+  // Clear all input data whenever modal opens/closes
+  useEffect(() => {
+    if (!loginModalOpen) {
+      resetForms();
+      setActiveTab("login");
+    }
+  }, [loginModalOpen]);
+
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (countdown > 0) {
@@ -68,19 +97,8 @@ export function UserLoginModal() {
   const handleOpenChange = (open: boolean) => {
     if (!open) {
       closeLoginModal();
-      setTimeout(() => {
-        setActiveTab("login");
-        setLoginEmail("");
-        setLoginPassword("");
-        setRegName("");
-        setRegPhone("");
-        setRegEmail("");
-        setRegPassword("");
-        setRegConfirmPassword("");
-        setOtpStep("email");
-        setOtpCode("");
-        setLoading(false);
-      }, 300);
+      resetForms();
+      setActiveTab("login");
     }
   };
 
@@ -102,6 +120,7 @@ export function UserLoginModal() {
         email: loginEmail.trim().toLowerCase(),
         password: loginPassword
       });
+      resetForms();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Invalid email or password.");
     } finally {
@@ -142,6 +161,7 @@ export function UserLoginModal() {
         password: regPassword,
         confirmPassword: regConfirmPassword
       });
+      resetForms();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Registration failed. Please try again.");
     } finally {
@@ -160,12 +180,23 @@ export function UserLoginModal() {
     setLoading(true);
     try {
       const res = await sendOtp(otpEmail.trim().toLowerCase());
-      setIsExistingOtpUser(Boolean(res.isExistingUser));
+      setIsExistingOtpUser(true);
       setOtpStep("code");
       setCountdown(60);
       toast.success(res.message || "OTP passcode sent to your inbox!");
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to send OTP.");
+      const msg = err instanceof Error ? err.message : "Failed to send OTP.";
+      toast.error(msg);
+      // If user is not registered, automatically redirect to register tab with prefilled email
+      if (
+        msg.toLowerCase().includes("register") ||
+        msg.toLowerCase().includes("not found") ||
+        msg.toLowerCase().includes("create an account") ||
+        msg.toLowerCase().includes("no account")
+      ) {
+        setRegEmail(otpEmail.trim().toLowerCase());
+        setActiveTab("register");
+      }
     } finally {
       setLoading(false);
     }
@@ -179,14 +210,10 @@ export function UserLoginModal() {
       return;
     }
 
-    if (!isExistingOtpUser && (!otpName.trim() || !otpPhone.trim())) {
-      toast.error("Please provide your full name and phone number to complete account setup.");
-      return;
-    }
-
     setLoading(true);
     try {
-      await verifyOtp(otpEmail.trim().toLowerCase(), otpCode.trim(), otpName.trim(), otpPhone.trim());
+      await verifyOtp(otpEmail.trim().toLowerCase(), otpCode.trim());
+      resetForms();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Invalid or expired OTP code.");
     } finally {
@@ -596,40 +623,6 @@ export function UserLoginModal() {
                       autoFocus
                     />
                   </div>
-
-                  {!isExistingOtpUser && (
-                    <div className="space-y-3 pt-2 border-t border-border">
-                      <div className="text-xs font-medium text-foreground">
-                        Profile details for your new account:
-                      </div>
-                      <div>
-                        <div className="relative">
-                          <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <input
-                            type="text"
-                            required
-                            value={otpName}
-                            onChange={(e) => setOtpName(e.target.value)}
-                            placeholder="Your Full Name"
-                            className="w-full pl-10 pr-4 py-2 rounded-xl border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <div className="relative">
-                          <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <input
-                            type="tel"
-                            required
-                            value={otpPhone}
-                            onChange={(e) => setOtpPhone(e.target.value)}
-                            placeholder="10-digit Mobile Number"
-                            className="w-full pl-10 pr-4 py-2 rounded-xl border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
 
                   <div className="flex items-center justify-between text-xs pt-1">
                     <span className="text-muted-foreground">Didn't receive code?</span>
