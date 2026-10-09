@@ -72,24 +72,24 @@ export function SiteHeader() {
 
   return (
     <>
-      {/* Top Announcement Banner (Scrolls away with page) */}
-      <div className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-400 px-3 py-1.5 sm:py-2 text-center text-xs font-bold text-slate-950 sm:text-sm shadow-xs border-b border-amber-300 overflow-hidden">
-        <div className="mx-auto flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 max-w-7xl text-[11px] sm:text-xs">
-          <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-            <Sparkles className="h-3.5 w-3.5 fill-slate-950 text-slate-950 shrink-0" />
-            Free delivery over ₹499
-          </span>
-          <span className="hidden sm:inline opacity-40">•</span>
-          <span className="hidden sm:inline whitespace-nowrap">Direct Online & WhatsApp Orders</span>
-          <span className="hidden sm:inline opacity-40">•</span>
-          <a href={`tel:${STORE.phone.replace(/[^\d+]/g, "")}`} className="inline-flex items-center gap-1 whitespace-nowrap hover:underline">
-            <Phone className="h-3 w-3 shrink-0" /> {STORE.phone}
-          </a>
-        </div>
-      </div>
-
       {/* Main Navigation Header (Permanently Sticky at top on scroll) */}
-      <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-md shadow-sm">
+      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur-md shadow-sm transition-all">
+        {/* Top Announcement Banner */}
+        <div className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-400 px-3 py-1.5 sm:py-2 text-center text-xs font-bold text-slate-950 sm:text-sm shadow-xs border-b border-amber-300 overflow-hidden">
+          <div className="mx-auto flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 max-w-7xl text-[11px] sm:text-xs">
+            <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+              <Sparkles className="h-3.5 w-3.5 fill-slate-950 text-slate-950 shrink-0" />
+              Free delivery over ₹499
+            </span>
+            <span className="hidden sm:inline opacity-40">•</span>
+            <span className="hidden sm:inline whitespace-nowrap">Direct Online & WhatsApp Orders</span>
+            <span className="hidden sm:inline opacity-40">•</span>
+            <a href={`tel:${STORE.phone.replace(/[^\d+]/g, "")}`} className="inline-flex items-center gap-1 whitespace-nowrap hover:underline">
+              <Phone className="h-3 w-3 shrink-0" /> {STORE.phone}
+            </a>
+          </div>
+        </div>
+
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-1.5 sm:gap-4 px-2.5 sm:px-6 lg:px-8 py-2 sm:py-3">
           {/* Logo & Branding */}
           <Link to="/" className="flex min-w-0 items-center gap-2 sm:gap-3 flex-shrink" aria-label="Success Book Hub home">
@@ -189,7 +189,7 @@ export function SiteHeader() {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link to="/account" className="flex items-center gap-2 cursor-pointer text-xs py-2">
+                    <Link to="/account" search={{ tab: "profile" }} className="flex items-center gap-2 cursor-pointer text-xs py-2">
                       <User className="h-3.5 w-3.5 text-amber-600" />
                       <span>My Dashboard & Profile</span>
                     </Link>
@@ -228,10 +228,12 @@ export function SiteHeader() {
                 variant="outline"
                 size="sm"
                 onClick={openLoginModal}
-                className="hidden sm:inline-flex rounded-full h-9 px-3 gap-1.5 text-xs font-bold border-amber-300 bg-amber-50/50 text-amber-900 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-200"
+                className="rounded-full h-8.5 w-8.5 sm:h-9 sm:w-auto p-0 sm:px-3 gap-1.5 text-xs font-bold border-amber-300 bg-amber-50/50 text-amber-900 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-200 justify-center"
+                title="Sign In / My Dashboard"
+                aria-label="User Account"
               >
-                <User className="h-3.5 w-3.5" />
-                <span>Sign In</span>
+                <User className="h-3.5 w-3.5 text-amber-700" />
+                <span className="hidden sm:inline">Sign In</span>
               </Button>
             )}
 

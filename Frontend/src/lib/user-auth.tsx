@@ -15,7 +15,7 @@ interface UserAuthContextType {
   closeLoginModal: () => void;
   loginWithPassword: (payload: { email: string; password: string }) => Promise<void>;
   registerWithPassword: (payload: { name: string; phone: string; email: string; password: string; confirmPassword?: string }) => Promise<void>;
-  changePassword: (payload: { currentPassword?: string; newPassword: string; confirmPassword?: string }) => Promise<void>;
+  changePassword: (payload: { currentPassword?: string | undefined; newPassword: string; confirmPassword?: string | undefined }) => Promise<void>;
   sendOtp: (email: string) => Promise<{ success: boolean; message: string; isExistingUser?: boolean }>;
   verifyOtp: (email: string, otp: string, name?: string, phone?: string) => Promise<void>;
   updateProfile: (data: { name?: string; phone?: string; avatar?: string }) => Promise<void>;
@@ -97,7 +97,7 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const changePassword = async (payload: { currentPassword?: string; newPassword: string; confirmPassword?: string }) => {
+  const changePassword = async (payload: { currentPassword?: string | undefined; newPassword: string; confirmPassword?: string | undefined }) => {
     if (!token) throw new Error("Please log in first.");
     const res = await api.changeUserPassword(token, payload);
     if (res.success) {

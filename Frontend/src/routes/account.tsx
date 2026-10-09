@@ -24,6 +24,7 @@ import {
   Lock,
   Eye,
   EyeOff,
+  BookOpen,
   RotateCcw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -37,9 +38,9 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/account")({
-  validateSearch: (search: Record<string, unknown>) => {
+  validateSearch: (search: Record<string, unknown>): { tab?: string | undefined } => {
     return {
-      tab: (search.tab as string) || "orders",
+      tab: typeof search["tab"] === "string" ? search["tab"] : undefined,
     };
   },
   component: AccountPage,
@@ -395,7 +396,7 @@ function AccountPage() {
                 key={tab.id}
                 onClick={() => {
                   setActiveTab(tab.id as any);
-                  navigate({ search: { tab: tab.id } });
+                  navigate({ to: "/account", search: { tab: tab.id } });
                 }}
                 className={cn(
                   "flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-xs sm:text-sm font-bold transition border-b-2 whitespace-nowrap",

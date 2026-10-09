@@ -20,14 +20,18 @@ export type Book = {
   price: number;
   oldPrice?: number | null | undefined;
   old_price?: number | null | undefined;
+  mrp?: number | null | undefined;
+  originalPrice?: number | null | undefined;
   discountPercent?: number | undefined;
   discount_percent?: number | undefined;
   rating: number;
   reviewsCount?: number | undefined;
   cover: string;
+  image?: string | undefined;
   image2?: string | undefined;
   image_2?: string | undefined;
   label?: string | null | undefined;
+  badge?: string | undefined;
   description?: string | undefined;
   stock?: number | undefined;
   featured?: boolean | undefined;

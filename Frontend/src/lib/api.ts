@@ -419,7 +419,7 @@ export const api = {
     return data;
   },
 
-  async changeUserPassword(token: string, payload: { currentPassword?: string; newPassword: string; confirmPassword?: string }): Promise<{ success: boolean; message: string }> {
+  async changeUserPassword(token: string, payload: { currentPassword?: string | undefined; newPassword: string; confirmPassword?: string | undefined }): Promise<{ success: boolean; message: string }> {
     const res = await fetch(getApiEndpoint("/api/user/auth/change-password"), {
       method: "POST",
       headers: {
@@ -941,15 +941,15 @@ export type UserAddress = {
 export type AddressInput = {
   fullName: string;
   phone: string;
-  alternatePhone?: string;
+  alternatePhone?: string | undefined;
   pincode: string;
   flatHouse: string;
   areaStreet: string;
-  landmark?: string;
+  landmark?: string | undefined;
   city: string;
-  state?: string;
-  addressType?: "Home" | "Work" | "Other";
-  isDefault?: boolean;
+  state?: string | undefined;
+  addressType?: "Home" | "Work" | "Other" | undefined;
+  isDefault?: boolean | undefined;
 };
 
 export type TaxInvoiceData = {
