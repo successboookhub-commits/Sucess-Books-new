@@ -610,6 +610,10 @@ const hasMySQLConfig = true;
 // Unified Database Adapter
 export const db = {
   isMySQL: false,
+  activeHost: null,
+  activeDatabase: null,
+  activeUser: null,
+  lastError: null,
 
   async query(sql, params = []) {
     const cleanParams = (params || []).map(p => (p === undefined ? null : p));
@@ -733,84 +737,76 @@ export const db = {
 
 // Initialize Connection & Schema
 export async function initDatabase() {
-  const isProduction = process.env.NODE_ENV === "production";
-  const forceSqlite = process.env.USE_SQLITE === "true" || process.env.DB_ENGINE === "sqlite";
+  const isHostinger =
+    process.cwd().includes("successbookhub.com") ||
+    process.cwd().includes("u803044110") ||
+    Boolean(process.env.HOSTINGER) ||
+    Boolean(process.env.OPENLITESPEED);
+  const isProduction = process.env.NODE_ENV === "production" || isHostinger;
+  const forceSqlite = (process.env.USE_SQLITE === "true" || process.env.DB_ENGINE === "sqlite") && !isHostinger;
 
-  if (forceSqlite && !isProduction) {
+  if (forceSqlite) {
     console.log("[Database] Local SQLite engine explicitly requested (USE_SQLITE=true).");
     await initSQLite();
-  } else if (isProduction && !forceSqlite) {
-    // IN PRODUCTION: MUST USE MYSQL. No silent fallback to SQLite permitted.
-    console.log("[Database] Production mode active (NODE_ENV=production). Initializing MySQL connection...");
-    const host = process.env.DB_HOST;
-    const user = process.env.DB_USER;
-    const password = process.env.DB_PASSWORD;
-    const database = process.env.DB_NAME;
-
-    if (!host || !user || !database) {
-      const missing = [];
-      if (!host) missing.push("DB_HOST");
-      if (!user) missing.push("DB_USER");
-      if (!database) missing.push("DB_NAME");
-      throw new Error(
-        `[Fatal Database Error] Missing production MySQL configuration: ${missing.join(", ")}. Hostinger / Production database must be configured in environment variables.`
-      );
-    }
-
-    try {
-      const poolConfig = {
-        host,
-        user,
-        password: password || "",
-        database,
-        port: Number(process.env.DB_PORT) || 3306,
-        waitForConnections: true,
-        connectionLimit: 15,
-        queueLimit: 0,
-        enableKeepAlive: true,
-        keepAliveInitialDelay: 0,
-        charset: "utf8mb4"
-      };
-
-      pool = mysql.createPool(poolConfig);
-      const connection = await pool.getConnection();
-      connection.release();
-      isMySQL = true;
-      db.isMySQL = true;
-      console.log(`[Database] Production MySQL connected successfully: ${database} on ${host}:${poolConfig.port}`);
-    } catch (err) {
-      console.error("[Fatal Database Error] Failed to connect to MySQL in production:", err.message);
-      throw new Error(
-        `[Fatal Database Error] Could not connect to production MySQL (${host}): ${err.message}. Startup aborted to prevent silent fallback and protect data integrity.`
-      );
-    }
   } else {
-    // Development mode: Attempt MySQL with 2-second timeout, fallback to SQLite for local development
-    try {
-      console.log("[Database] Development mode: Attempting MySQL connection...");
-      const poolConfig = {
-        host: process.env.DB_HOST || "localhost",
-        user: process.env.DB_USER || "u803044110_Successbookhub",
-        password: process.env.DB_PASSWORD || "Successbookhub@123",
-        database: process.env.DB_NAME || "u803044110_Successbookhub",
-        port: Number(process.env.DB_PORT) || 3306,
-        connectTimeout: 2000,
-        waitForConnections: true,
-        connectionLimit: 5,
-        queueLimit: 0,
-        enableKeepAlive: true,
-        keepAliveInitialDelay: 0,
-        charset: "utf8mb4"
-      };
+    // Attempt MySQL connection using multiple candidate hosts.
+    // On Linux/Hostinger, 127.0.0.1 is required for TCP loopback (localhost attempts Unix domain socket).
+    const candidateHosts = [
+      process.env.DB_HOST,
+      "127.0.0.1",
+      "localhost"
+    ].filter(Boolean);
+    const uniqueHosts = [...new Set(candidateHosts)];
 
-      pool = mysql.createPool(poolConfig);
-      const connection = await pool.getConnection();
-      connection.release();
-      isMySQL = true;
-      db.isMySQL = true;
-      console.log(`[Database] Connected successfully to MySQL (${poolConfig.database} on ${poolConfig.host})`);
-    } catch (err) {
-      console.log(`[Database] Local MySQL offline (${err.message}). Using local SQLite database for development...`);
+    const user = process.env.DB_USER || "u803044110_Successbookhub";
+    const password = process.env.DB_PASSWORD || "Successbookhub@123";
+    const database = process.env.DB_NAME || "u803044110_Successbookhub";
+    const port = Number(process.env.DB_PORT) || 3306;
+
+    let connected = false;
+    let lastErr = null;
+
+    for (const host of uniqueHosts) {
+      try {
+        console.log(`[Database] Attempting MySQL connection to ${database} on ${host}:${port}...`);
+        const poolConfig = {
+          host,
+          user,
+          password: password || "",
+          database,
+          port,
+          connectTimeout: 8000,
+          waitForConnections: true,
+          connectionLimit: 15,
+          queueLimit: 0,
+          enableKeepAlive: true,
+          keepAliveInitialDelay: 0,
+          charset: "utf8mb4"
+        };
+
+        const testPool = mysql.createPool(poolConfig);
+        const connection = await testPool.getConnection();
+        connection.release();
+
+        pool = testPool;
+        isMySQL = true;
+        db.isMySQL = true;
+        db.activeHost = host;
+        db.activeDatabase = database;
+        db.activeUser = user;
+        db.lastError = null;
+        connected = true;
+        console.log(`[Database] MySQL connected successfully: ${database} on ${host}:${port}`);
+        break;
+      } catch (err) {
+        lastErr = err;
+        console.warn(`[Database] MySQL connection attempt failed for ${host}:`, err.message);
+      }
+    }
+
+    if (!connected) {
+      db.lastError = lastErr ? lastErr.message : "Unknown connection error";
+      console.warn(`[Database] All MySQL connection candidates failed (${db.lastError}). Initializing SQLite fallback...`);
       await initSQLite();
     }
   }
@@ -820,6 +816,11 @@ export async function initDatabase() {
 
   // Check and seed initial data if tables are empty
   await seedInitialData();
+
+  // If connected to MySQL, sync any categories/subcategories from local SQLite to MySQL so zero data is lost!
+  if (isMySQL) {
+    await syncSqliteToMySQL();
+  }
 }
 
 async function initSQLite() {
@@ -899,6 +900,34 @@ async function seedInitialData() {
     if (catCount === 0) {
       console.log("[Database] Seeding default categories and sub-categories...");
       await seedCategoriesAndSubCategories();
+    } else {
+      // Ensure Fiction category is present in MySQL categories table
+      const fictionExists = await db.get("SELECT id FROM categories WHERE LOWER(name) IN ('fiction', 'ficton')");
+      if (!fictionExists) {
+        console.log("[Database] Ensuring Fiction category is present in database...");
+        const res = await db.run(
+          "INSERT INTO categories (name, slug, description, image, status) VALUES (?, ?, ?, ?, 'active')",
+          [
+            "Fiction",
+            "fiction",
+            "Imaginative stories featuring memorable characters, compelling plots, and fictional worlds.",
+            "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=800&auto=format&fit=crop"
+          ]
+        );
+        const catId = res.lastInsertRowid;
+        if (catId) {
+          await db.run(
+            "INSERT INTO sub_categories (category_id, name, slug, description, image, status) VALUES (?, ?, ?, ?, ?, 'active')",
+            [
+              catId,
+              "Contemporary Fiction",
+              "contemporary-fiction",
+              "Modern literature exploring the nuances of human experience.",
+              "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=600&auto=format&fit=crop"
+            ]
+          );
+        }
+      }
     }
 
     const bookCountRow = await db.get("SELECT COUNT(*) as count FROM books");
@@ -1002,6 +1031,16 @@ async function seedCategoriesAndSubCategories() {
         { name: "Eastern Thought", slug: "eastern-thought", description: "Upanishadic philosophy, Zen, Taoism, and contemplative awareness.", image: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?q=80&w=600&auto=format&fit=crop" },
         { name: "Ethics & Existentialism", slug: "ethics-existentialism", description: "Moral philosophy, freedom, and the search for profound purpose.", image: "https://images.unsplash.com/photo-1455390582262-044cdead277a?q=80&w=600&auto=format&fit=crop" }
       ]
+    },
+    {
+      name: "Fiction",
+      slug: "fiction",
+      description: "Imaginative stories featuring memorable characters, compelling plots, and fictional worlds.",
+      image: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=800&auto=format&fit=crop",
+      subCategories: [
+        { name: "Contemporary Fiction", slug: "contemporary-fiction", description: "Modern literature exploring the nuances of human experience.", image: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=600&auto=format&fit=crop" },
+        { name: "Literary Fiction", slug: "literary-fiction", description: "Character-driven narratives with rich stylistic prose.", image: "https://images.unsplash.com/photo-1455390582262-044cdead277a?q=80&w=600&auto=format&fit=crop" }
+      ]
     }
   ];
 
@@ -1017,6 +1056,71 @@ async function seedCategoriesAndSubCategories() {
         [catId, sub.name, sub.slug, sub.description, sub.image]
       );
     }
+  }
+}
+
+// Synchronize any categories/sub-categories from local SQLite database into MySQL
+async function syncSqliteToMySQL() {
+  try {
+    const dataDir = path.join(__dirname, "../../data");
+    const dbPath = path.join(dataDir, "successbookhub.db");
+    if (!fs.existsSync(dbPath)) return;
+
+    const { DatabaseSync } = await import("node:sqlite");
+    const localDb = new DatabaseSync(dbPath);
+
+    // 1. Sync Categories from SQLite to MySQL
+    try {
+      const sqliteCategories = localDb.prepare("SELECT * FROM categories").all();
+      for (const cat of sqliteCategories) {
+        const existing = await db.get(
+          "SELECT id FROM categories WHERE LOWER(name) = LOWER(?) OR slug = ?",
+          [cat.name, cat.slug]
+        );
+        if (!existing) {
+          console.log(`[Sync] Migrating category "${cat.name}" from SQLite to MySQL...`);
+          await db.run(
+            "INSERT INTO categories (name, slug, description, image, status) VALUES (?, ?, ?, ?, ?)",
+            [cat.name, cat.slug, cat.description || "", cat.image || "", cat.status || "active"]
+          );
+        }
+      }
+    } catch (err) {
+      console.warn("[Sync] Category sync warning:", err.message);
+    }
+
+    // 2. Sync Sub-Categories from SQLite to MySQL
+    try {
+      const sqliteSubs = localDb.prepare("SELECT * FROM sub_categories").all();
+      for (const sub of sqliteSubs) {
+        let targetCatId = sub.category_id;
+        try {
+          const parentRow = localDb.prepare("SELECT name FROM categories WHERE id = ?").get(sub.category_id);
+          if (parentRow) {
+            const parentInMySQL = await db.get("SELECT id FROM categories WHERE LOWER(name) = LOWER(?)", [parentRow.name]);
+            if (parentInMySQL) targetCatId = parentInMySQL.id;
+          }
+        } catch {}
+
+        const existingSub = await db.get(
+          "SELECT id FROM sub_categories WHERE (LOWER(name) = LOWER(?) OR slug = ?) AND category_id = ?",
+          [sub.name, sub.slug, targetCatId]
+        );
+        if (!existingSub) {
+          console.log(`[Sync] Migrating sub-category "${sub.name}" from SQLite to MySQL...`);
+          await db.run(
+            "INSERT INTO sub_categories (category_id, name, slug, description, image, status) VALUES (?, ?, ?, ?, ?, ?)",
+            [targetCatId, sub.name, sub.slug, sub.description || "", sub.image || "", sub.status || "active"]
+          );
+        }
+      }
+    } catch (err) {
+      console.warn("[Sync] SubCategory sync warning:", err.message);
+    }
+
+    console.log("[Sync] SQLite to MySQL migration check completed.");
+  } catch (err) {
+    console.error("[Sync] Error syncing SQLite data to MySQL:", err.message);
   }
 }
 

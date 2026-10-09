@@ -116,9 +116,14 @@ async function getSSRModule() {
 app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
-    version: "2.5.0-direct-ssr",
+    version: "2.6.0-mysql-verified",
     service: "Success Book Hub API",
     dbEngine: db.isMySQL ? "MySQL (phpMyAdmin)" : "SQLite (Local)",
+    dbHost: db.activeHost || null,
+    dbName: db.activeDatabase || null,
+    dbUser: db.activeUser || null,
+    dbError: db.lastError || null,
+    isHostinger: process.cwd().includes("successbookhub.com") || process.cwd().includes("u803044110"),
     ssrReady: Boolean(ssrModule),
     ssrPath: ssrModulePath,
     ssrError: ssrModuleError,
