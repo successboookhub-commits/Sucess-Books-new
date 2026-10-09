@@ -1,12 +1,14 @@
-import { Heart, ShoppingBag, Trash2, ArrowRight, BookOpen } from "lucide-react";
+import { Heart, ShoppingBag, Trash2, ArrowRight, User, LogIn } from "lucide-react";
 import { SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useWishlist } from "@/lib/wishlist";
 import { useCart } from "@/lib/cart";
+import { useUserAuth } from "@/lib/user-auth";
 import { Link } from "@tanstack/react-router";
 
 export function WishlistSheet() {
   const { wishlist, wishlistCount, removeFromWishlist, setWishlistOpen } = useWishlist();
+  const { isAuthenticated, openLoginModal } = useUserAuth();
   const { addToCart } = useCart();
 
   const handleMoveToCart = (book: any) => {
@@ -20,23 +22,57 @@ export function WishlistSheet() {
         <SheetTitle className="font-display text-2xl flex items-center gap-2">
           <Heart className="h-6 w-6 text-red-500 fill-red-500" />
           My Wishlist
-          <span className="text-xs font-normal text-muted-foreground ml-1">
-            ({wishlistCount} {wishlistCount === 1 ? "item" : "items"})
-          </span>
+          {isAuthenticated && (
+            <span className="text-xs font-normal text-muted-foreground ml-1">
+              ({wishlistCount} {wishlistCount === 1 ? "item" : "items"})
+            </span>
+          )}
         </SheetTitle>
         <SheetDescription className="text-xs text-muted-foreground">
-          Books you've saved for later. Move them to your bag anytime.
+          {isAuthenticated
+            ? "Books you've saved for later. Move them to your bag anytime."
+            : "Sign in to save books and sync your wishlist across all your devices."}
         </SheetDescription>
       </SheetHeader>
 
-      {wishlistCount === 0 ? (
+      {!isAuthenticated ? (
+        <div className="flex flex-1 flex-col items-center justify-center p-8 text-center space-y-4">
+          <div className="rounded-full bg-amber-500/10 p-6 text-amber-600 mb-1 border border-amber-300/40">
+            <Heart className="h-10 w-10 text-amber-600 stroke-[1.5]" />
+          </div>
+          <h3 className="font-display text-xl font-bold">Sign In to Save Your Wishlist</h3>
+          <p className="text-xs text-muted-foreground max-w-xs leading-relaxed">
+            Your wishlist is saved to your account. Sign in with email & OTP to keep track of books you want to read.
+          </p>
+          <div className="pt-2 w-full max-w-xs space-y-2">
+            <Button
+              onClick={() => {
+                setWishlistOpen(false);
+                openLoginModal();
+              }}
+              className="w-full rounded-full bg-primary hover:bg-primary/90 text-primary-foreground py-5 text-xs font-bold gap-2 shadow-md btn-shimmer cursor-pointer"
+            >
+              <LogIn className="h-4 w-4" />
+              Sign In with Email & OTP
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setWishlistOpen(false)}
+              asChild
+              className="w-full rounded-full border-border text-xs font-semibold"
+            >
+              <Link to="/shop">Browse Catalog</Link>
+            </Button>
+          </div>
+        </div>
+      ) : wishlistCount === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
           <div className="rounded-full bg-secondary/60 p-6 text-muted-foreground mb-4">
             <Heart className="h-10 w-10 text-muted-foreground stroke-[1.5]" />
           </div>
           <h3 className="font-display text-xl font-medium">Your Wishlist is Empty</h3>
           <p className="mt-2 text-xs text-muted-foreground max-w-xs leading-relaxed">
-            Explore our curated catalog and tap the heart icon to save your favorite books!
+            Explore our curated catalog and tap the heart icon on any book to save it here!
           </p>
           <Button
             onClick={() => setWishlistOpen(false)}
