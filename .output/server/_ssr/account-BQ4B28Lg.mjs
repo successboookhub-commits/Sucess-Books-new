@@ -10,8 +10,8 @@ import { A as Plus, G as Mail, J as Lock, K as LogOut, M as Phone, N as Pen, T a
 import { n as useWishlist } from "./wishlist-a-u1H06p.mjs";
 import { a as DialogTitle, i as DialogHeader, n as DialogContent, r as DialogDescription, t as Dialog } from "./dialog-C-FEQyPT.mjs";
 import { t as TaxInvoiceModal } from "./tax-invoice-modal-6TreJndk.mjs";
-import { t as Route } from "./account-TYIUKtex.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/account-Dn-dUNqM.js
+import { t as Route } from "./account-B29oZF5a.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/account-BQ4B28Lg.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 function AccountPage() {
@@ -44,10 +44,8 @@ function AccountPage() {
 	const [profileName, setProfileName] = (0, import_react.useState)("");
 	const [profilePhone, setProfilePhone] = (0, import_react.useState)("");
 	const [savingProfile, setSavingProfile] = (0, import_react.useState)(false);
-	const [currentPassword, setCurrentPassword] = (0, import_react.useState)("");
 	const [newPassword, setNewPassword] = (0, import_react.useState)("");
 	const [confirmNewPassword, setConfirmNewPassword] = (0, import_react.useState)("");
-	const [showCurrentPwd, setShowCurrentPwd] = (0, import_react.useState)(false);
 	const [showNewPwd, setShowNewPwd] = (0, import_react.useState)(false);
 	const [showConfirmNewPwd, setShowConfirmNewPwd] = (0, import_react.useState)(false);
 	const [savingPassword, setSavingPassword] = (0, import_react.useState)(false);
@@ -221,11 +219,9 @@ function AccountPage() {
 		setSavingPassword(true);
 		try {
 			await changePassword({
-				currentPassword: currentPassword || void 0,
 				newPassword,
 				confirmPassword: confirmNewPassword
 			});
-			setCurrentPassword("");
 			setNewPassword("");
 			setConfirmNewPassword("");
 		} catch (err) {
@@ -823,36 +819,14 @@ function AccountPage() {
 								className: "border-t border-border pt-6 space-y-4",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h3", {
 									className: "font-display text-lg font-bold flex items-center gap-2",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Lock, { className: "h-4 w-4 text-amber-600" }), "Account Security & Password"]
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Lock, { className: "h-4 w-4 text-amber-600" }), "Account Password Setup"]
 								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 									className: "text-xs text-muted-foreground",
-									children: "Set a new account password to sign in securely from any device"
+									children: "Set a password for your account to sign in securely from any device."
 								})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
 									onSubmit: handleChangePassword,
 									className: "space-y-3.5",
 									children: [
-										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
-											className: "block text-xs font-semibold text-muted-foreground mb-1",
-											children: "Current Password (Optional if newly registered)"
-										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											className: "relative",
-											children: [
-												/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Lock, { className: "absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" }),
-												/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-													type: showCurrentPwd ? "text" : "password",
-													value: currentPassword,
-													onChange: (e) => setCurrentPassword(e.target.value),
-													placeholder: "Enter current password",
-													className: "w-full pl-10 pr-11 py-2 rounded-xl border border-input bg-background text-xs text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
-												}),
-												/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-													type: "button",
-													onClick: () => setShowCurrentPwd(!showCurrentPwd),
-													className: "absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1",
-													children: showCurrentPwd ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(EyeOff, { className: "h-3.5 w-3.5" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Eye, { className: "h-3.5 w-3.5" })
-												})
-											]
-										})] }),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 											className: "grid grid-cols-1 sm:grid-cols-2 gap-3",
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
@@ -867,7 +841,7 @@ function AccountPage() {
 														required: true,
 														value: newPassword,
 														onChange: (e) => setNewPassword(e.target.value),
-														placeholder: "New password",
+														placeholder: "Enter new password",
 														className: "w-full pl-10 pr-11 py-2 rounded-xl border border-input bg-background text-xs text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
 													}),
 													/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
@@ -879,7 +853,7 @@ function AccountPage() {
 												]
 											})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
 												className: "block text-xs font-semibold text-muted-foreground mb-1",
-												children: "Confirm New Password"
+												children: "Again New Password (Confirm)"
 											}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 												className: "relative",
 												children: [
@@ -889,7 +863,7 @@ function AccountPage() {
 														required: true,
 														value: confirmNewPassword,
 														onChange: (e) => setConfirmNewPassword(e.target.value),
-														placeholder: "Re-type new password",
+														placeholder: "Re-enter new password",
 														className: "w-full pl-10 pr-11 py-2 rounded-xl border border-input bg-background text-xs text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
 													}),
 													/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
@@ -901,13 +875,17 @@ function AccountPage() {
 												]
 											})] })]
 										}),
+										newPassword && confirmNewPassword && newPassword !== confirmNewPassword && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+											className: "text-[11px] text-rose-500 font-medium",
+											children: "⚠️ Passwords do not match. Please ensure both fields are identical."
+										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 											className: "pt-2",
 											children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
 												type: "submit",
-												disabled: savingPassword || !newPassword || newPassword !== confirmNewPassword,
-												className: "w-full rounded-xl py-5 text-xs font-bold bg-secondary hover:bg-secondary/80 text-foreground border border-border shadow-xs transition",
-												children: savingPassword ? "Updating Password..." : "Update Password"
+												disabled: savingPassword || !newPassword || !confirmNewPassword || newPassword !== confirmNewPassword,
+												className: "w-full rounded-xl py-5 text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow transition",
+												children: savingPassword ? "Updating Password..." : "Save New Password"
 											})
 										})
 									]

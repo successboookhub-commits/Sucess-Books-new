@@ -1,4 +1,4 @@
-//#region node_modules/.nitro/vite/services/ssr/assets/_tanstack-start-manifest_v-DUCuWjBa.js
+//#region node_modules/.nitro/vite/services/ssr/assets/_tanstack-start-manifest_v-bQ9VI9Jk.js
 var tsrStartManifest = () => ({ routes: {
 	__root__: {
 		filePath: "D:/Freelancing/Sucessbookhub/Frontend/src/routes/__root.tsx",
@@ -15,7 +15,7 @@ var tsrStartManifest = () => ({ routes: {
 			"/terms"
 		],
 		preloads: [
-			"/assets/index-DVTpm_ov.js",
+			"/assets/index-CncKKbNh.js",
 			"/assets/createLucideIcon-B0PJLGQl.js",
 			"/assets/link-C0Ue2dSg.js",
 			"/assets/preload-helper-iHvirpW0.js",
@@ -31,7 +31,7 @@ var tsrStartManifest = () => ({ routes: {
 			"/assets/admin-D5tVhOsB.js",
 			"/assets/circle-check-CW1fUXqY.js",
 			"/assets/clock-VNp5POHz.js",
-			"/assets/account-DOufcNnA.js",
+			"/assets/account-BseFQf6Y.js",
 			"/assets/file-text-DbaPDUQO.js",
 			"/assets/tax-invoice-modal-FFGbZqk_.js",
 			"/assets/lock-B1G1YU99.js",
@@ -51,7 +51,7 @@ var tsrStartManifest = () => ({ routes: {
 		scripts: [{ attrs: {
 			type: "module",
 			async: !0,
-			src: "/assets/index-DVTpm_ov.js"
+			src: "/assets/index-CncKKbNh.js"
 		} }]
 	},
 	"/": {
@@ -74,7 +74,7 @@ var tsrStartManifest = () => ({ routes: {
 		filePath: "D:/Freelancing/Sucessbookhub/Frontend/src/routes/account.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/account-DedqaHtv.js",
+			"/assets/account-D52_GknJ.js",
 			"/assets/useNavigate-BkUnIIsL.js",
 			"/assets/pen-Cg7FoBIk.js"
 		]

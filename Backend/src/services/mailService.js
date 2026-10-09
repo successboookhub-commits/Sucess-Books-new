@@ -9,8 +9,8 @@ function getTransporter() {
   if (!transporter) {
     const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
     const smtpPort = Number(process.env.SMTP_PORT) || 465;
-    const smtpUser = (process.env.SMTP_USER || "successboookhub@gmail.com").trim().toLowerCase();
-    const smtpPass = (process.env.SMTP_PASS || "").replace(/\s+/g, "").toLowerCase();
+    const smtpUser = (process.env.SMTP_USER || "successboookhub@gmail.com").trim();
+    const smtpPass = (process.env.SMTP_PASS || "").replace(/\s+/g, "");
 
     transporter = nodemailer.createTransport({
       host: smtpHost,
@@ -332,8 +332,10 @@ export async function sendUserOtpEmail(toEmail, otp, userName = "") {
 </html>
   `;
 
+  const fromEmail = process.env.SMTP_USER || "successboookhub@gmail.com";
   const info = await mailClient.sendMail({
-    from: `"Success Book Hub" <${process.env.SMTP_USER || "successboookhub@gmail.com"}>`,
+    from: `"Success Book Hub" <${fromEmail}>`,
+    replyTo: fromEmail,
     to: toEmail,
     subject: `📚 ${otp} is your Success Book Hub verification code`,
     text: `Your Success Book Hub verification OTP is: ${otp}. Valid for 10 minutes.`,

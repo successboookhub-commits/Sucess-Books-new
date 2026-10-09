@@ -13,14 +13,14 @@ import { n as useWishlist, t as WishlistProvider } from "./wishlist-a-u1H06p.mjs
 import { a as DialogOverlay, c as DialogTrigger, i as DialogDescription, n as DialogClose, o as DialogPortal, r as DialogContent, s as DialogTitle, t as Dialog } from "../_libs/@radix-ui/react-dialog+[...].mjs";
 import { a as DialogTitle$1, i as DialogHeader, n as DialogContent$1, o as DialogTrigger$1, r as DialogDescription$1, t as Dialog$1 } from "./dialog-C-FEQyPT.mjs";
 import { t as TaxInvoiceModal } from "./tax-invoice-modal-6TreJndk.mjs";
-import { t as Route$8 } from "./account-TYIUKtex.mjs";
+import { t as Route$8 } from "./account-B29oZF5a.mjs";
 import { n as useAdminAuth, t as AuthProvider } from "./auth-DOWIJfDH.mjs";
 import { a as DropdownMenuSeparator, i as DropdownMenuLabel, n as DropdownMenuContent, o as DropdownMenuTrigger, r as DropdownMenuItem, s as Route$9, t as DropdownMenu } from "./admin-BJUUMVTe.mjs";
 import { t as Route$10 } from "./shop-CsDskRXS.mjs";
 import { t as QueryClientProvider } from "../_libs/tanstack__react-query.mjs";
 import { t as QueryClient } from "../_libs/tanstack__query-core.mjs";
 import { i as Trigger, n as List, r as Root2, t as Content } from "../_libs/radix-ui__react-tabs.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/router-jR4N4xI0.js
+//#region node_modules/.nitro/vite/services/ssr/assets/router-CtR2Xyd4.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 var styles_default = "/assets/styles-zOq_YHtb.css";
@@ -3036,6 +3036,18 @@ function UserLoginModal() {
 									className: "text-primary font-semibold hover:underline",
 									children: "Resend Code"
 								})]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-2 text-[11px] text-amber-900 dark:text-amber-200",
+								children: [
+									"💡 ",
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", { children: "Tip:" }),
+									" If you don't see the email in your Primary inbox, please check your ",
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", { children: "Spam / Junk" }),
+									" or ",
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", { children: "Promotions" }),
+									" folder."
+								]
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 								className: "pt-2",

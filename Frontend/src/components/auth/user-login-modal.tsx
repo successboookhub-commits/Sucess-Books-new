@@ -640,6 +640,10 @@ export function UserLoginModal() {
                     )}
                   </div>
 
+                  <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-2 text-[11px] text-amber-900 dark:text-amber-200">
+                    💡 <strong>Tip:</strong> If you don't see the email in your Primary inbox, please check your <strong>Spam / Junk</strong> or <strong>Promotions</strong> folder.
+                  </div>
+
                   <div className="pt-2">
                     <Button
                       type="submit"

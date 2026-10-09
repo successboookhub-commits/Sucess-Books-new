@@ -425,7 +425,7 @@ export const api = {
     return data;
   },
 
-  async changeUserPassword(token: string, payload: { currentPassword?: string | undefined; newPassword: string; confirmPassword?: string | undefined }): Promise<{ success: boolean; message: string }> {
+  async changeUserPassword(token: string, payload: { newPassword: string; confirmPassword?: string }): Promise<{ success: boolean; message: string }> {
     const res = await fetch(getApiEndpoint("/api/user/auth/change-password"), {
       method: "POST",
       headers: {

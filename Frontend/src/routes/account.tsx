@@ -89,10 +89,8 @@ function AccountPage() {
   const [savingProfile, setSavingProfile] = useState(false);
 
   // Change Password Form State
-  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
-  const [showCurrentPwd, setShowCurrentPwd] = useState(false);
   const [showNewPwd, setShowNewPwd] = useState(false);
   const [showConfirmNewPwd, setShowConfirmNewPwd] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
@@ -293,11 +291,9 @@ function AccountPage() {
     setSavingPassword(true);
     try {
       await changePassword({
-        currentPassword: currentPassword || undefined,
         newPassword,
         confirmPassword: confirmNewPassword
       });
-      setCurrentPassword("");
       setNewPassword("");
       setConfirmNewPassword("");
     } catch (err: unknown) {
@@ -542,9 +538,9 @@ function AccountPage() {
                             <div key={idx} className="flex items-center justify-between text-xs py-1">
                               <div className="flex items-center gap-3 min-w-0">
                                 <div className="h-10 w-8 bg-secondary rounded overflow-hidden flex-shrink-0 border border-border flex items-center justify-center">
-                                  {item.image || (item as any).cover ? (
+                                  {(item as any).image || (item as any).cover ? (
                                     <img
-                                      src={item.image || (item as any).cover}
+                                      src={(item as any).image || (item as any).cover}
                                       alt={item.title}
                                       onError={(e) => {
                                         (e.currentTarget as HTMLImageElement).style.display = "none";
@@ -885,37 +881,14 @@ function AccountPage() {
               <div>
                 <h3 className="font-display text-lg font-bold flex items-center gap-2">
                   <Lock className="h-4 w-4 text-amber-600" />
-                  Account Security & Password
+                  Account Password Setup
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Set a new account password to sign in securely from any device
+                  Set a password for your account to sign in securely from any device.
                 </p>
               </div>
 
               <form onSubmit={handleChangePassword} className="space-y-3.5">
-                <div>
-                  <label className="block text-xs font-semibold text-muted-foreground mb-1">
-                    Current Password (Optional if newly registered)
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <input
-                      type={showCurrentPwd ? "text" : "password"}
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      placeholder="Enter current password"
-                      className="w-full pl-10 pr-11 py-2 rounded-xl border border-input bg-background text-xs text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowCurrentPwd(!showCurrentPwd)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
-                    >
-                      {showCurrentPwd ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                    </button>
-                  </div>
-                </div>
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-muted-foreground mb-1">
@@ -928,7 +901,7 @@ function AccountPage() {
                         required
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="New password"
+                        placeholder="Enter new password"
                         className="w-full pl-10 pr-11 py-2 rounded-xl border border-input bg-background text-xs text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
                       />
                       <button
@@ -943,7 +916,7 @@ function AccountPage() {
 
                   <div>
                     <label className="block text-xs font-semibold text-muted-foreground mb-1">
-                      Confirm New Password
+                      Again New Password (Confirm)
                     </label>
                     <div className="relative">
                       <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -952,7 +925,7 @@ function AccountPage() {
                         required
                         value={confirmNewPassword}
                         onChange={(e) => setConfirmNewPassword(e.target.value)}
-                        placeholder="Re-type new password"
+                        placeholder="Re-enter new password"
                         className="w-full pl-10 pr-11 py-2 rounded-xl border border-input bg-background text-xs text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
                       />
                       <button
@@ -966,13 +939,19 @@ function AccountPage() {
                   </div>
                 </div>
 
+                {newPassword && confirmNewPassword && newPassword !== confirmNewPassword && (
+                  <p className="text-[11px] text-rose-500 font-medium">
+                    ⚠️ Passwords do not match. Please ensure both fields are identical.
+                  </p>
+                )}
+
                 <div className="pt-2">
                   <Button
                     type="submit"
-                    disabled={savingPassword || !newPassword || newPassword !== confirmNewPassword}
-                    className="w-full rounded-xl py-5 text-xs font-bold bg-secondary hover:bg-secondary/80 text-foreground border border-border shadow-xs transition"
+                    disabled={savingPassword || !newPassword || !confirmNewPassword || newPassword !== confirmNewPassword}
+                    className="w-full rounded-xl py-5 text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow transition"
                   >
-                    {savingPassword ? "Updating Password..." : "Update Password"}
+                    {savingPassword ? "Updating Password..." : "Save New Password"}
                   </Button>
                 </div>
               </form>

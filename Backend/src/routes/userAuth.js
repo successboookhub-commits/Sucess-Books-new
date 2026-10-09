@@ -194,12 +194,12 @@ router.post("/login", async (req, res) => {
 
 /**
  * 3. POST /api/user/auth/change-password
- * Change password for logged-in user with current password verification
+ * Set / Update password for logged-in user (requires newPassword and confirmPassword)
  */
 router.post("/change-password", requireUserAuth, async (req, res) => {
   try {
     const userEmail = req.user.email;
-    const { currentPassword, newPassword, confirmPassword } = req.body;
+    const { newPassword, confirmPassword } = req.body;
 
     if (!newPassword || newPassword.length < 6) {
       return res.status(400).json({
@@ -218,24 +218,6 @@ router.post("/change-password", requireUserAuth, async (req, res) => {
     const user = await db.get("SELECT * FROM users WHERE email = ?", [userEmail]);
     if (!user) {
       return res.status(404).json({ success: false, message: "User account not found." });
-    }
-
-    // If user already had a password, verify current password
-    if (user.password_hash) {
-      if (!currentPassword) {
-        return res.status(400).json({
-          success: false,
-          message: "Current password is required to set a new password."
-        });
-      }
-
-      const isValid = verifyPassword(currentPassword, user.password_hash);
-      if (!isValid) {
-        return res.status(401).json({
-          success: false,
-          message: "The current password you entered is incorrect."
-        });
-      }
     }
 
     const newHash = hashPassword(newPassword);
