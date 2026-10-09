@@ -569,7 +569,10 @@ export const db = {
 
 // Initialize Connection & Schema
 export async function initDatabase() {
-  if (hasMySQLConfig) {
+  if (process.env.USE_SQLITE === "true" || process.env.DB_ENGINE === "sqlite") {
+    console.log("[Database] Local SQLite engine active (USE_SQLITE=true).");
+    await initSQLite();
+  } else if (hasMySQLConfig) {
     try {
       console.log("[Database] Connecting to MySQL server...");
       const poolConfig = {
@@ -578,6 +581,7 @@ export async function initDatabase() {
         password: process.env.DB_PASSWORD || "Successbookhub@123",
         database: process.env.DB_NAME || "u803044110_Successbookhub",
         port: Number(process.env.DB_PORT) || 3306,
+        connectTimeout: 2000,
         waitForConnections: true,
         connectionLimit: 10,
         queueLimit: 0,

@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node Backend/src/server.js",
     "dev": "node --watch Backend/src/server.js",
+    "dev:frontend": "npm run dev --prefix Frontend",
     "build": "cd Frontend && npm run build && cd .. && node build-and-sync.js",
     "sync": "node build-and-sync.js"
   },
