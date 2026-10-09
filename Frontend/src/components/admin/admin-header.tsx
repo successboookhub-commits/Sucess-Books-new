@@ -55,9 +55,8 @@ function getBreadcrumbs(section: AdminSection): { category: string; item: string
     case "publishers":
       return { category: "Catalog", item: "Publishers" };
     case "books":
-      return { category: "Catalog", item: "Books Inventory" };
     case "inventory":
-      return { category: "Catalog", item: "Stock Levels" };
+      return { category: "Catalog", item: "Books Catalog" };
     // Sales
     case "orders":
       return { category: "Sales", item: "Customer Orders" };
@@ -83,11 +82,10 @@ function getBreadcrumbs(section: AdminSection): { category: string; item: string
       return { category: "Content", item: "Articles & Blogs" };
     // Reports
     case "sales-report":
+    case "inventory-report":
       return { category: "Reports", item: "Sales Analytics" };
     case "revenue-report":
       return { category: "Reports", item: "Revenue Breakdown" };
-    case "inventory-report":
-      return { category: "Reports", item: "Inventory Valuation" };
     case "customer-report":
       return { category: "Reports", item: "Customer Growth" };
     // Settings
@@ -146,8 +144,8 @@ export function AdminHeader({
     },
     {
       id: 3,
-      title: "Low Inventory Alert",
-      desc: "A Brief History of Time has 22 copies remaining",
+      title: "Catalog Showcase Updated",
+      desc: "Latest bestselling titles featured on homepage",
       time: "2 hours ago",
       icon: AlertCircle,
       unread: true,

@@ -704,7 +704,7 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
                 </span>
               </div>
               <p className="font-display text-2xl sm:text-3xl font-bold text-foreground mt-2">{books.length} Titles</p>
-              <p className="text-[11px] text-muted-foreground mt-1">{totalStockUnits} warehouse units in stock</p>
+              <p className="text-[11px] text-muted-foreground mt-1">{dbCategories.length} Categories active</p>
             </div>
 
             <div className="rounded-2xl border border-border bg-card p-5 shadow-xs transition hover:shadow-md">
@@ -876,24 +876,13 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
                   );
                 })}
               </div>
-
-              {/* Low stock alert badge */}
-              {lowStockBooks.length > 0 && (
-                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 flex items-start gap-2.5 text-xs">
-                  <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-bold">{lowStockBooks.length} Books Low in Stock</p>
-                    <p className="text-[11px] opacity-90">Titles have fewer than 20 copies remaining in warehouse.</p>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
       );
     }
 
-    // 2. Catalog: Books & Inventory View
+    // 2. Catalog: Books View
     if (activeSection === "books" || activeSection === "inventory") {
       const selectedCatObj = dbCategories.find(c => c.name.toLowerCase() === newCategory.toLowerCase());
       const modalSubCats = dbSubCategories.filter(s => selectedCatObj ? s.category_id === selectedCatObj.id : false);
@@ -908,10 +897,10 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <h2 className="font-display text-2xl font-bold text-foreground">
-                {activeSection === "inventory" ? "Warehouse & Inventory Management" : "Books Catalog"}
+                Books Catalog
               </h2>
               <p className="text-xs text-muted-foreground">
-                Manage book titles, front &amp; secondary preview images, authors, publishers, categories, MRP &amp; stock levels.
+                Manage book titles, front &amp; secondary preview images, authors, publishers, categories &amp; MRP pricing.
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -925,52 +914,50 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
           </div>
 
           {/* Sub-view switcher tabs for Book Catalog: Books List, Authors Directory, Publishers & Imprints */}
-          {activeSection === "books" && (
-            <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-secondary/80 border border-border/80 w-fit">
-              <button
-                type="button"
-                onClick={() => setCatalogActiveTab("books")}
-                className={cn(
-                  "px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2",
-                  catalogActiveTab === "books"
-                    ? "bg-card text-primary shadow-xs border border-border/60"
-                    : "text-muted-foreground hover:text-foreground hover:bg-card/50"
-                )}
-              >
-                <BookOpen className="h-4 w-4" />
-                Books List ({books.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setCatalogActiveTab("authors")}
-                className={cn(
-                  "px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2",
-                  catalogActiveTab === "authors"
-                    ? "bg-card text-amber-600 shadow-xs border border-border/60"
-                    : "text-muted-foreground hover:text-foreground hover:bg-card/50"
-                )}
-              >
-                <Users className="h-4 w-4" />
-                Authors Directory ({distinctAuthors.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setCatalogActiveTab("publishers")}
-                className={cn(
-                  "px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2",
-                  catalogActiveTab === "publishers"
-                    ? "bg-card text-blue-600 shadow-xs border border-border/60"
-                    : "text-muted-foreground hover:text-foreground hover:bg-card/50"
-                )}
-              >
-                <Building className="h-4 w-4" />
-                Publishers &amp; Imprints ({distinctPublishers.length})
-              </button>
-            </div>
-          )}
+          <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-secondary/80 border border-border/80 w-fit">
+            <button
+              type="button"
+              onClick={() => setCatalogActiveTab("books")}
+              className={cn(
+                "px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2",
+                catalogActiveTab === "books"
+                  ? "bg-card text-primary shadow-xs border border-border/60"
+                  : "text-muted-foreground hover:text-foreground hover:bg-card/50"
+              )}
+            >
+              <BookOpen className="h-4 w-4" />
+              Books List ({books.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setCatalogActiveTab("authors")}
+              className={cn(
+                "px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2",
+                catalogActiveTab === "authors"
+                  ? "bg-card text-amber-600 shadow-xs border border-border/60"
+                  : "text-muted-foreground hover:text-foreground hover:bg-card/50"
+              )}
+            >
+              <Users className="h-4 w-4" />
+              Authors Directory ({distinctAuthors.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setCatalogActiveTab("publishers")}
+              className={cn(
+                "px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2",
+                catalogActiveTab === "publishers"
+                  ? "bg-card text-blue-600 shadow-xs border border-border/60"
+                  : "text-muted-foreground hover:text-foreground hover:bg-card/50"
+              )}
+            >
+              <Building className="h-4 w-4" />
+              Publishers &amp; Imprints ({distinctPublishers.length})
+            </button>
+          </div>
 
-          {/* 1. BOOKS LIST TAB (OR INVENTORY VIEW) */}
-          {(catalogActiveTab === "books" || activeSection === "inventory") && (
+          {/* 1. BOOKS LIST TAB */}
+          {catalogActiveTab === "books" && (
             <>
               {/* Filter Toolbar */}
               <div className="space-y-3 p-4 rounded-2xl border border-border bg-card shadow-xs">
@@ -1090,24 +1077,6 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
                 </div>
               </div>
 
-              {/* Inventory Summary Cards if on inventory view */}
-              {activeSection === "inventory" && (
-                <div className="grid sm:grid-cols-3 gap-4">
-                  <div className="p-4 rounded-xl border border-border bg-card">
-                    <span className="text-xs font-bold text-muted-foreground uppercase">Total Warehouse Units</span>
-                    <p className="font-display text-2xl font-bold text-foreground mt-1">{totalStockUnits} Copies</p>
-                  </div>
-                  <div className="p-4 rounded-xl border border-border bg-card">
-                    <span className="text-xs font-bold text-muted-foreground uppercase">Catalog Asset Valuation</span>
-                    <p className="font-display text-2xl font-bold text-emerald-600 mt-1">₹{totalInventoryValuation.toLocaleString()}</p>
-                  </div>
-                  <div className="p-4 rounded-xl border border-border bg-card">
-                    <span className="text-xs font-bold text-muted-foreground uppercase">Low Stock Warnings (&lt;20)</span>
-                    <p className="font-display text-2xl font-bold text-amber-600 mt-1">{lowStockBooks.length} Titles</p>
-                  </div>
-                </div>
-              )}
-
               {/* Books Table */}
               <div className="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
                 <div className="overflow-x-auto">
@@ -1119,7 +1088,6 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
                         <th className="p-3.5">Category / Sub-Category</th>
                         <th className="p-3.5">Cost &amp; MRP</th>
                         <th className="p-3.5">Discount %</th>
-                        <th className="p-3.5">Stock Level</th>
                         <th className="p-3.5">Rating</th>
                         <th className="p-3.5 text-right">Actions</th>
                       </tr>
@@ -1127,7 +1095,7 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
                     <tbody className="divide-y divide-border/60">
                       {filteredBooks.length === 0 ? (
                         <tr>
-                          <td colSpan={8} className="p-8 text-center text-muted-foreground">
+                          <td colSpan={7} className="p-8 text-center text-muted-foreground">
                             No books match the current filters.{" "}
                             {(catalogFilterAuthor !== "All" || catalogFilterPublisher !== "All" || catalogFilterCategory !== "All") && (
                               <button
@@ -1150,7 +1118,6 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
                           const mrpVal = b.oldPrice || b.old_price;
                           const disc = b.discountPercent || b.discount_percent || (mrpVal && mrpVal > b.price ? Math.round(((mrpVal - b.price) / mrpVal) * 100) : 0);
                           const sub = b.subCategory || b.sub_category;
-                          const currentStock = b.stock ?? 30;
 
                           return (
                             <tr key={b.id} className="hover:bg-secondary/20 transition">
@@ -1237,34 +1204,6 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
                                 ) : (
                                   <span className="text-muted-foreground text-[11px]">Standard</span>
                                 )}
-                              </td>
-
-                              {/* Stock with 1-click Quick Adjust */}
-                              <td className="p-3.5">
-                                <div className="flex items-center gap-1.5">
-                                  <button
-                                    onClick={() => handleStockAdjust(b.id, currentStock, -5)}
-                                    className="h-6 w-6 rounded bg-secondary hover:bg-muted text-foreground font-bold flex items-center justify-center text-xs transition"
-                                    title="Decrease stock by 5"
-                                  >
-                                    -
-                                  </button>
-                                  <span className={cn(
-                                    "px-2 py-0.5 rounded-full font-bold text-[11px] min-w-[50px] text-center",
-                                    currentStock >= 20 ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" :
-                                    currentStock > 0 ? "bg-amber-500/10 text-amber-700 dark:text-amber-300" :
-                                    "bg-red-500/10 text-red-700 dark:text-red-300"
-                                  )}>
-                                    {currentStock}
-                                  </span>
-                                  <button
-                                    onClick={() => handleStockAdjust(b.id, currentStock, 5)}
-                                    className="h-6 w-6 rounded bg-secondary hover:bg-muted text-foreground font-bold flex items-center justify-center text-xs transition"
-                                    title="Increase stock by 5"
-                                  >
-                                    +
-                                  </button>
-                                </div>
                               </td>
 
                               {/* Rating */}
@@ -1581,7 +1520,7 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
                 </div>
 
                 {/* Pricing, MRP & Live Discount Calculation */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="font-bold block mb-1">Selling Price / Cost (₹) *</label>
                     <input
@@ -1606,18 +1545,6 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
                       onChange={(e) => setNewOldPrice(e.target.value)}
                       placeholder="499"
                       className="w-full h-9 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary text-muted-foreground"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="font-bold block mb-1">Stock Quantity</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={newStock}
-                      onChange={(e) => setNewStock(e.target.value)}
-                      placeholder="50"
-                      className="w-full h-9 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary"
                     />
                   </div>
                 </div>
@@ -2612,7 +2539,7 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
             <div className="p-5 rounded-2xl border border-border bg-card shadow-xs">
               <span className="text-xs font-bold text-muted-foreground">Active Catalog Value</span>
               <p className="font-display text-2xl font-bold text-foreground mt-1">₹{totalInventoryValuation.toLocaleString()}</p>
-              <span className="text-[11px] text-muted-foreground mt-1 inline-block">{books.length} titles in stock</span>
+              <span className="text-[11px] text-muted-foreground mt-1 inline-block">{books.length} titles in catalog</span>
             </div>
           </div>
 
@@ -2654,7 +2581,7 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
                     </div>
                     <div className="text-right shrink-0">
                       <p className="font-bold text-foreground font-display text-sm">₹{b.price}</p>
-                      <p className="text-[10px] text-emerald-600 font-semibold">{b.stock} in stock</p>
+                      <p className="text-[10px] text-muted-foreground font-medium">★ {b.rating || 4.5}</p>
                     </div>
                   </div>
                 ))}

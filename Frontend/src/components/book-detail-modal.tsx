@@ -265,7 +265,7 @@ export function BookDetailModal({ book, open, onOpenChange }: BookDetailModalPro
                   </span>
                 </div>
                 <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
-                  ● In Stock ({currentItem.stock ?? 35} copies)
+                  ● In Stock • Ready to Dispatch
                 </span>
                 <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 bg-secondary px-2.5 py-1 rounded-full border border-border">
                   100% Original Edition

@@ -64,7 +64,6 @@ export function AdminSidebar({
         { id: "categories", label: "Categories" },
         { id: "sub-categories", label: "Sub Categories" },
         { id: "books", label: "Books" },
-        { id: "inventory", label: "Inventory" },
       ],
     },
     {
@@ -105,7 +104,6 @@ export function AdminSidebar({
       items: [
         { id: "sales-report", label: "Sales Report" },
         { id: "revenue-report", label: "Revenue Report" },
-        { id: "inventory-report", label: "Inventory Report" },
         { id: "customer-report", label: "Customer Report" },
       ],
     },
