@@ -1,4 +1,4 @@
-//#region node_modules/.nitro/vite/services/ssr/assets/_tanstack-start-manifest_v-CSFZ3L73.js
+//#region node_modules/.nitro/vite/services/ssr/assets/_tanstack-start-manifest_v-BCBeEO_q.js
 var tsrStartManifest = () => ({ routes: {
 	__root__: {
 		filePath: "D:/Freelancing/Sucessbookhub/Frontend/src/routes/__root.tsx",
@@ -15,7 +15,7 @@ var tsrStartManifest = () => ({ routes: {
 			"/terms"
 		],
 		preloads: [
-			"/assets/index-BXkMeZDC.js",
+			"/assets/index-CqgyCQP8.js",
 			"/assets/createLucideIcon-BfZogB2V.js",
 			"/assets/link-BQhbMAEl.js",
 			"/assets/preload-helper-PYkFbxrK.js",
@@ -29,11 +29,11 @@ var tsrStartManifest = () => ({ routes: {
 			"/assets/book-open-CVw-I5P1.js",
 			"/assets/search-HGcPZjpq.js",
 			"/assets/chevron-down-BnvS7aMP.js",
-			"/assets/admin-4h3Jilqo.js",
+			"/assets/admin-Bmqy5JGj.js",
 			"/assets/circle-check-Co11zhBR.js",
 			"/assets/clock-q0gNZWlP.js",
 			"/assets/file-text-BhQN5vPp.js",
-			"/assets/tax-invoice-modal-Cn4YzXL_.js",
+			"/assets/tax-invoice-modal-COARyMPT.js",
 			"/assets/mail-D3emFCCY.js",
 			"/assets/map-pin-keqKJRd-.js",
 			"/assets/message-circle-BCMdgIo1.js",
@@ -45,13 +45,13 @@ var tsrStartManifest = () => ({ routes: {
 			"/assets/sparkles-Di7Nq1aI.js",
 			"/assets/truck-YO8mbBV9.js",
 			"/assets/button-DGqueH1g.js",
-			"/assets/account-DUa0NXx3.js",
+			"/assets/account-BVX69CuK.js",
 			"/assets/shop-CqsRSbaT.js"
 		],
 		scripts: [{ attrs: {
 			type: "module",
 			async: !0,
-			src: "/assets/index-BXkMeZDC.js"
+			src: "/assets/index-CqgyCQP8.js"
 		} }]
 	},
 	"/": {
@@ -74,7 +74,7 @@ var tsrStartManifest = () => ({ routes: {
 		filePath: "D:/Freelancing/Sucessbookhub/Frontend/src/routes/account.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/account-BskOJh7S.js",
+			"/assets/account-BvQIyT37.js",
 			"/assets/useNavigate-BoELgxfH.js",
 			"/assets/pen-C4rwqR7X.js"
 		]
@@ -83,7 +83,7 @@ var tsrStartManifest = () => ({ routes: {
 		filePath: "D:/Freelancing/Sucessbookhub/Frontend/src/routes/admin.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/admin-ue_cYkLR.js",
+			"/assets/admin-kSVBqpUi.js",
 			"/assets/useNavigate-BoELgxfH.js",
 			"/assets/external-link-Cv28W478.js",
 			"/assets/tag-B_1aP3S8.js",

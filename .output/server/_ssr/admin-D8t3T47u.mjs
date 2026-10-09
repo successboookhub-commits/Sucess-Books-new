@@ -5,13 +5,13 @@ import { u as require_react } from "../_libs/@floating-ui/react-dom+[...].mjs";
 import { o as require_jsx_runtime } from "../_libs/@radix-ui/react-collection+[...].mjs";
 import { n as cn, t as Button } from "./button-CKfowhiz.mjs";
 import { _ as useNavigate, g as Link } from "../_libs/@tanstack/react-router+[...].mjs";
-import { $ as Image, At as ArrowUpRight, C as Save, Dt as Bell, E as Receipt, Et as BookOpen, F as PanelLeftOpen, G as LogOut, H as Menu, I as PanelLeftClose, K as LogIn, L as Palette, M as Pen, N as PenLine, O as Printer, R as Package, S as Search, St as ChevronDown, T as RefreshCw, X as LayoutDashboard, Y as Library, Z as Layers, _ as Shield, _t as CircleCheck, a as Upload, at as FolderOpen, b as Settings, bt as ChevronRight, c as TriangleAlert, d as ToggleRight, f as ToggleLeft, g as ShoppingBag, h as Sparkles, i as User, it as FolderPlus, jt as ArrowRight, k as Plus, l as TrendingUp, lt as ExternalLink, m as Star, n as X, p as Tag, r as Users, rt as Funnel, u as Trash2, ut as DollarSign, v as ShieldCheck, vt as CircleAlert, wt as ChartColumn, y as ShieldAlert } from "../_libs/lucide-react.mjs";
+import { $ as Image$1, At as ArrowUpRight, C as Save, Dt as Bell, E as Receipt, Et as BookOpen, F as PanelLeftOpen, G as LogOut, H as Menu, I as PanelLeftClose, J as LoaderCircle, K as LogIn, L as Palette, M as Pen, N as PenLine, O as Printer, R as Package, S as Search, St as ChevronDown, T as RefreshCw, X as LayoutDashboard, Y as Library, Z as Layers, _ as Shield, _t as CircleCheck, a as Upload, at as FolderOpen, b as Settings, bt as ChevronRight, c as TriangleAlert, d as ToggleRight, f as ToggleLeft, g as ShoppingBag, h as Sparkles, i as User, it as FolderPlus, jt as ArrowRight, k as Plus, l as TrendingUp, lt as ExternalLink, m as Star, n as X, p as Tag, r as Users, rt as Funnel, u as Trash2, ut as DollarSign, v as ShieldCheck, vt as CircleAlert, wt as ChartColumn, y as ShieldAlert } from "../_libs/lucide-react.mjs";
 import { n as toast } from "../_libs/sonner.mjs";
 import { t as TaxInvoiceModal } from "./tax-invoice-modal-CfeHJugp.mjs";
 import { n as useAdminAuth } from "./auth-Bx5IPpeH.mjs";
-import { a as DropdownMenuSeparator, i as DropdownMenuLabel, n as DropdownMenuContent, o as DropdownMenuTrigger, r as DropdownMenuItem, s as Route, t as DropdownMenu } from "./admin-DknEHxNI.mjs";
+import { a as DropdownMenuSeparator, i as DropdownMenuLabel, n as DropdownMenuContent, o as DropdownMenuTrigger, r as DropdownMenuItem, s as Route, t as DropdownMenu } from "./admin-_Po7ZC_1.mjs";
 import { i as Trigger, n as Portal, r as Root2, t as Content2 } from "../_libs/radix-ui__react-popover.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/admin-DGDr6AH4.js
+//#region node_modules/.nitro/vite/services/ssr/assets/admin-D8t3T47u.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 function AdminSidebar({ activeSection, onSelectSection, mobileOpen, onMobileClose, collapsed, onToggleCollapse, ordersCount = 0 }) {
@@ -672,6 +672,101 @@ function AdminHeader({ activeSection, onOpenMobileSidebar, searchQuery, onSearch
 		})]
 	});
 }
+async function compressImageFile(file, options = {}) {
+	const { maxWidth = 1200, maxHeight = 800, quality = .82 } = options;
+	return new Promise((resolve) => {
+		if (!file.type || !file.type.startsWith("image/")) {
+			const reader = new FileReader();
+			reader.onload = () => resolve(reader.result);
+			reader.onerror = () => resolve("");
+			reader.readAsDataURL(file);
+			return;
+		}
+		const reader = new FileReader();
+		reader.onload = (e) => {
+			const rawDataUrl = e.target?.result;
+			if (!rawDataUrl) {
+				resolve("");
+				return;
+			}
+			if (file.type === "image/svg+xml") {
+				resolve(rawDataUrl);
+				return;
+			}
+			const img = new Image();
+			img.onload = () => {
+				let width = img.naturalWidth || img.width;
+				let height = img.naturalHeight || img.height;
+				if (width <= 0 || height <= 0) {
+					resolve(rawDataUrl);
+					return;
+				}
+				if (width > maxWidth) {
+					height = Math.round(height * maxWidth / width);
+					width = maxWidth;
+				}
+				if (height > maxHeight) {
+					width = Math.round(width * maxHeight / height);
+					height = maxHeight;
+				}
+				try {
+					const canvas = document.createElement("canvas");
+					canvas.width = width;
+					canvas.height = height;
+					const ctx = canvas.getContext("2d");
+					if (!ctx) {
+						resolve(rawDataUrl);
+						return;
+					}
+					ctx.imageSmoothingEnabled = true;
+					ctx.imageSmoothingQuality = "high";
+					ctx.drawImage(img, 0, 0, width, height);
+					resolve(canvas.toDataURL("image/jpeg", quality));
+				} catch (err) {
+					console.warn("[compressImageFile] Canvas compression failed, using raw data URL:", err);
+					resolve(rawDataUrl);
+				}
+			};
+			img.onerror = () => {
+				console.warn("[compressImageFile] Image decode error, falling back to raw data URL");
+				resolve(rawDataUrl);
+			};
+			img.src = rawDataUrl;
+		};
+		reader.onerror = () => resolve("");
+		reader.readAsDataURL(file);
+	});
+}
+/**
+* Optimizes and uploads an image to the backend /api/upload endpoint.
+* Returns the public URL (e.g. "/uploads/cat-1728...jpg") on success.
+* Gracefully falls back to the compressed base64 Data URL if the upload endpoint is unreachable.
+*/
+async function uploadImageToServer(fileOrData, namePrefix) {
+	let base64Payload = "";
+	if (typeof fileOrData === "string") {
+		if (fileOrData.startsWith("http://") || fileOrData.startsWith("https://") || fileOrData.startsWith("/uploads/")) return fileOrData;
+		base64Payload = fileOrData;
+	} else base64Payload = await compressImageFile(fileOrData);
+	if (!base64Payload || !base64Payload.startsWith("data:image/")) return base64Payload;
+	try {
+		const res = await fetch("/api/upload", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				image: base64Payload,
+				name: namePrefix || "image"
+			})
+		});
+		if (res.ok) {
+			const data = await res.json();
+			if (data && data.url) return data.url;
+		}
+	} catch (err) {
+		console.warn("[uploadImageToServer] /api/upload network notice, using compressed data URL:", err);
+	}
+	return base64Payload;
+}
 var PRESET_IMAGES = [
 	{
 		label: "Classics",
@@ -719,6 +814,7 @@ function CategoryManager({ onNavigateToSubCategories, onOpenAddSubCategory }) {
 	const [image, setImage] = (0, import_react.useState)("");
 	const [status, setStatus] = (0, import_react.useState)("active");
 	const [saving, setSaving] = (0, import_react.useState)(false);
+	const [uploadingImage, setUploadingImage] = (0, import_react.useState)(false);
 	const loadCategories = async () => {
 		setLoading(true);
 		try {
@@ -760,21 +856,27 @@ function CategoryManager({ onNavigateToSubCategories, onOpenAddSubCategory }) {
 		setStatus(cat.status);
 		setIsModalOpen(true);
 	};
-	const handleImageFileUpload = (e) => {
+	const handleImageFileUpload = async (e) => {
 		const file = e.target.files?.[0];
 		if (!file) return;
-		if (file.size > 4194304) {
-			toast.error("File size is too large (max 4MB)");
+		if (file.size > 10485760) {
+			toast.error("File size is too large (max 10MB)");
 			return;
 		}
-		const reader = new FileReader();
-		reader.onload = () => {
-			if (typeof reader.result === "string") {
-				setImage(reader.result);
-				toast.success("Image loaded successfully");
+		setUploadingImage(true);
+		const toastId = toast.loading("Optimizing and uploading image...");
+		try {
+			const uploadedUrl = await uploadImageToServer(file, name ? name.toLowerCase().replace(/[^a-z0-9]+/g, "-") : "cat");
+			if (uploadedUrl) {
+				setImage(uploadedUrl);
+				toast.success("Image updated successfully", { id: toastId });
 			}
-		};
-		reader.readAsDataURL(file);
+		} catch (err) {
+			toast.error("Failed to process image: " + (err.message || "Unknown error"), { id: toastId });
+		} finally {
+			setUploadingImage(false);
+			e.target.value = "";
+		}
 	};
 	const handleSave = async (e) => {
 		e.preventDefault();
@@ -970,7 +1072,7 @@ function CategoryManager({ onNavigateToSubCategories, onOpenAddSubCategory }) {
 						className: "relative h-40 w-full overflow-hidden bg-muted",
 						children: [
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
-								src: cat.image || PRESET_IMAGES[0].url,
+								src: !cat.image || cat.image.startsWith("data:image/") && cat.image.length >= 65530 ? PRESET_IMAGES[0].url : cat.image,
 								alt: cat.name,
 								className: "h-full w-full object-cover group-hover:scale-105 transition-transform duration-500",
 								onError: (e) => {
@@ -1124,13 +1226,14 @@ function CategoryManager({ onNavigateToSubCategories, onOpenAddSubCategory }) {
 										placeholder: "Paste image URL or choose preset/upload...",
 										className: "flex-1 h-9 rounded-md border border-border bg-background px-3 text-xs outline-none focus:border-primary"
 									}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
-										className: "h-9 px-3 rounded-md border border-border bg-secondary/70 hover:bg-secondary cursor-pointer flex items-center gap-1.5 text-xs font-semibold text-foreground",
+										className: cn("h-9 px-3 rounded-md border border-border bg-secondary/70 hover:bg-secondary cursor-pointer flex items-center gap-1.5 text-xs font-semibold text-foreground transition-all", uploadingImage && "opacity-60 pointer-events-none"),
 										children: [
-											/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Upload, { className: "h-3.5 w-3.5" }),
-											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Upload" }),
+											uploadingImage ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, { className: "h-3.5 w-3.5 animate-spin text-primary" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Upload, { className: "h-3.5 w-3.5" }),
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: uploadingImage ? "Uploading..." : "Upload" }),
 											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
 												type: "file",
 												accept: "image/*",
+												disabled: uploadingImage,
 												className: "hidden",
 												onChange: handleImageFileUpload
 											})
@@ -1348,6 +1451,7 @@ function SubCategoryManager({ initialCategoryId, categories: passedCategories, a
 	const [image, setImage] = (0, import_react.useState)("");
 	const [status, setStatus] = (0, import_react.useState)("active");
 	const [saving, setSaving] = (0, import_react.useState)(false);
+	const [uploadingImage, setUploadingImage] = (0, import_react.useState)(false);
 	const handleCloseModal = () => {
 		setIsModalOpen(false);
 		if (onModalClosed) onModalClosed();
@@ -1417,21 +1521,27 @@ function SubCategoryManager({ initialCategoryId, categories: passedCategories, a
 		setStatus(sub.status);
 		setIsModalOpen(true);
 	};
-	const handleImageFileUpload = (e) => {
+	const handleImageFileUpload = async (e) => {
 		const file = e.target.files?.[0];
 		if (!file) return;
-		if (file.size > 4194304) {
-			toast.error("File size is too large (max 4MB)");
+		if (file.size > 10485760) {
+			toast.error("File size is too large (max 10MB)");
 			return;
 		}
-		const reader = new FileReader();
-		reader.onload = () => {
-			if (typeof reader.result === "string") {
-				setImage(reader.result);
-				toast.success("Image loaded successfully");
+		setUploadingImage(true);
+		const toastId = toast.loading("Optimizing and uploading image...");
+		try {
+			const uploadedUrl = await uploadImageToServer(file, name ? name.toLowerCase().replace(/[^a-z0-9]+/g, "-") : "subcat");
+			if (uploadedUrl) {
+				setImage(uploadedUrl);
+				toast.success("Image updated successfully", { id: toastId });
 			}
-		};
-		reader.readAsDataURL(file);
+		} catch (err) {
+			toast.error("Failed to process image: " + (err.message || "Unknown error"), { id: toastId });
+		} finally {
+			setUploadingImage(false);
+			e.target.value = "";
+		}
 	};
 	const handleSave = async (e) => {
 		e.preventDefault();
@@ -1693,7 +1803,7 @@ function SubCategoryManager({ initialCategoryId, categories: passedCategories, a
 											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 												className: "h-12 w-12 rounded-lg overflow-hidden border border-border bg-muted shrink-0",
 												children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
-													src: sub.image || PRESET_SUB_IMAGES[0].url,
+													src: !sub.image || sub.image.startsWith("data:image/") && sub.image.length >= 65530 ? PRESET_SUB_IMAGES[0].url : sub.image,
 													alt: sub.name,
 													className: "h-full w-full object-cover",
 													onError: (e) => {
@@ -1844,13 +1954,14 @@ function SubCategoryManager({ initialCategoryId, categories: passedCategories, a
 										placeholder: "Paste thumbnail URL or select preset/upload...",
 										className: "flex-1 h-9 rounded-md border border-border bg-background px-3 text-xs outline-none focus:border-primary"
 									}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
-										className: "h-9 px-3 rounded-md border border-border bg-secondary/70 hover:bg-secondary cursor-pointer flex items-center gap-1.5 text-xs font-semibold text-foreground",
+										className: cn("h-9 px-3 rounded-md border border-border bg-secondary/70 hover:bg-secondary cursor-pointer flex items-center gap-1.5 text-xs font-semibold text-foreground transition-all", uploadingImage && "opacity-60 pointer-events-none"),
 										children: [
-											/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Upload, { className: "h-3.5 w-3.5" }),
-											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Upload" }),
+											uploadingImage ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, { className: "h-3.5 w-3.5 animate-spin text-primary" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Upload, { className: "h-3.5 w-3.5" }),
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: uploadingImage ? "Uploading..." : "Upload" }),
 											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
 												type: "file",
 												accept: "image/*",
+												disabled: uploadingImage,
 												className: "hidden",
 												onChange: handleImageFileUpload
 											})
@@ -4731,7 +4842,7 @@ function AdminViews({ activeSection, searchQuery, onNavigateSection }) {
 					children: filteredContentBlocks.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 						className: "col-span-full text-center py-12 text-muted-foreground text-xs rounded-2xl border border-dashed border-border p-8 bg-card",
 						children: [
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Image, { className: "h-10 w-10 mx-auto text-muted-foreground/50 mb-2" }),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Image$1, { className: "h-10 w-10 mx-auto text-muted-foreground/50 mb-2" }),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
 								className: "font-semibold text-foreground",
 								children: [

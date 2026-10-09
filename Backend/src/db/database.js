@@ -18,7 +18,7 @@ export const SCHEMA_DEFINITIONS = {
         name VARCHAR(255) NOT NULL UNIQUE,
         slug VARCHAR(255) NOT NULL UNIQUE,
         description TEXT,
-        image TEXT,
+        image MEDIUMTEXT,
         status VARCHAR(50) DEFAULT 'active',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -39,7 +39,7 @@ export const SCHEMA_DEFINITIONS = {
       { name: "name", mysqlType: "VARCHAR(255) NOT NULL", sqliteType: "TEXT NOT NULL" },
       { name: "slug", mysqlType: "VARCHAR(255) NOT NULL", sqliteType: "TEXT NOT NULL" },
       { name: "description", mysqlType: "TEXT", sqliteType: "TEXT" },
-      { name: "image", mysqlType: "TEXT", sqliteType: "TEXT" },
+      { name: "image", mysqlType: "MEDIUMTEXT", sqliteType: "TEXT" },
       { name: "status", mysqlType: "VARCHAR(50) DEFAULT 'active'", sqliteType: "TEXT DEFAULT 'active'" },
       { name: "created_at", mysqlType: "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", sqliteType: "TEXT DEFAULT (datetime('now'))" }
     ]
@@ -52,7 +52,7 @@ export const SCHEMA_DEFINITIONS = {
         name VARCHAR(255) NOT NULL,
         slug VARCHAR(255) NOT NULL,
         description TEXT,
-        image TEXT,
+        image MEDIUMTEXT,
         status VARCHAR(50) DEFAULT 'active',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         INDEX idx_category_id (category_id),
@@ -78,7 +78,7 @@ export const SCHEMA_DEFINITIONS = {
       { name: "name", mysqlType: "VARCHAR(255) NOT NULL", sqliteType: "TEXT NOT NULL" },
       { name: "slug", mysqlType: "VARCHAR(255) NOT NULL", sqliteType: "TEXT NOT NULL" },
       { name: "description", mysqlType: "TEXT", sqliteType: "TEXT" },
-      { name: "image", mysqlType: "TEXT", sqliteType: "TEXT" },
+      { name: "image", mysqlType: "MEDIUMTEXT", sqliteType: "TEXT" },
       { name: "status", mysqlType: "VARCHAR(50) DEFAULT 'active'", sqliteType: "TEXT DEFAULT 'active'" },
       { name: "created_at", mysqlType: "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", sqliteType: "TEXT DEFAULT (datetime('now'))" }
     ]
@@ -96,8 +96,8 @@ export const SCHEMA_DEFINITIONS = {
         discount_percent INT DEFAULT 0,
         rating DECIMAL(3,2) DEFAULT 4.5,
         reviews_count INT DEFAULT 0,
-        cover TEXT NOT NULL,
-        image_2 TEXT NULL,
+        cover MEDIUMTEXT NOT NULL,
+        image_2 MEDIUMTEXT NULL,
         label VARCHAR(100) NULL,
         description TEXT,
         stock INT DEFAULT 50,
@@ -137,8 +137,8 @@ export const SCHEMA_DEFINITIONS = {
       { name: "discount_percent", mysqlType: "INT DEFAULT 0", sqliteType: "INTEGER DEFAULT 0" },
       { name: "rating", mysqlType: "DECIMAL(3,2) DEFAULT 4.5", sqliteType: "REAL DEFAULT 4.5" },
       { name: "reviews_count", mysqlType: "INT DEFAULT 0", sqliteType: "INTEGER DEFAULT 0" },
-      { name: "cover", mysqlType: "TEXT NOT NULL", sqliteType: "TEXT NOT NULL" },
-      { name: "image_2", mysqlType: "TEXT NULL", sqliteType: "TEXT" },
+      { name: "cover", mysqlType: "MEDIUMTEXT NOT NULL", sqliteType: "TEXT NOT NULL" },
+      { name: "image_2", mysqlType: "MEDIUMTEXT NULL", sqliteType: "TEXT" },
       { name: "label", mysqlType: "VARCHAR(100) NULL", sqliteType: "TEXT" },
       { name: "description", mysqlType: "TEXT", sqliteType: "TEXT" },
       { name: "stock", mysqlType: "INT DEFAULT 50", sqliteType: "INTEGER DEFAULT 50" },
@@ -561,7 +561,7 @@ export const SCHEMA_DEFINITIONS = {
         type VARCHAR(50) NOT NULL,
         title VARCHAR(255) NOT NULL,
         subtitle TEXT NULL,
-        image TEXT NULL,
+        image MEDIUMTEXT NULL,
         link_url TEXT NULL,
         content LONGTEXT NULL,
         status VARCHAR(20) DEFAULT 'active',
@@ -589,7 +589,7 @@ export const SCHEMA_DEFINITIONS = {
       { name: "type", mysqlType: "VARCHAR(50) NOT NULL", sqliteType: "TEXT NOT NULL" },
       { name: "title", mysqlType: "VARCHAR(255) NOT NULL", sqliteType: "TEXT NOT NULL" },
       { name: "subtitle", mysqlType: "TEXT NULL", sqliteType: "TEXT" },
-      { name: "image", mysqlType: "TEXT NULL", sqliteType: "TEXT" },
+      { name: "image", mysqlType: "MEDIUMTEXT NULL", sqliteType: "TEXT" },
       { name: "link_url", mysqlType: "TEXT NULL", sqliteType: "TEXT" },
       { name: "content", mysqlType: "LONGTEXT NULL", sqliteType: "TEXT" },
       { name: "status", mysqlType: "VARCHAR(20) DEFAULT 'active'", sqliteType: "TEXT DEFAULT 'active'" },
@@ -879,6 +879,25 @@ async function setupSchema() {
     await autoMigrateColumns(tableName, def);
   }
 
+  // 3. Upgrade existing MySQL columns storing media/images to MEDIUMTEXT
+  if (isMySQL && pool) {
+    const mediumTextUpgrades = [
+      { table: "categories", column: "image" },
+      { table: "sub_categories", column: "image" },
+      { table: "books", column: "cover" },
+      { table: "books", column: "image_2" },
+      { table: "content_blocks", column: "image" }
+    ];
+    for (const item of mediumTextUpgrades) {
+      try {
+        await pool.query(`ALTER TABLE \`${item.table}\` MODIFY COLUMN \`${item.column}\` MEDIUMTEXT`);
+        console.log(`[Auto-Migration] Verified/Upgraded ${item.table}.${item.column} to MEDIUMTEXT in MySQL.`);
+      } catch (err) {
+        // Table or column already modified or not yet initialized
+      }
+    }
+  }
+
   console.log("[Database] Schema sync completed successfully. All tables and columns are up to date.");
 }
 
@@ -955,6 +974,22 @@ async function seedInitialData() {
             ]
           );
         }
+      }
+
+      // Check and repair any category with corrupted truncated base64 image (length >= 65530)
+      try {
+        const corruptedCategories = await db.all(
+          "SELECT id, name, image FROM categories WHERE image LIKE 'data:image/%' AND LENGTH(image) >= 65530"
+        );
+        for (const cat of (corruptedCategories || [])) {
+          await db.run("UPDATE categories SET image = ? WHERE id = ?", [
+            "https://images.unsplash.com/photo-1476275466078-4007374efbbe?q=80&w=800&auto=format&fit=crop",
+            cat.id
+          ]);
+          console.log(`[Database] Repaired corrupted truncated image for category "${cat.name}" (id: ${cat.id})`);
+        }
+      } catch (e) {
+        // Table or query check
       }
     }
 

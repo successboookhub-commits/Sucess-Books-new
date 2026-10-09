@@ -5,7 +5,7 @@ import { n as cn } from "./button-CKfowhiz.mjs";
 import { m as createFileRoute, p as lazyRouteComponent } from "../_libs/@tanstack/react-router+[...].mjs";
 import { Ct as Check, bt as ChevronRight, mt as Circle } from "../_libs/lucide-react.mjs";
 import { a as Label2, c as Root2, d as SubTrigger2, f as Trigger, i as ItemIndicator2, l as Separator2, n as Content2, o as Portal2, r as Item2, s as RadioItem2, t as CheckboxItem2, u as SubContent2 } from "../_libs/@radix-ui/react-dropdown-menu+[...].mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/admin-DknEHxNI.js
+//#region node_modules/.nitro/vite/services/ssr/assets/admin-_Po7ZC_1.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 var DropdownMenu = Root2;
@@ -75,7 +75,7 @@ var DropdownMenuShortcut = ({ className, ...props }) => {
 	});
 };
 DropdownMenuShortcut.displayName = "DropdownMenuShortcut";
-var $$splitComponentImporter = () => import("./admin-DGDr6AH4.mjs");
+var $$splitComponentImporter = () => import("./admin-D8t3T47u.mjs");
 var Route = createFileRoute("/admin")({
 	validateSearch: (search) => ({ tab: typeof search.tab === "string" ? search.tab : void 0 }),
 	head: () => ({ meta: [

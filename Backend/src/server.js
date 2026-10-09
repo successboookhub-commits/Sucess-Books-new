@@ -20,6 +20,8 @@ import wishlistRouter from "./routes/wishlist.js";
 import couponsRouter from "./routes/coupons.js";
 import settingsRouter from "./routes/settings.js";
 import contentRouter from "./routes/content.js";
+import uploadRouter from "./routes/upload.js";
+import { getUploadsDir } from "./utils/imageStorage.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -116,7 +118,7 @@ async function getSSRModule() {
 app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
-    version: "2.6.0-mysql-verified",
+    version: "2.7.0-image-upload-fix",
     service: "Success Book Hub API",
     dbEngine: db.isMySQL ? "MySQL (phpMyAdmin)" : "SQLite (Local)",
     dbHost: db.activeHost || null,
@@ -149,6 +151,16 @@ app.use("/api/wishlist", wishlistRouter);
 app.use("/api/coupons", couponsRouter);
 app.use("/api/settings", settingsRouter);
 app.use("/api/content", contentRouter);
+app.use("/api/upload", uploadRouter);
+
+// Dedicated uploads static directory for user-uploaded images & media
+const uploadsDir = getUploadsDir();
+app.use("/uploads", express.static(uploadsDir, {
+  maxAge: "30d",
+  setHeaders: (res) => {
+    res.setHeader("Cache-Control", "public, max-age=2592000");
+  }
+}));
 
 
 // 4. Static Asset Serving (Direct disk serving with strict MIME types)

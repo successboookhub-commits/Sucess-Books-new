@@ -13,10 +13,12 @@ import {
   BookOpen,
   ArrowRight,
   Upload,
-  Sparkles
+  Sparkles,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { api, type Category } from "@/lib/api";
+import { uploadImageToServer } from "@/lib/image-compress";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -54,6 +56,7 @@ export function CategoryManager({ onNavigateToSubCategories, onOpenAddSubCategor
   const [image, setImage] = useState("");
   const [status, setStatus] = useState<"active" | "inactive">("active");
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Fetch categories
   const loadCategories = async () => {
@@ -103,24 +106,32 @@ export function CategoryManager({ onNavigateToSubCategories, onOpenAddSubCategor
     setIsModalOpen(true);
   };
 
-  // Handle local image file upload -> convert to base64 Data URL
-  const handleImageFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle local image file upload -> compress client-side & upload to server
+  const handleImageFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 4 * 1024 * 1024) {
-      toast.error("File size is too large (max 4MB)");
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File size is too large (max 10MB)");
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        setImage(reader.result);
-        toast.success("Image loaded successfully");
+    setUploadingImage(true);
+    const toastId = toast.loading("Optimizing and uploading image...");
+    try {
+      const prefix = name ? name.toLowerCase().replace(/[^a-z0-9]+/g, "-") : "cat";
+      const uploadedUrl = await uploadImageToServer(file, prefix);
+      if (uploadedUrl) {
+        setImage(uploadedUrl);
+        toast.success("Image updated successfully", { id: toastId });
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err: any) {
+      toast.error("Failed to process image: " + (err.message || "Unknown error"), { id: toastId });
+    } finally {
+      setUploadingImage(false);
+      // Reset input value so user can select the same file again if desired
+      e.target.value = "";
+    }
   };
 
   // Save Category (Create or Edit)
@@ -305,7 +316,11 @@ export function CategoryManager({ onNavigateToSubCategories, onOpenAddSubCategor
               {/* Category Cover Image with Overlay Badges */}
               <div className="relative h-40 w-full overflow-hidden bg-muted">
                 <img
-                  src={cat.image || PRESET_IMAGES[0].url}
+                  src={
+                    !cat.image || (cat.image.startsWith("data:image/") && cat.image.length >= 65530)
+                      ? PRESET_IMAGES[0].url
+                      : cat.image
+                  }
                   alt={cat.name}
                   className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
                   onError={(e) => {
@@ -477,12 +492,20 @@ export function CategoryManager({ onNavigateToSubCategories, onOpenAddSubCategor
                   placeholder="Paste image URL or choose preset/upload..."
                   className="flex-1 h-9 rounded-md border border-border bg-background px-3 text-xs outline-none focus:border-primary"
                 />
-                <label className="h-9 px-3 rounded-md border border-border bg-secondary/70 hover:bg-secondary cursor-pointer flex items-center gap-1.5 text-xs font-semibold text-foreground">
-                  <Upload className="h-3.5 w-3.5" />
-                  <span>Upload</span>
+                <label className={cn(
+                  "h-9 px-3 rounded-md border border-border bg-secondary/70 hover:bg-secondary cursor-pointer flex items-center gap-1.5 text-xs font-semibold text-foreground transition-all",
+                  uploadingImage && "opacity-60 pointer-events-none"
+                )}>
+                  {uploadingImage ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                  ) : (
+                    <Upload className="h-3.5 w-3.5" />
+                  )}
+                  <span>{uploadingImage ? "Uploading..." : "Upload"}</span>
                   <input
                     type="file"
                     accept="image/*"
+                    disabled={uploadingImage}
                     className="hidden"
                     onChange={handleImageFileUpload}
                   />

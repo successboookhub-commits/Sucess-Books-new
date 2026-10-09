@@ -1,5 +1,6 @@
 import express from "express";
 import { db } from "../db/database.js";
+import { saveBase64Image } from "../utils/imageStorage.js";
 
 const router = express.Router();
 
@@ -118,6 +119,10 @@ router.post("/", async (req, res) => {
     }
 
     const defaultImg = "https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=600&auto=format&fit=crop";
+    let storedImage = image && image.trim() ? image.trim() : defaultImg;
+    if (storedImage.startsWith("data:image/")) {
+      storedImage = await saveBase64Image(storedImage, `subcat-${slug}`);
+    }
 
     const result = await db.run(`
       INSERT INTO sub_categories (category_id, name, slug, description, image, status)
@@ -127,7 +132,7 @@ router.post("/", async (req, res) => {
       trimmedName,
       slug,
       description ? description.trim() : "",
-      image && image.trim() ? image.trim() : defaultImg,
+      storedImage,
       status || "active"
     ]);
 
@@ -182,6 +187,11 @@ router.put("/:id", async (req, res) => {
       return res.status(400).json({ success: false, message: `Another sub-category named "${updatedName}" already exists in ${category.name}` });
     }
 
+    let storedImage = image !== undefined && image.trim() ? image.trim() : subCategory.image;
+    if (storedImage && storedImage.startsWith("data:image/")) {
+      storedImage = await saveBase64Image(storedImage, `subcat-${slug}`);
+    }
+
     await db.run(`
       UPDATE sub_categories
       SET category_id = ?, name = ?, slug = ?, description = ?, image = ?, status = ?
@@ -191,7 +201,7 @@ router.put("/:id", async (req, res) => {
       updatedName,
       slug,
       description !== undefined ? description.trim() : subCategory.description,
-      image !== undefined && image.trim() ? image.trim() : subCategory.image,
+      storedImage,
       status !== undefined ? status : subCategory.status,
       id
     ]);

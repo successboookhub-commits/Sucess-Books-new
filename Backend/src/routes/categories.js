@@ -1,5 +1,6 @@
 import express from "express";
 import { db } from "../db/database.js";
+import { saveBase64Image } from "../utils/imageStorage.js";
 
 const router = express.Router();
 
@@ -126,6 +127,10 @@ router.post("/", async (req, res) => {
     }
 
     const defaultImg = "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=800&auto=format&fit=crop";
+    let storedImage = image && image.trim() ? image.trim() : defaultImg;
+    if (storedImage.startsWith("data:image/")) {
+      storedImage = await saveBase64Image(storedImage, `cat-${slug}`);
+    }
 
     const result = await db.run(`
       INSERT INTO categories (name, slug, description, image, status)
@@ -134,7 +139,7 @@ router.post("/", async (req, res) => {
       trimmedName,
       slug,
       description ? description.trim() : "",
-      image && image.trim() ? image.trim() : defaultImg,
+      storedImage,
       status || "active"
     ]);
 
@@ -179,6 +184,11 @@ router.put("/:id", async (req, res) => {
       slug = slugify(updatedName);
     }
 
+    let storedImage = image !== undefined && image.trim() ? image.trim() : category.image;
+    if (storedImage && storedImage.startsWith("data:image/")) {
+      storedImage = await saveBase64Image(storedImage, `cat-${slug}`);
+    }
+
     await db.run(`
       UPDATE categories
       SET name = ?, slug = ?, description = ?, image = ?, status = ?
@@ -187,7 +197,7 @@ router.put("/:id", async (req, res) => {
       updatedName,
       slug,
       description !== undefined ? description.trim() : category.description,
-      image !== undefined && image.trim() ? image.trim() : category.image,
+      storedImage,
       status !== undefined ? status : category.status,
       id
     ]);
