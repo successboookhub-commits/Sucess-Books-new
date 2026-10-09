@@ -13,6 +13,9 @@ interface UserAuthContextType {
   loginModalOpen: boolean;
   openLoginModal: () => void;
   closeLoginModal: () => void;
+  loginWithPassword: (payload: { email: string; password: string }) => Promise<void>;
+  registerWithPassword: (payload: { name: string; phone: string; email: string; password: string; confirmPassword?: string }) => Promise<void>;
+  changePassword: (payload: { currentPassword?: string; newPassword: string; confirmPassword?: string }) => Promise<void>;
   sendOtp: (email: string) => Promise<{ success: boolean; message: string; isExistingUser?: boolean }>;
   verifyOtp: (email: string, otp: string, name?: string, phone?: string) => Promise<void>;
   updateProfile: (data: { name?: string; phone?: string; avatar?: string }) => Promise<void>;
@@ -69,6 +72,38 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
 
   const openLoginModal = () => setLoginModalOpen(true);
   const closeLoginModal = () => setLoginModalOpen(false);
+
+  const loginWithPassword = async (payload: { email: string; password: string }) => {
+    const res = await api.loginUser(payload);
+    if (res.success && res.token) {
+      setToken(res.token);
+      setUser(res.user);
+      localStorage.setItem(USER_TOKEN_KEY, res.token);
+      localStorage.setItem(USER_DATA_KEY, JSON.stringify(res.user));
+      closeLoginModal();
+      toast.success(res.message || `Welcome back, ${res.user.name || "Book Lover"}!`);
+    }
+  };
+
+  const registerWithPassword = async (payload: { name: string; phone: string; email: string; password: string; confirmPassword?: string }) => {
+    const res = await api.registerUser(payload);
+    if (res.success && res.token) {
+      setToken(res.token);
+      setUser(res.user);
+      localStorage.setItem(USER_TOKEN_KEY, res.token);
+      localStorage.setItem(USER_DATA_KEY, JSON.stringify(res.user));
+      closeLoginModal();
+      toast.success(res.message || `Welcome to Success Book Hub, ${res.user.name}!`);
+    }
+  };
+
+  const changePassword = async (payload: { currentPassword?: string; newPassword: string; confirmPassword?: string }) => {
+    if (!token) throw new Error("Please log in first.");
+    const res = await api.changeUserPassword(token, payload);
+    if (res.success) {
+      toast.success(res.message || "Password updated successfully!");
+    }
+  };
 
   const sendOtp = async (email: string) => {
     return await api.sendUserOtp(email);
@@ -127,6 +162,9 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
         loginModalOpen,
         openLoginModal,
         closeLoginModal,
+        loginWithPassword,
+        registerWithPassword,
+        changePassword,
         sendOtp,
         verifyOtp,
         updateProfile,

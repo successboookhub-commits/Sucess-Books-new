@@ -20,7 +20,11 @@ import {
   LogOut,
   AlertCircle,
   PlusCircle,
-  X
+  X,
+  Lock,
+  Eye,
+  EyeOff,
+  RotateCcw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -44,7 +48,7 @@ export const Route = createFileRoute("/account")({
 function AccountPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
-  const { user, token, isAuthenticated, isLoading, openLoginModal, updateProfile, logout } = useUserAuth();
+  const { user, token, isAuthenticated, isLoading, openLoginModal, updateProfile, changePassword, logout } = useUserAuth();
   const { wishlist, removeFromWishlist } = useWishlist();
   const { addToCart } = useCart();
 
@@ -82,6 +86,15 @@ function AccountPage() {
   const [profileName, setProfileName] = useState("");
   const [profilePhone, setProfilePhone] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
+
+  // Change Password Form State
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [showCurrentPwd, setShowCurrentPwd] = useState(false);
+  const [showNewPwd, setShowNewPwd] = useState(false);
+  const [showConfirmNewPwd, setShowConfirmNewPwd] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
 
   // Keep active tab synced with query param
   useEffect(() => {
@@ -247,6 +260,49 @@ function AccountPage() {
       toast.error(err instanceof Error ? err.message : "Failed to update profile.");
     } finally {
       setSavingProfile(false);
+    }
+  };
+
+  const handleCancelOrder = async (orderId: string) => {
+    if (!token) return;
+    if (!confirm(`Are you sure you want to cancel Order #${orderId}? Any reserved stock will be automatically restored.`)) {
+      return;
+    }
+
+    try {
+      const res = await api.cancelOrder(token, orderId);
+      toast.success(res.message || `Order #${orderId} has been cancelled.`);
+      loadOrders();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to cancel order.");
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPassword || newPassword.length < 6) {
+      toast.error("New password must be at least 6 characters long.");
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      toast.error("New password and confirm password do not match.");
+      return;
+    }
+
+    setSavingPassword(true);
+    try {
+      await changePassword({
+        currentPassword: currentPassword || undefined,
+        newPassword,
+        confirmPassword: confirmNewPassword
+      });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to change password.");
+    } finally {
+      setSavingPassword(false);
     }
   };
 
@@ -437,6 +493,17 @@ function AccountPage() {
                             <FileText className="h-3.5 w-3.5" />
                             Tax Invoice
                           </Button>
+                          {(order.status === "pending" || order.status === "confirmed") && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleCancelOrder(order.id)}
+                              className="rounded-lg text-xs gap-1 h-8 border-rose-300 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                            >
+                              <RotateCcw className="h-3.5 w-3.5" />
+                              Cancel Order
+                            </Button>
+                          )}
                         </div>
                       </div>
 
@@ -797,6 +864,104 @@ function AccountPage() {
                 </Button>
               </div>
             </form>
+
+            {/* Account Security Card */}
+            <div className="border-t border-border pt-6 space-y-4">
+              <div>
+                <h3 className="font-display text-lg font-bold flex items-center gap-2">
+                  <Lock className="h-4 w-4 text-amber-600" />
+                  Account Security & Password
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Set a new account password to sign in securely from any device
+                </p>
+              </div>
+
+              <form onSubmit={handleChangePassword} className="space-y-3.5">
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                    Current Password (Optional if newly registered)
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <input
+                      type={showCurrentPwd ? "text" : "password"}
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      placeholder="Enter current password"
+                      className="w-full pl-10 pr-11 py-2 rounded-xl border border-input bg-background text-xs text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrentPwd(!showCurrentPwd)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
+                    >
+                      {showCurrentPwd ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                      New Password (min. 6 chars)
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <input
+                        type={showNewPwd ? "text" : "password"}
+                        required
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="New password"
+                        className="w-full pl-10 pr-11 py-2 rounded-xl border border-input bg-background text-xs text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPwd(!showNewPwd)}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
+                      >
+                        {showNewPwd ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                      Confirm New Password
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <input
+                        type={showConfirmNewPwd ? "text" : "password"}
+                        required
+                        value={confirmNewPassword}
+                        onChange={(e) => setConfirmNewPassword(e.target.value)}
+                        placeholder="Re-type new password"
+                        className="w-full pl-10 pr-11 py-2 rounded-xl border border-input bg-background text-xs text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmNewPwd(!showConfirmNewPwd)}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
+                      >
+                        {showConfirmNewPwd ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <Button
+                    type="submit"
+                    disabled={savingPassword || !newPassword || newPassword !== confirmNewPassword}
+                    className="w-full rounded-xl py-5 text-xs font-bold bg-secondary hover:bg-secondary/80 text-foreground border border-border shadow-xs transition"
+                  >
+                    {savingPassword ? "Updating Password..." : "Update Password"}
+                  </Button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
       </div>

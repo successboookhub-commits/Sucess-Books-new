@@ -348,6 +348,7 @@ export const SCHEMA_DEFINITIONS = {
         name VARCHAR(255) NULL,
         email VARCHAR(255) NOT NULL UNIQUE,
         phone VARCHAR(50) NULL,
+        password_hash VARCHAR(255) NULL,
         avatar TEXT NULL,
         role VARCHAR(50) DEFAULT 'customer',
         status VARCHAR(50) DEFAULT 'active',
@@ -361,6 +362,7 @@ export const SCHEMA_DEFINITIONS = {
         name TEXT,
         email TEXT NOT NULL UNIQUE,
         phone TEXT,
+        password_hash TEXT,
         avatar TEXT,
         role TEXT DEFAULT 'customer',
         status TEXT DEFAULT 'active',
@@ -373,6 +375,7 @@ export const SCHEMA_DEFINITIONS = {
       { name: "name", mysqlType: "VARCHAR(255) NULL", sqliteType: "TEXT" },
       { name: "email", mysqlType: "VARCHAR(255) NOT NULL UNIQUE", sqliteType: "TEXT NOT NULL UNIQUE" },
       { name: "phone", mysqlType: "VARCHAR(50) NULL", sqliteType: "TEXT" },
+      { name: "password_hash", mysqlType: "VARCHAR(255) NULL", sqliteType: "TEXT" },
       { name: "avatar", mysqlType: "TEXT NULL", sqliteType: "TEXT" },
       { name: "role", mysqlType: "VARCHAR(50) DEFAULT 'customer'", sqliteType: "TEXT DEFAULT 'customer'" },
       { name: "status", mysqlType: "VARCHAR(50) DEFAULT 'active'", sqliteType: "TEXT DEFAULT 'active'" },
@@ -598,6 +601,95 @@ export const SCHEMA_DEFINITIONS = {
       { name: "status", mysqlType: "VARCHAR(20) DEFAULT 'active'", sqliteType: "TEXT DEFAULT 'active'" },
       { name: "display_order", mysqlType: "INT DEFAULT 0", sqliteType: "INTEGER DEFAULT 0" },
       { name: "created_at", mysqlType: "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", sqliteType: "TEXT DEFAULT (datetime('now'))" }
+    ]
+  },
+  cart_items: {
+    mysqlCreate: `
+      CREATE TABLE IF NOT EXISTS cart_items (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NULL,
+        user_email VARCHAR(255) NOT NULL,
+        book_id INT NOT NULL,
+        quantity INT DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY user_book_cart_uniq (user_email, book_id),
+        INDEX idx_cart_user_email (user_email)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `,
+    sqliteCreate: `
+      CREATE TABLE IF NOT EXISTS cart_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        user_email TEXT NOT NULL,
+        book_id INTEGER NOT NULL,
+        quantity INTEGER DEFAULT 1,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        UNIQUE(user_email, book_id)
+      );
+    `,
+    columns: [
+      { name: "id", mysqlType: "INT AUTO_INCREMENT PRIMARY KEY", sqliteType: "INTEGER PRIMARY KEY AUTOINCREMENT" },
+      { name: "user_id", mysqlType: "INT NULL", sqliteType: "INTEGER" },
+      { name: "user_email", mysqlType: "VARCHAR(255) NOT NULL", sqliteType: "TEXT NOT NULL" },
+      { name: "book_id", mysqlType: "INT NOT NULL", sqliteType: "INTEGER NOT NULL" },
+      { name: "quantity", mysqlType: "INT DEFAULT 1", sqliteType: "INTEGER DEFAULT 1" },
+      { name: "created_at", mysqlType: "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", sqliteType: "TEXT DEFAULT (datetime('now'))" },
+      { name: "updated_at", mysqlType: "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", sqliteType: "TEXT DEFAULT (datetime('now'))" }
+    ]
+  },
+  payments: {
+    mysqlCreate: `
+      CREATE TABLE IF NOT EXISTS payments (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        order_id VARCHAR(50) NOT NULL,
+        user_id INT NULL,
+        user_email VARCHAR(255) NULL,
+        amount DECIMAL(10,2) NOT NULL,
+        currency VARCHAR(10) DEFAULT 'INR',
+        payment_method VARCHAR(50) NOT NULL,
+        provider VARCHAR(50) DEFAULT 'manual',
+        transaction_id VARCHAR(255) NULL,
+        status VARCHAR(50) DEFAULT 'pending',
+        payment_notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_order_id (order_id),
+        INDEX idx_payment_status (status)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `,
+    sqliteCreate: `
+      CREATE TABLE IF NOT EXISTS payments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        order_id TEXT NOT NULL,
+        user_id INTEGER,
+        user_email TEXT,
+        amount REAL NOT NULL,
+        currency TEXT DEFAULT 'INR',
+        payment_method TEXT NOT NULL,
+        provider TEXT DEFAULT 'manual',
+        transaction_id TEXT,
+        status TEXT DEFAULT 'pending',
+        payment_notes TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      );
+    `,
+    columns: [
+      { name: "id", mysqlType: "INT AUTO_INCREMENT PRIMARY KEY", sqliteType: "INTEGER PRIMARY KEY AUTOINCREMENT" },
+      { name: "order_id", mysqlType: "VARCHAR(50) NOT NULL", sqliteType: "TEXT NOT NULL" },
+      { name: "user_id", mysqlType: "INT NULL", sqliteType: "INTEGER" },
+      { name: "user_email", mysqlType: "VARCHAR(255) NULL", sqliteType: "TEXT" },
+      { name: "amount", mysqlType: "DECIMAL(10,2) NOT NULL", sqliteType: "REAL NOT NULL" },
+      { name: "currency", mysqlType: "VARCHAR(10) DEFAULT 'INR'", sqliteType: "TEXT DEFAULT 'INR'" },
+      { name: "payment_method", mysqlType: "VARCHAR(50) NOT NULL", sqliteType: "TEXT NOT NULL" },
+      { name: "provider", mysqlType: "VARCHAR(50) DEFAULT 'manual'", sqliteType: "TEXT DEFAULT 'manual'" },
+      { name: "transaction_id", mysqlType: "VARCHAR(255) NULL", sqliteType: "TEXT" },
+      { name: "status", mysqlType: "VARCHAR(50) DEFAULT 'pending'", sqliteType: "TEXT DEFAULT 'pending'" },
+      { name: "payment_notes", mysqlType: "TEXT", sqliteType: "TEXT" },
+      { name: "created_at", mysqlType: "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", sqliteType: "TEXT DEFAULT (datetime('now'))" },
+      { name: "updated_at", mysqlType: "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", sqliteType: "TEXT DEFAULT (datetime('now'))" }
     ]
   }
 };
@@ -888,6 +980,7 @@ async function setupSchema() {
       "ALTER TABLE `books` ADD COLUMN `publisher` VARCHAR(255) NULL",
       "ALTER TABLE `orders` ADD COLUMN `user_id` INT NULL",
       "ALTER TABLE `user_addresses` ADD COLUMN `user_id` INT NULL",
+      "ALTER TABLE `users` ADD COLUMN `password_hash` VARCHAR(255) NULL",
       "ALTER TABLE `users` ADD COLUMN `status` VARCHAR(50) DEFAULT 'active'",
       "ALTER TABLE `users` ADD COLUMN `role` VARCHAR(50) DEFAULT 'customer'"
     ];

@@ -396,7 +396,43 @@ export const api = {
     }
   },
 
-  // Customer / User Authentication
+  // Customer / User Authentication (Email & Password + OTP)
+  async registerUser(payload: { name: string; phone: string; email: string; password: string; confirmPassword?: string }): Promise<{ success: boolean; token: string; user: UserProfile; message?: string }> {
+    const res = await fetch(getApiEndpoint("/api/user/auth/register"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Registration failed");
+    return data;
+  },
+
+  async loginUser(payload: { email: string; password: string }): Promise<{ success: boolean; token: string; user: UserProfile; message?: string }> {
+    const res = await fetch(getApiEndpoint("/api/user/auth/login"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Invalid credentials");
+    return data;
+  },
+
+  async changeUserPassword(token: string, payload: { currentPassword?: string; newPassword: string; confirmPassword?: string }): Promise<{ success: boolean; message: string }> {
+    const res = await fetch(getApiEndpoint("/api/user/auth/change-password"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to change password");
+    return data;
+  },
+
   async sendUserOtp(email: string): Promise<{ success: boolean; message: string; email?: string; isExistingUser?: boolean }> {
     const res = await fetch(getApiEndpoint("/api/user/auth/send-otp"), {
       method: "POST",
@@ -439,6 +475,92 @@ export const api = {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Failed to update profile");
+    return data;
+  },
+
+  // Persistent Database Cart Operations
+  async getCart(token: string) {
+    const res = await fetch(getApiEndpoint("/api/cart"), {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to load cart");
+    return data;
+  },
+
+  async addToDbCart(token: string, bookId: number, quantity: number = 1) {
+    const res = await fetch(getApiEndpoint("/api/cart"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ bookId, quantity })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to add to cart");
+    return data;
+  },
+
+  async updateDbCartItem(token: string, bookId: number, quantity: number) {
+    const res = await fetch(getApiEndpoint(`/api/cart/${bookId}`), {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ quantity })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to update cart");
+    return data;
+  },
+
+  async removeFromDbCart(token: string, bookId: number) {
+    const res = await fetch(getApiEndpoint(`/api/cart/${bookId}`), {
+      method: "DELETE",
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to remove item from cart");
+    return data;
+  },
+
+  async clearDbCart(token: string) {
+    const res = await fetch(getApiEndpoint("/api/cart"), {
+      method: "DELETE",
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to clear cart");
+    return data;
+  },
+
+  async mergeGuestCart(token: string, items: Array<{ id: number; quantity: number }>) {
+    const res = await fetch(getApiEndpoint("/api/cart/merge"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ items })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to merge cart");
+    return data;
+  },
+
+  // Customer Order Cancellation (Restores inventory stock)
+  async cancelOrder(token: string, orderId: string): Promise<{ success: boolean; message: string; orderId: string }> {
+    const res = await fetch(getApiEndpoint(`/api/orders/${orderId}/cancel`), {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to cancel order");
     return data;
   },
 

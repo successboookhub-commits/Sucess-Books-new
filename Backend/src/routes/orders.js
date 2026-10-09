@@ -131,7 +131,7 @@ router.post("/", optionalUserAuth, async (req, res) => {
     const userId = req.user?.id || null;
     const finalEmail = (customerEmail || req.user?.email || "").trim().toLowerCase();
 
-    // 2. Persist order and update inventory stock atomically inside transaction
+    // 2. Persist order, update inventory stock, record payment, and clear user cart inside transaction
     await db.transaction(async (tx) => {
       await tx.run(`
         INSERT INTO orders (
@@ -179,6 +179,27 @@ router.post("/", optionalUserAuth, async (req, res) => {
           `UPDATE coupons SET usage_count = usage_count + 1 WHERE UPPER(code) = ?`,
           [couponCode.trim().toUpperCase()]
         );
+      }
+
+      // Record payment attempt in payments table
+      try {
+        const paymentProvider = paymentMethod === "COD" ? "cash_on_delivery" : (paymentMethod === "UPI" ? "upi" : "online");
+        await tx.run(
+          `INSERT INTO payments (order_id, user_id, amount, currency, provider, status, payment_method)
+           VALUES (?, ?, ?, 'INR', ?, 'pending', ?)`,
+          [orderId, userId, total, paymentProvider, paymentMethod]
+        );
+      } catch (payErr) {
+        console.warn("[Orders] Could not record payments table entry:", payErr.message);
+      }
+
+      // Clear persistent database cart for this customer upon successful checkout
+      if (finalEmail) {
+        try {
+          await tx.run(`DELETE FROM cart_items WHERE user_email = ?`, [finalEmail]);
+        } catch {
+          // ignore if table not available
+        }
       }
     });
 
@@ -537,6 +558,77 @@ router.patch("/:orderId/status", async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// PATCH cancel order (with stock restoration and customer authorization)
+router.patch("/:orderId/cancel", optionalUserAuth, async (req, res) => {
+  try {
+    const orderId = req.params.orderId.toUpperCase();
+    const order = await db.get("SELECT * FROM orders WHERE UPPER(id) = ?", [orderId]);
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found." });
+    }
+
+    // Verify ownership if requested by user
+    if (req.user) {
+      const isOwner = (order.customer_email && order.customer_email.toLowerCase() === req.user.email.toLowerCase()) ||
+                      (order.user_id && order.user_id === req.user.id) ||
+                      (req.user.role === "admin");
+      if (!isOwner) {
+        return res.status(403).json({ success: false, message: "You are not authorized to cancel this order." });
+      }
+    }
+
+    const currentStatus = (order.status || "").toLowerCase();
+    if (currentStatus === "cancelled") {
+      return res.status(400).json({ success: false, message: "This order is already cancelled." });
+    }
+
+    if (currentStatus === "dispatched" || currentStatus === "delivered") {
+      return res.status(400).json({
+        success: false,
+        message: `Orders with status '${order.status}' cannot be cancelled online. Please contact support.`
+      });
+    }
+
+    // Parse items to restore stock
+    let items = [];
+    try {
+      items = typeof order.items_json === "string" ? JSON.parse(order.items_json) : (order.items_json || []);
+    } catch {
+      items = [];
+    }
+
+    await db.transaction(async (tx) => {
+      await tx.run("UPDATE orders SET status = 'cancelled' WHERE id = ?", [order.id]);
+
+      // Restore stock in books table
+      for (const item of items) {
+        if (item.id) {
+          const qty = parseInt(item.quantity) || 1;
+          await tx.run("UPDATE books SET stock = stock + ? WHERE id = ?", [qty, item.id]);
+        }
+      }
+
+      // Update payments table status if applicable
+      try {
+        await tx.run("UPDATE payments SET status = 'cancelled' WHERE order_id = ?", [order.id]);
+      } catch {
+        // ignore if payments table unavailable
+      }
+    });
+
+    return res.json({
+      success: true,
+      message: `Order #${order.id} has been cancelled successfully. Any reserved stock has been restored.`,
+      orderId: order.id,
+      status: "cancelled"
+    });
+  } catch (err) {
+    console.error("[Order Cancel Error]:", err);
+    return res.status(500).json({ success: false, error: err.message });
   }
 });
 

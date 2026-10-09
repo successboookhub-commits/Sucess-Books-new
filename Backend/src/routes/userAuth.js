@@ -2,11 +2,257 @@ import { Router } from "express";
 import { db } from "../db/database.js";
 import { sendUserOtpEmail } from "../services/mailService.js";
 import { generateUserToken, requireUserAuth } from "../middleware/auth.js";
+import { hashPassword, verifyPassword } from "../utils/password.js";
 
 const router = Router();
 
 /**
- * 1. POST /api/user/auth/send-otp
+ * 1. POST /api/user/auth/register
+ * Register a new customer account with Full Name, Phone, Email, and Password
+ */
+router.post("/register", async (req, res) => {
+  try {
+    const rawEmail = req.body.email ? String(req.body.email).trim().toLowerCase() : "";
+    const rawName = req.body.name ? String(req.body.name).trim() : "";
+    const rawPhone = req.body.phone ? String(req.body.phone).trim() : "";
+    const password = req.body.password ? String(req.body.password) : "";
+    const confirmPassword = req.body.confirmPassword ? String(req.body.confirmPassword) : "";
+
+    // Input Validation
+    if (!rawEmail || !rawEmail.includes("@")) {
+      return res.status(400).json({
+        success: false,
+        message: "A valid email address is required."
+      });
+    }
+
+    if (!rawName || rawName.length < 2) {
+      return res.status(400).json({
+        success: false,
+        message: "Full name is required (at least 2 characters)."
+      });
+    }
+
+    if (!rawPhone || rawPhone.replace(/\D/g, "").length < 10) {
+      return res.status(400).json({
+        success: false,
+        message: "A valid 10-digit mobile number is required."
+      });
+    }
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 6 characters long."
+      });
+    }
+
+    if (confirmPassword && password !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Confirm password does not match the password."
+      });
+    }
+
+    // Check if user already exists
+    const existing = await db.get("SELECT * FROM users WHERE email = ?", [rawEmail]);
+    if (existing && existing.password_hash) {
+      return res.status(409).json({
+        success: false,
+        message: "An account with this email already exists. Please sign in instead."
+      });
+    }
+
+    const passwordHash = hashPassword(password);
+
+    let user;
+    if (existing) {
+      // Upgrade existing guest/OTP user with password
+      await db.run(
+        "UPDATE users SET name = ?, phone = ?, password_hash = ?, status = 'active' WHERE id = ?",
+        [rawName, rawPhone, passwordHash, existing.id]
+      );
+      user = await db.get("SELECT id, name, email, phone, avatar, role, created_at FROM users WHERE id = ?", [existing.id]);
+    } else {
+      const result = await db.run(
+        "INSERT INTO users (name, email, phone, password_hash, role, status) VALUES (?, ?, ?, ?, 'customer', 'active')",
+        [rawName, rawEmail, rawPhone, passwordHash]
+      );
+      user = await db.get("SELECT id, name, email, phone, avatar, role, created_at FROM users WHERE id = ?", [result.lastInsertRowid]);
+    }
+
+    // Generate JWT auth token (30 days validity)
+    const token = generateUserToken({
+      id: user.id,
+      email: user.email,
+      name: user.name || "",
+      phone: user.phone || "",
+      role: "customer"
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: `Welcome to Success Book Hub, ${user.name}! Your account has been created.`,
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        phone: user.phone,
+        avatar: user.avatar || "",
+        role: user.role || "customer",
+        createdAt: user.created_at
+      }
+    });
+  } catch (err) {
+    console.error("[User Registration Error]:", err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || "Failed to register account."
+    });
+  }
+});
+
+/**
+ * 2. POST /api/user/auth/login
+ * Log in an existing customer with Email and Password
+ */
+router.post("/login", async (req, res) => {
+  try {
+    const rawEmail = req.body.email ? String(req.body.email).trim().toLowerCase() : "";
+    const password = req.body.password ? String(req.body.password) : "";
+
+    if (!rawEmail || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Email address and password are required."
+      });
+    }
+
+    const user = await db.get("SELECT * FROM users WHERE email = ?", [rawEmail]);
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password. Please check your credentials or create an account."
+      });
+    }
+
+    if (user.status === "blocked" || user.status === "suspended") {
+      return res.status(403).json({
+        success: false,
+        message: "Your account is inactive or suspended. Please contact customer support."
+      });
+    }
+
+    // If user registered only via OTP previously without password
+    if (!user.password_hash) {
+      return res.status(401).json({
+        success: false,
+        needsOtpOrPasswordSetup: true,
+        message: "No password set for this account. Please sign in using OTP verification or set a new password."
+      });
+    }
+
+    const isValid = verifyPassword(password, user.password_hash);
+    if (!isValid) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password. Please check your credentials."
+      });
+    }
+
+    const token = generateUserToken({
+      id: user.id,
+      email: user.email,
+      name: user.name || "",
+      phone: user.phone || "",
+      role: user.role || "customer"
+    });
+
+    return res.json({
+      success: true,
+      message: `Welcome back, ${user.name || "Reader"}!`,
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name || "",
+        phone: user.phone || "",
+        avatar: user.avatar || "",
+        role: user.role || "customer",
+        createdAt: user.created_at
+      }
+    });
+  } catch (err) {
+    console.error("[User Login Error]:", err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || "An unexpected error occurred during login."
+    });
+  }
+});
+
+/**
+ * 3. POST /api/user/auth/change-password
+ * Change password for logged-in user with current password verification
+ */
+router.post("/change-password", requireUserAuth, async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "New password must be at least 6 characters long."
+      });
+    }
+
+    if (confirmPassword && newPassword !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "New password and confirm password do not match."
+      });
+    }
+
+    const user = await db.get("SELECT * FROM users WHERE email = ?", [userEmail]);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User account not found." });
+    }
+
+    // If user already had a password, verify current password
+    if (user.password_hash) {
+      if (!currentPassword) {
+        return res.status(400).json({
+          success: false,
+          message: "Current password is required to set a new password."
+        });
+      }
+
+      const isValid = verifyPassword(currentPassword, user.password_hash);
+      if (!isValid) {
+        return res.status(401).json({
+          success: false,
+          message: "The current password you entered is incorrect."
+        });
+      }
+    }
+
+    const newHash = hashPassword(newPassword);
+    await db.run("UPDATE users SET password_hash = ? WHERE email = ?", [newHash, userEmail]);
+
+    return res.json({
+      success: true,
+      message: "Password updated successfully! Please use your new password for future logins."
+    });
+  } catch (err) {
+    console.error("[Change Password Error]:", err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to change password." });
+  }
+});
+
+/**
+ * 4. POST /api/user/auth/send-otp
  * Generates and sends a real 6-digit OTP to any customer email via Gmail SMTP
  */
 router.post("/send-otp", async (req, res) => {
@@ -20,17 +266,12 @@ router.post("/send-otp", async (req, res) => {
       });
     }
 
-    // Check if user already exists to personalize email
     const existingUser = await db.get("SELECT * FROM users WHERE email = ?", [rawEmail]);
     const userName = existingUser?.name || "";
 
-    // Generate random 6-digit numeric OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-    // Expiry time: 10 minutes from now in ISO UTC string
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
-    // Store OTP in database
     await db.run(
       "INSERT INTO user_otps (email, otp, expires_at, used) VALUES (?, ?, ?, 0)",
       [rawEmail, otp, expiresAt]
@@ -56,7 +297,7 @@ router.post("/send-otp", async (req, res) => {
 });
 
 /**
- * 2. POST /api/user/auth/verify-otp
+ * 5. POST /api/user/auth/verify-otp
  * Verifies OTP and registers or logs in customer, issuing a 30-day JWT token
  */
 router.post("/verify-otp", async (req, res) => {
@@ -73,7 +314,6 @@ router.post("/verify-otp", async (req, res) => {
       });
     }
 
-    // Find the latest valid unused OTP for this email
     const record = await db.get(
       `SELECT * FROM user_otps 
        WHERE email = ? AND otp = ? AND used = 0 
@@ -88,7 +328,6 @@ router.post("/verify-otp", async (req, res) => {
       });
     }
 
-    // Check expiry
     const nowMs = Date.now();
     const expiryMs = new Date(record.expires_at).getTime();
     if (isNaN(expiryMs) || nowMs > expiryMs) {
@@ -98,14 +337,12 @@ router.post("/verify-otp", async (req, res) => {
       });
     }
 
-    // Mark as used
     await db.run("UPDATE user_otps SET used = 1 WHERE id = ?", [record.id]);
 
-    // Check if user exists, else create user record
     let user = await db.get("SELECT * FROM users WHERE email = ?", [rawEmail]);
     if (!user) {
       const result = await db.run(
-        "INSERT INTO users (name, email, phone, role) VALUES (?, ?, ?, 'customer')",
+        "INSERT INTO users (name, email, phone, role, status) VALUES (?, ?, ?, 'customer', 'active')",
         [providedName || null, rawEmail, providedPhone || null]
       );
       user = await db.get("SELECT * FROM users WHERE id = ?", [result.lastInsertRowid]);
@@ -117,7 +354,6 @@ router.post("/verify-otp", async (req, res) => {
       user = await db.get("SELECT * FROM users WHERE id = ?", [user.id]);
     }
 
-    // Generate JWT token
     const token = generateUserToken({
       id: user.id,
       email: user.email,
@@ -136,7 +372,8 @@ router.post("/verify-otp", async (req, res) => {
         name: user.name || "",
         phone: user.phone || "",
         avatar: user.avatar || "",
-        role: user.role || "customer"
+        role: user.role || "customer",
+        createdAt: user.created_at
       }
     });
   } catch (err) {
@@ -149,8 +386,8 @@ router.post("/verify-otp", async (req, res) => {
 });
 
 /**
- * 3. GET /api/user/profile
- * Returns authenticated customer profile with stats
+ * 6. GET /api/user/auth/profile or /me
+ * Returns authenticated customer profile with aggregated orders, wishlist, and address stats
  */
 router.get("/profile", requireUserAuth, async (req, res) => {
   try {
@@ -160,7 +397,7 @@ router.get("/profile", requireUserAuth, async (req, res) => {
     }
 
     const orderCountRow = await db.get(
-      "SELECT COUNT(*) as count FROM orders WHERE customer_email = ? OR user_id = ?",
+      "SELECT COUNT(*) as count, COALESCE(SUM(total), 0) as totalSpent FROM orders WHERE customer_email = ? OR user_id = ?",
       [user.email, user.id]
     );
     const wishlistCountRow = await db.get(
@@ -178,6 +415,7 @@ router.get("/profile", requireUserAuth, async (req, res) => {
         ...user,
         stats: {
           ordersCount: orderCountRow?.count || 0,
+          totalSpent: Math.round(orderCountRow?.totalSpent || 0),
           wishlistCount: wishlistCountRow?.count || 0,
           addressesCount: addressCountRow?.count || 0
         }
@@ -189,7 +427,7 @@ router.get("/profile", requireUserAuth, async (req, res) => {
 });
 
 /**
- * 4. PUT /api/user/profile
+ * 7. PUT /api/user/auth/profile
  * Updates customer profile details
  */
 router.put("/profile", requireUserAuth, async (req, res) => {
@@ -210,6 +448,16 @@ router.put("/profile", requireUserAuth, async (req, res) => {
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
   }
+});
+
+/**
+ * 8. POST /api/user/auth/logout
+ */
+router.post("/logout", (req, res) => {
+  return res.json({
+    success: true,
+    message: "Signed out successfully."
+  });
 });
 
 export default router;

@@ -25,14 +25,16 @@ interface BookDetailModalProps {
   book: Book | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSelectBook?: (book: Book) => void;
 }
 
-export function BookDetailModal({ book, open, onOpenChange }: BookDetailModalProps) {
-  const { changeQuantity, cart } = useCart();
+export function BookDetailModal({ book, open, onOpenChange, onSelectBook }: BookDetailModalProps) {
+  const { changeQuantity, addToCart, setCartOpen, catalog, cart } = useCart();
   const { isWishlisted, toggleWishlist } = useWishlist();
   const [details, setDetails] = useState<BookDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState<0 | 1>(0);
+  const [selectedQty, setSelectedQty] = useState(1);
 
   const wishlisted = book ? isWishlisted(book.id) : false;
 
@@ -48,6 +50,7 @@ export function BookDetailModal({ book, open, onOpenChange }: BookDetailModalPro
     setLoading(true);
     setShowReviewForm(false);
     setActiveImageIndex(0);
+    setSelectedQty(1);
     api
       .getBook(book.id)
       .then((data) => {
@@ -310,50 +313,97 @@ export function BookDetailModal({ book, open, onOpenChange }: BookDetailModalPro
                 </p>
               </div>
 
-              {/* Action Buttons: Perfectly Balanced Row */}
-              <div className="pt-2 grid grid-cols-2 sm:grid-cols-[1fr_1fr_auto] gap-2.5">
-                {/* 1. Add to Bag (Gold Button) */}
-                <Button
-                  className="col-span-2 sm:col-span-1 h-11 rounded-full gap-2 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-500 hover:to-yellow-500 text-slate-950 font-bold shadow-md hover:shadow-lg transition-all active:scale-95 text-xs sm:text-sm cursor-pointer"
-                  onClick={() => {
-                    changeQuantity(book.id, 1, book);
-                    toast.success(`"${book.title}" added to your bag!`);
-                  }}
-                >
-                  <ShoppingBag className="h-4 w-4 fill-slate-950" />
-                  {inCartQty > 0 ? `In Bag (${inCartQty}) • Add More` : "Add to Bag"}
-                </Button>
+              {/* Action Buttons: Perfectly Balanced Row with Quantity Selector & Buy Now */}
+              <div className="space-y-3 pt-2">
+                {/* Quantity Selector Row */}
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                    Quantity:
+                  </span>
+                  <div className="flex items-center gap-2 bg-secondary/80 rounded-xl p-1 border border-border">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedQty(Math.max(1, selectedQty - 1))}
+                      className="h-7 w-7 rounded-lg bg-card hover:bg-background transition flex items-center justify-center font-bold text-muted-foreground hover:text-foreground border border-border/50 cursor-pointer"
+                      aria-label="Decrease quantity"
+                    >
+                      -
+                    </button>
+                    <span className="w-8 text-center text-sm font-bold font-mono text-foreground">
+                      {selectedQty}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedQty(selectedQty + 1)}
+                      className="h-7 w-7 rounded-lg bg-card hover:bg-background transition flex items-center justify-center font-bold text-muted-foreground hover:text-foreground border border-border/50 cursor-pointer"
+                      aria-label="Increase quantity"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <span className="text-xs text-muted-foreground font-mono">
+                    Total: <strong className="text-foreground font-bold">₹{sellingPrice * selectedQty}</strong>
+                  </span>
+                </div>
 
-                {/* 2. Buy on WhatsApp (Real WhatsApp Green) */}
-                <Button
-                  className="col-span-1 h-11 rounded-full gap-2 bg-[#25D366] hover:bg-[#20ba59] text-white font-bold shadow-md hover:shadow-lg transition-all active:scale-95 text-xs sm:text-sm cursor-pointer"
-                  asChild
-                >
-                  <a href={whatsappDirectOrder} target="_blank" rel="noreferrer">
-                    <MessageCircle className="h-4 w-4 fill-current" />
-                    Buy on WhatsApp
-                  </a>
-                </Button>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                  {/* 1. Add to Bag (Gold Button) */}
+                  <Button
+                    className="col-span-1 h-11 rounded-full gap-2 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-500 hover:to-yellow-500 text-slate-950 font-bold shadow-md hover:shadow-lg transition-all active:scale-95 text-xs cursor-pointer"
+                    onClick={() => {
+                      addToCart(book, selectedQty);
+                      toast.success(`Added ${selectedQty} × "${book.title}" to your bag!`);
+                    }}
+                  >
+                    <ShoppingBag className="h-4 w-4 fill-slate-950" />
+                    {inCartQty > 0 ? `In Bag (${inCartQty}) +` : "Add to Bag"}
+                  </Button>
 
-                {/* 3. Wishlist Save Icon Button */}
-                <Button
-                  variant="outline"
-                  onClick={() => toggleWishlist(book)}
-                  className={cn(
-                    "col-span-1 sm:col-span-1 h-11 px-4 rounded-full border border-border/80 transition-all font-semibold shrink-0 gap-1.5 hover:border-red-300 cursor-pointer justify-center",
-                    wishlisted
-                      ? "bg-red-50 text-red-600 border-red-200 dark:bg-red-950/40"
-                      : "text-muted-foreground hover:text-red-500"
-                  )}
-                  title={wishlisted ? "Remove from wishlist" : "Save to wishlist"}
-                >
-                  <Heart className={cn("h-4 w-4", wishlisted && "fill-current text-red-500")} />
-                  <span className="text-xs">{wishlisted ? "Saved" : "Save"}</span>
-                </Button>
+                  {/* 2. Buy Now (Express Checkout) */}
+                  <Button
+                    className="col-span-1 h-11 rounded-full gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md hover:shadow-lg transition-all active:scale-95 text-xs cursor-pointer"
+                    onClick={() => {
+                      addToCart(book, selectedQty);
+                      onOpenChange(false);
+                      setCartOpen(true);
+                    }}
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    Buy Now
+                  </Button>
+
+                  {/* 3. Wishlist / WhatsApp Buttons */}
+                  <div className="col-span-2 sm:col-span-1 flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => toggleWishlist(book)}
+                      className={cn(
+                        "flex-1 h-11 rounded-full border border-border/80 transition-all font-semibold shrink-0 gap-1.5 hover:border-red-300 cursor-pointer justify-center text-xs",
+                        wishlisted
+                          ? "bg-red-50 text-red-600 border-red-200 dark:bg-red-950/40"
+                          : "text-muted-foreground hover:text-red-500"
+                      )}
+                      title={wishlisted ? "Remove from wishlist" : "Save to wishlist"}
+                    >
+                      <Heart className={cn("h-4 w-4", wishlisted && "fill-current text-red-500")} />
+                      <span>{wishlisted ? "Saved" : "Save"}</span>
+                    </Button>
+
+                    <Button
+                      className="h-11 px-3 rounded-full bg-[#25D366] hover:bg-[#20ba59] text-white font-bold shadow-md transition cursor-pointer shrink-0"
+                      asChild
+                      title="Order on WhatsApp"
+                    >
+                      <a href={whatsappDirectOrder} target="_blank" rel="noreferrer">
+                        <MessageCircle className="h-4 w-4 fill-current" />
+                      </a>
+                    </Button>
+                  </div>
+                </div>
               </div>
 
               {/* Guarantees Strip */}
-              <div className="pt-1 flex items-center justify-between text-[11px] text-muted-foreground border-t border-border/50 pt-2.5 flex-wrap gap-2">
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground border-t border-border/50 pt-2.5 flex-wrap gap-2">
                 <span className="flex items-center gap-1.5">
                   <Truck className="h-3.5 w-3.5 text-amber-600 shrink-0" /> Free delivery over ₹499
                 </span>
@@ -366,6 +416,56 @@ export function BookDetailModal({ book, open, onOpenChange }: BookDetailModalPro
               </div>
             </div>
           </div>
+
+          {/* Related Books Section */}
+          {(() => {
+            const related = catalog
+              .filter(b => b.category === book.category && b.id !== book.id)
+              .slice(0, 4);
+
+            if (related.length === 0) return null;
+
+            return (
+              <div className="border-t border-border pt-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-display text-base font-bold text-foreground">
+                    More in {book.category}
+                  </h3>
+                  <span className="text-[11px] text-muted-foreground">Handpicked for you</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {related.map(rel => (
+                    <div
+                      key={rel.id}
+                      onClick={() => {
+                        if (onSelectBook) onSelectBook(rel);
+                        else setDetails(rel);
+                      }}
+                      className="group p-2 rounded-xl border border-border bg-card hover:border-amber-400 hover:shadow-md transition cursor-pointer flex flex-col justify-between"
+                    >
+                      <div className="aspect-[3/4] rounded-lg overflow-hidden bg-secondary mb-2 relative">
+                        <img
+                          src={rel.cover || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=600&auto=format&fit=crop"}
+                          alt={rel.title}
+                          className="h-full w-full object-cover group-hover:scale-105 transition duration-300"
+                        />
+                      </div>
+                      <div>
+                        <h4 className="font-display text-xs font-bold text-foreground truncate group-hover:text-amber-600 transition">
+                          {rel.title}
+                        </h4>
+                        <p className="text-[10px] text-muted-foreground truncate">{rel.author}</p>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-xs font-bold text-primary font-mono">₹{rel.price}</span>
+                          <span className="text-[10px] font-semibold text-amber-600">View &rarr;</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Reader Reviews Section */}
           <div className="border-t border-border pt-4 space-y-3.5">
