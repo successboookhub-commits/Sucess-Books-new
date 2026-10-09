@@ -198,7 +198,7 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
       setContentBlocks(fetchedContent || []);
 
       if (fetchedCats && fetchedCats.length > 0 && !newCategory) {
-        setNewCategory(fetchedCats[0].name);
+        setNewCategory(fetchedCats[0]?.name || "Classics");
       }
     } catch (err) {
       console.error("Admin view data load error:", err);
@@ -296,7 +296,7 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
     setNewTitle("");
     setNewAuthor("");
     setNewPublisher("");
-    setNewCategory(dbCategories.length > 0 ? dbCategories[0].name : "Classics");
+    setNewCategory(dbCategories[0]?.name || "Classics");
     setNewSubCategory("");
     setNewPrice("");
     setNewOldPrice("");
@@ -314,7 +314,7 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
     setNewTitle(b.title || "");
     setNewAuthor(b.author || "");
     setNewPublisher(b.publisher || "");
-    setNewCategory(b.category || (dbCategories.length > 0 ? dbCategories[0].name : "Classics"));
+    setNewCategory(b.category || dbCategories[0]?.name || "Classics");
     setNewSubCategory(b.subCategory || b.sub_category || "");
     setNewPrice(b.price ? String(b.price) : "");
     setNewOldPrice(b.oldPrice || b.old_price ? String(b.oldPrice || b.old_price) : "");
@@ -503,7 +503,7 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
         discountType: couponType,
         discountValue: parseFloat(couponValue),
         minOrder: parseFloat(couponMinOrder) || 0,
-        maxDiscount: couponMaxDiscount ? parseFloat(couponMaxDiscount) : undefined,
+        ...(couponMaxDiscount ? { maxDiscount: parseFloat(couponMaxDiscount) } : {}),
         status: couponStatus
       };
       if (editingCouponId) {

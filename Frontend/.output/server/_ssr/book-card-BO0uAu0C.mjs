@@ -9,7 +9,7 @@ import { n as cn, t as Button } from "./button-CKfowhiz.mjs";
 import { A as Plus, H as MessageCircle, Q as Layers, Tt as Check, g as ShoppingBag, h as Sparkles, ht as Clock, kt as BookOpen, lt as Eye, m as Star, nt as Heart, s as Truck, v as ShieldCheck, x as Send } from "../_libs/lucide-react.mjs";
 import { n as useWishlist } from "./wishlist-BizSf4Wx.mjs";
 import { a as DialogTitle, n as DialogContent, t as Dialog } from "./dialog-C-FEQyPT.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/book-card-RdNFU0Cy.js
+//#region node_modules/.nitro/vite/services/ssr/assets/book-card-BO0uAu0C.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 function BookDetailModal({ book, open, onOpenChange, onSelectBook }) {
@@ -196,7 +196,7 @@ function BookDetailModal({ book, open, onOpenChange, onSelectBook }) {
 													className: "text-[10px] text-muted-foreground font-normal",
 													children: [
 														"(",
-														currentItem.reviewsCount || currentItem.reviews?.length || 0,
+														currentItem.reviewsCount || details?.reviews?.length || 0,
 														")"
 													]
 												})

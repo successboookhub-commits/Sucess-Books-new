@@ -13,24 +13,24 @@ export type Book = {
   id: number;
   title: string;
   author: string;
-  publisher?: string;
+  publisher?: string | undefined;
   category: string;
-  subCategory?: string;
-  sub_category?: string;
+  subCategory?: string | undefined;
+  sub_category?: string | undefined;
   price: number;
-  oldPrice?: number | null;
-  old_price?: number | null;
-  discountPercent?: number;
-  discount_percent?: number;
+  oldPrice?: number | null | undefined;
+  old_price?: number | null | undefined;
+  discountPercent?: number | undefined;
+  discount_percent?: number | undefined;
   rating: number;
-  reviewsCount?: number;
+  reviewsCount?: number | undefined;
   cover: string;
-  image2?: string;
-  image_2?: string;
-  label?: string | null;
-  description?: string;
-  stock?: number;
-  featured?: boolean;
+  image2?: string | undefined;
+  image_2?: string | undefined;
+  label?: string | null | undefined;
+  description?: string | undefined;
+  stock?: number | undefined;
+  featured?: boolean | undefined;
 };
 
 export const books: Book[] = [

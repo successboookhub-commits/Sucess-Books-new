@@ -1,4 +1,4 @@
-//#region node_modules/.nitro/vite/services/ssr/assets/_tanstack-start-manifest_v-C-EgYw-E.js
+//#region node_modules/.nitro/vite/services/ssr/assets/_tanstack-start-manifest_v-wIaSNYPB.js
 var tsrStartManifest = () => ({ routes: {
 	__root__: {
 		filePath: "D:/Freelancing/Sucessbookhub/Frontend/src/routes/__root.tsx",
@@ -15,7 +15,7 @@ var tsrStartManifest = () => ({ routes: {
 			"/terms"
 		],
 		preloads: [
-			"/assets/index-Dik-cHDx.js",
+			"/assets/index-tHOj_KHR.js",
 			"/assets/createLucideIcon-BfZogB2V.js",
 			"/assets/link-BQhbMAEl.js",
 			"/assets/preload-helper-PYkFbxrK.js",
@@ -28,7 +28,7 @@ var tsrStartManifest = () => ({ routes: {
 			"/assets/book-open-CVw-I5P1.js",
 			"/assets/search-HGcPZjpq.js",
 			"/assets/chevron-down-BnvS7aMP.js",
-			"/assets/admin-3sVyylyX.js",
+			"/assets/admin-D24xhwQW.js",
 			"/assets/circle-check-Co11zhBR.js",
 			"/assets/clock-q0gNZWlP.js",
 			"/assets/account-Cp5UPr6k.js",
@@ -46,21 +46,21 @@ var tsrStartManifest = () => ({ routes: {
 			"/assets/sparkles-Di7Nq1aI.js",
 			"/assets/truck-YO8mbBV9.js",
 			"/assets/button-DGqueH1g.js",
-			"/assets/shop-DMw_q3Hz.js"
+			"/assets/shop-CJFpCFaI.js"
 		],
 		scripts: [{ attrs: {
 			type: "module",
 			async: !0,
-			src: "/assets/index-Dik-cHDx.js"
+			src: "/assets/index-tHOj_KHR.js"
 		} }]
 	},
 	"/": {
 		filePath: "D:/Freelancing/Sucessbookhub/Frontend/src/routes/index.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/routes-BnvV0s1s.js",
+			"/assets/routes-Bn2muxmo.js",
 			"/assets/useNavigate-BoELgxfH.js",
-			"/assets/book-card-C9QcGnu8.js",
+			"/assets/book-card-Cgn4QKuv.js",
 			"/assets/external-link-Cv28W478.js",
 			"/assets/tag-B_1aP3S8.js"
 		]
@@ -83,7 +83,7 @@ var tsrStartManifest = () => ({ routes: {
 		filePath: "D:/Freelancing/Sucessbookhub/Frontend/src/routes/admin.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/admin-CRqI7o10.js",
+			"/assets/admin-CrXYX1u7.js",
 			"/assets/useNavigate-BoELgxfH.js",
 			"/assets/external-link-Cv28W478.js",
 			"/assets/tag-B_1aP3S8.js",
@@ -115,8 +115,8 @@ var tsrStartManifest = () => ({ routes: {
 		filePath: "D:/Freelancing/Sucessbookhub/Frontend/src/routes/shop.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/shop-BCtrQoVV.js",
-			"/assets/book-card-C9QcGnu8.js",
+			"/assets/shop-B8w23Ms7.js",
+			"/assets/book-card-Cgn4QKuv.js",
 			"/assets/tag-B_1aP3S8.js"
 		]
 	},

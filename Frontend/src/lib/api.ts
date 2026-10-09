@@ -747,11 +747,11 @@ export const api = {
 
   async createCoupon(payload: {
     code: string;
-    discountType?: "percentage" | "flat";
+    discountType?: "percentage" | "flat" | undefined;
     discountValue: number;
-    minOrder?: number;
-    maxDiscount?: number;
-    status?: "active" | "inactive";
+    minOrder?: number | undefined;
+    maxDiscount?: number | undefined;
+    status?: "active" | "inactive" | undefined;
   }): Promise<Coupon> {
     const res = await fetch(getApiEndpoint("/api/coupons"), {
       method: "POST",
@@ -861,18 +861,18 @@ export type Coupon = {
   id: number;
   code: string;
   discountType: "percentage" | "flat";
-  discount_type?: "percentage" | "flat";
+  discount_type?: "percentage" | "flat" | undefined;
   discountValue: number;
-  discount_value?: number;
+  discount_value?: number | undefined;
   minOrder: number;
-  min_order?: number;
-  maxDiscount?: number;
-  max_discount?: number;
+  min_order?: number | undefined;
+  maxDiscount?: number | undefined;
+  max_discount?: number | undefined;
   status: "active" | "inactive";
   usageCount: number;
-  usage_count?: number;
-  createdAt?: string;
-  created_at?: string;
+  usage_count?: number | undefined;
+  createdAt?: string | undefined;
+  created_at?: string | undefined;
 };
 
 export type StoreSettings = {
@@ -894,16 +894,16 @@ export type ContentBlock = {
   id: number;
   type: "hero-banners" | "promo-banners" | "testimonials" | "blogs" | string;
   title: string;
-  subtitle?: string;
-  image?: string;
-  linkUrl?: string;
-  link_url?: string;
-  content?: string;
+  subtitle?: string | undefined;
+  image?: string | undefined;
+  linkUrl?: string | undefined;
+  link_url?: string | undefined;
+  content?: string | undefined;
   status: "active" | "inactive";
   displayOrder: number;
-  display_order?: number;
-  createdAt?: string;
-  created_at?: string;
+  display_order?: number | undefined;
+  createdAt?: string | undefined;
+  created_at?: string | undefined;
 };
 
 export type UserProfile = {

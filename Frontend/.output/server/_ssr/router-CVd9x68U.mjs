@@ -15,12 +15,12 @@ import { a as DialogTitle$1, i as DialogHeader, n as DialogContent$1, o as Dialo
 import { t as TaxInvoiceModal } from "./tax-invoice-modal-CdUn0YD2.mjs";
 import { t as Route$8 } from "./account-dAgN1ghG.mjs";
 import { n as useAdminAuth, t as AuthProvider } from "./auth-rJO5DXeK.mjs";
-import { a as DropdownMenuSeparator, i as DropdownMenuLabel, n as DropdownMenuContent, o as DropdownMenuTrigger, r as DropdownMenuItem, s as Route$9, t as DropdownMenu } from "./admin-beuG7j_8.mjs";
-import { t as Route$10 } from "./shop-DJt8t6KA.mjs";
+import { a as DropdownMenuSeparator, i as DropdownMenuLabel, n as DropdownMenuContent, o as DropdownMenuTrigger, r as DropdownMenuItem, s as Route$9, t as DropdownMenu } from "./admin-CgqgscT_.mjs";
+import { t as Route$10 } from "./shop-DU6q2uj0.mjs";
 import { t as QueryClientProvider } from "../_libs/tanstack__react-query.mjs";
 import { t as QueryClient } from "../_libs/tanstack__query-core.mjs";
 import { i as Trigger, n as List, r as Root2, t as Content } from "../_libs/radix-ui__react-tabs.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/router-DdJym7xd.js
+//#region node_modules/.nitro/vite/services/ssr/assets/router-CVd9x68U.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 var styles_default = "/assets/styles-CQhSiMqF.css";
@@ -3213,7 +3213,7 @@ function RootComponent() {
 		}) }) }) }) })
 	});
 }
-var $$splitComponentImporter$6 = () => import("./routes-DkiI9Eqx.mjs");
+var $$splitComponentImporter$6 = () => import("./routes-Db8z4zwv.mjs");
 var Route$6 = createFileRoute("/")({
 	head: () => ({ meta: [
 		{ title: "Success Book Hub — Curated Books & Timeless Stories" },

@@ -5,9 +5,9 @@ import { u as require_react } from "../_libs/@floating-ui/react-dom+[...].mjs";
 import { o as require_jsx_runtime } from "../_libs/@radix-ui/react-collection+[...].mjs";
 import { r as useCart } from "./cart-DMZvUTwh.mjs";
 import { Ct as ChevronLeft, Pt as ArrowRight, Q as Layers, S as Search, St as ChevronRight, h as Sparkles, kt as BookOpen, n as X, p as Tag } from "../_libs/lucide-react.mjs";
-import { t as Route } from "./shop-DJt8t6KA.mjs";
-import { n as BookDetailModal, t as BookCard } from "./book-card-RdNFU0Cy.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/shop-2fsejoPb.js
+import { t as Route } from "./shop-DU6q2uj0.mjs";
+import { n as BookDetailModal, t as BookCard } from "./book-card-BO0uAu0C.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/shop-B5kBX95D.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 function Shop() {

@@ -9,9 +9,9 @@ import { _ as useNavigate, g as Link } from "../_libs/@tanstack/react-router+[..
 import { A as Plus, At as Bell, C as Save, D as Receipt, Dt as Building, E as RefreshCw, Et as ChartColumn, I as PanelLeftOpen, K as LogOut, L as PanelLeftClose, N as Pen, Nt as ArrowUpRight, P as PenLine, Pt as ArrowRight, Q as Layers, R as Palette, S as Search, St as ChevronRight, U as Menu, X as Library, Y as LoaderCircle, Z as LayoutDashboard, _ as Shield, a as Upload, at as FolderPlus, b as Settings, bt as CircleAlert, c as TriangleAlert, d as ToggleRight, dt as ExternalLink, et as Image$1, f as ToggleLeft, ft as DollarSign, g as ShoppingBag, h as Sparkles, i as User, it as Funnel, k as Printer, kt as BookOpen, l as TrendingUp, m as Star, n as X, ot as FolderOpen, p as Tag, q as LogIn, r as Users, u as Trash2, v as ShieldCheck, wt as ChevronDown, y as ShieldAlert, yt as CircleCheck, z as Package } from "../_libs/lucide-react.mjs";
 import { t as TaxInvoiceModal } from "./tax-invoice-modal-CdUn0YD2.mjs";
 import { n as useAdminAuth } from "./auth-rJO5DXeK.mjs";
-import { a as DropdownMenuSeparator, i as DropdownMenuLabel, n as DropdownMenuContent, o as DropdownMenuTrigger, r as DropdownMenuItem, s as Route, t as DropdownMenu } from "./admin-beuG7j_8.mjs";
+import { a as DropdownMenuSeparator, i as DropdownMenuLabel, n as DropdownMenuContent, o as DropdownMenuTrigger, r as DropdownMenuItem, s as Route, t as DropdownMenu } from "./admin-CgqgscT_.mjs";
 import { i as Trigger, n as Portal, r as Root2, t as Content2 } from "../_libs/radix-ui__react-popover.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/admin-_5MwjtFe.js
+//#region node_modules/.nitro/vite/services/ssr/assets/admin-DODZdvIE.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 function AdminSidebar({ activeSection, onSelectSection, mobileOpen, onMobileClose, collapsed, onToggleCollapse, ordersCount = 0 }) {
@@ -2424,7 +2424,7 @@ function AdminViews({ activeSection, searchQuery, onNavigateSection }) {
 				discountType: couponType,
 				discountValue: parseFloat(couponValue),
 				minOrder: parseFloat(couponMinOrder) || 0,
-				maxDiscount: couponMaxDiscount ? parseFloat(couponMaxDiscount) : void 0,
+				...couponMaxDiscount ? { maxDiscount: parseFloat(couponMaxDiscount) } : {},
 				status: couponStatus
 			};
 			if (editingCouponId) {

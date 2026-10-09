@@ -7,8 +7,8 @@ import { r as useCart } from "./cart-DMZvUTwh.mjs";
 import { t as Button } from "./button-CKfowhiz.mjs";
 import { _ as useNavigate, g as Link } from "../_libs/@tanstack/react-router+[...].mjs";
 import { Ct as ChevronLeft, F as Pause, Pt as ArrowRight, S as Search, St as ChevronRight, dt as ExternalLink, g as ShoppingBag, h as Sparkles, j as Play, kt as BookOpen, m as Star, n as X, p as Tag, s as Truck, v as ShieldCheck, w as RotateCw } from "../_libs/lucide-react.mjs";
-import { n as BookDetailModal, t as BookCard } from "./book-card-RdNFU0Cy.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/routes-DkiI9Eqx.js
+import { n as BookDetailModal, t as BookCard } from "./book-card-BO0uAu0C.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/routes-Db8z4zwv.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 var STORIES = [
