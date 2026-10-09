@@ -541,8 +541,19 @@ function AccountPage() {
                           {order.items.map((item, idx) => (
                             <div key={idx} className="flex items-center justify-between text-xs py-1">
                               <div className="flex items-center gap-3 min-w-0">
-                                <div className="h-10 w-8 bg-secondary rounded overflow-hidden flex-shrink-0 border border-border">
-                                  <BookOpen className="h-full w-full p-2 text-muted-foreground" />
+                                <div className="h-10 w-8 bg-secondary rounded overflow-hidden flex-shrink-0 border border-border flex items-center justify-center">
+                                  {item.image || (item as any).cover ? (
+                                    <img
+                                      src={item.image || (item as any).cover}
+                                      alt={item.title}
+                                      onError={(e) => {
+                                        (e.currentTarget as HTMLImageElement).style.display = "none";
+                                      }}
+                                      className="h-full w-full object-cover"
+                                    />
+                                  ) : (
+                                    <BookOpen className="h-full w-full p-2 text-muted-foreground" />
+                                  )}
                                 </div>
                                 <div className="min-w-0">
                                   <h4 className="font-bold text-foreground text-xs truncate">
@@ -731,6 +742,9 @@ function AccountPage() {
                         <img
                           src={book.cover || book.image || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=600&auto=format&fit=crop"}
                           alt={book.title}
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=600&auto=format&fit=crop";
+                          }}
                           className="h-full w-full object-cover"
                         />
                         {discount > 0 && (

@@ -315,7 +315,14 @@ function Shop() {
                           >
                             <div className="h-12 w-9 rounded-md overflow-hidden bg-secondary border border-border shadow-2xs shrink-0 flex items-center justify-center">
                               {book.cover && (book.cover.startsWith("http") || book.cover.startsWith("/")) ? (
-                                <img src={book.cover} alt={book.title} className="h-full w-full object-cover" />
+                                <img
+                                  src={book.cover}
+                                  alt={book.title}
+                                  onError={(e) => {
+                                    (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=600&auto=format&fit=crop";
+                                  }}
+                                  className="h-full w-full object-cover"
+                                />
                               ) : (
                                 <BookOpen className="h-4 w-4 text-amber-600" />
                               )}

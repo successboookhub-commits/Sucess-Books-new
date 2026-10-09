@@ -309,6 +309,9 @@ export function CartSheet() {
                           <img
                             src={book.cover || book.image || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=600&auto=format&fit=crop"}
                             alt={book.title}
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=600&auto=format&fit=crop";
+                            }}
                             className="h-full w-full object-cover"
                           />
                         </div>

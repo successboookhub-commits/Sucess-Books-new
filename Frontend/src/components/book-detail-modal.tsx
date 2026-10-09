@@ -226,7 +226,14 @@ export function BookDetailModal({ book, open, onOpenChange, onSelectBook }: Book
                     )}
                   >
                     {isImage1 ? (
-                      <img src={image1} alt="Cover 1" className="w-full h-full object-cover rounded-md" />
+                      <img
+                        src={image1}
+                        alt="Cover 1"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=600&auto=format&fit=crop";
+                        }}
+                        className="w-full h-full object-cover rounded-md"
+                      />
                     ) : (
                       <div className="w-full h-full bg-primary/20 flex items-center justify-center text-[10px] text-primary font-bold">
                         1
@@ -244,7 +251,14 @@ export function BookDetailModal({ book, open, onOpenChange, onSelectBook }: Book
                         : "border-border opacity-70 hover:opacity-100"
                     )}
                   >
-                    <img src={image2} alt="Cover 2" className="w-full h-full object-cover rounded-md" />
+                    <img
+                      src={image2}
+                      alt="Cover 2"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=600&auto=format&fit=crop";
+                      }}
+                      className="w-full h-full object-cover rounded-md"
+                    />
                   </button>
                 </div>
               )}
