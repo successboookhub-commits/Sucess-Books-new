@@ -5,13 +5,13 @@ import { u as require_react } from "../_libs/@floating-ui/react-dom+[...].mjs";
 import { o as require_jsx_runtime } from "../_libs/@radix-ui/react-collection+[...].mjs";
 import { n as cn, t as Button } from "./button-CKfowhiz.mjs";
 import { _ as useNavigate, g as Link } from "../_libs/@tanstack/react-router+[...].mjs";
-import { $ as Image$1, At as ArrowUpRight, C as Save, Dt as Bell, E as Receipt, Et as BookOpen, F as PanelLeftOpen, G as LogOut, H as Menu, I as PanelLeftClose, J as LoaderCircle, K as LogIn, L as Palette, M as Pen, N as PenLine, O as Printer, R as Package, S as Search, St as ChevronDown, T as RefreshCw, X as LayoutDashboard, Y as Library, Z as Layers, _ as Shield, _t as CircleCheck, a as Upload, at as FolderOpen, b as Settings, bt as ChevronRight, c as TriangleAlert, d as ToggleRight, f as ToggleLeft, g as ShoppingBag, h as Sparkles, i as User, it as FolderPlus, jt as ArrowRight, k as Plus, l as TrendingUp, lt as ExternalLink, m as Star, n as X, p as Tag, r as Users, rt as Funnel, u as Trash2, ut as DollarSign, v as ShieldCheck, vt as CircleAlert, wt as ChartColumn, y as ShieldAlert } from "../_libs/lucide-react.mjs";
+import { $ as Image$1, C as Save, Dt as BookOpen, E as Receipt, F as PanelLeftOpen, G as LogOut, H as Menu, I as PanelLeftClose, J as LoaderCircle, K as LogIn, L as Palette, M as Pen, Mt as ArrowRight, N as PenLine, O as Printer, Ot as Bell, R as Package, S as Search, St as ChevronDown, T as RefreshCw, Tt as Building, X as LayoutDashboard, Y as Library, Z as Layers, _ as Shield, _t as CircleCheck, a as Upload, at as FolderOpen, b as Settings, bt as ChevronRight, c as TriangleAlert, d as ToggleRight, f as ToggleLeft, g as ShoppingBag, h as Sparkles, i as User, it as FolderPlus, jt as ArrowUpRight, k as Plus, l as TrendingUp, lt as ExternalLink, m as Star, n as X, p as Tag, r as Users, rt as Funnel, u as Trash2, ut as DollarSign, v as ShieldCheck, vt as CircleAlert, wt as ChartColumn, y as ShieldAlert } from "../_libs/lucide-react.mjs";
 import { n as toast } from "../_libs/sonner.mjs";
 import { t as TaxInvoiceModal } from "./tax-invoice-modal-CfeHJugp.mjs";
 import { n as useAdminAuth } from "./auth-Bx5IPpeH.mjs";
-import { a as DropdownMenuSeparator, i as DropdownMenuLabel, n as DropdownMenuContent, o as DropdownMenuTrigger, r as DropdownMenuItem, s as Route, t as DropdownMenu } from "./admin-_Po7ZC_1.mjs";
+import { a as DropdownMenuSeparator, i as DropdownMenuLabel, n as DropdownMenuContent, o as DropdownMenuTrigger, r as DropdownMenuItem, s as Route, t as DropdownMenu } from "./admin-Dp8r0cTc.mjs";
 import { i as Trigger, n as Portal, r as Root2, t as Content2 } from "../_libs/radix-ui__react-popover.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/admin-D8t3T47u.js
+//#region node_modules/.nitro/vite/services/ssr/assets/admin-Bj5dGFPw.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 function AdminSidebar({ activeSection, onSelectSection, mobileOpen, onMobileClose, collapsed, onToggleCollapse, ordersCount = 0 }) {
@@ -43,14 +43,6 @@ function AdminSidebar({ activeSection, onSelectSection, mobileOpen, onMobileClos
 				{
 					id: "sub-categories",
 					label: "Sub Categories"
-				},
-				{
-					id: "authors",
-					label: "Authors"
-				},
-				{
-					id: "publishers",
-					label: "Publishers"
 				},
 				{
 					id: "books",
@@ -2168,6 +2160,10 @@ function AdminViews({ activeSection, searchQuery, onNavigateSection }) {
 	const [newFeatured, setNewFeatured] = (0, import_react.useState)(false);
 	const [savingBook, setSavingBook] = (0, import_react.useState)(false);
 	const [catalogFilterCategory, setCatalogFilterCategory] = (0, import_react.useState)("All");
+	const [catalogActiveTab, setCatalogActiveTab] = (0, import_react.useState)("books");
+	const [catalogFilterAuthor, setCatalogFilterAuthor] = (0, import_react.useState)("All");
+	const [catalogFilterPublisher, setCatalogFilterPublisher] = (0, import_react.useState)("All");
+	const [newPublisher, setNewPublisher] = (0, import_react.useState)("");
 	const loadData = async () => {
 		setLoading(true);
 		try {
@@ -2244,6 +2240,7 @@ function AdminViews({ activeSection, searchQuery, onNavigateSection }) {
 		setEditingBookId(null);
 		setNewTitle("");
 		setNewAuthor("");
+		setNewPublisher("");
 		setNewCategory(dbCategories.length > 0 ? dbCategories[0].name : "Classics");
 		setNewSubCategory("");
 		setNewPrice("");
@@ -2260,6 +2257,7 @@ function AdminViews({ activeSection, searchQuery, onNavigateSection }) {
 		setEditingBookId(b.id);
 		setNewTitle(b.title || "");
 		setNewAuthor(b.author || "");
+		setNewPublisher(b.publisher || "");
 		setNewCategory(b.category || (dbCategories.length > 0 ? dbCategories[0].name : "Classics"));
 		setNewSubCategory(b.subCategory || b.sub_category || "");
 		setNewPrice(b.price ? String(b.price) : "");
@@ -2287,6 +2285,7 @@ function AdminViews({ activeSection, searchQuery, onNavigateSection }) {
 			const payload = {
 				title: newTitle.trim(),
 				author: newAuthor.trim(),
+				publisher: newPublisher.trim() || void 0,
 				category: newCategory,
 				subCategory: newSubCategory.trim() || void 0,
 				sub_category: newSubCategory.trim() || void 0,
@@ -2320,9 +2319,12 @@ function AdminViews({ activeSection, searchQuery, onNavigateSection }) {
 		}
 	};
 	const filteredBooks = books.filter((b) => {
-		const matchesSearch = `${b.title} ${b.author} ${b.category} ${b.subCategory || ""} ${b.sub_category || ""}`.toLowerCase().includes(searchQuery.toLowerCase());
+		const bookPublisher = b.publisher && b.publisher.trim() ? b.publisher.trim() : b.author ? `${b.author} Imprint` : "Independent";
+		const matchesSearch = `${b.title} ${b.author} ${b.publisher || ""} ${b.category} ${b.subCategory || ""} ${b.sub_category || ""}`.toLowerCase().includes(searchQuery.toLowerCase());
 		const matchesCategory = catalogFilterCategory === "All" || b.category.toLowerCase() === catalogFilterCategory.toLowerCase();
-		return matchesSearch && matchesCategory;
+		const matchesAuthor = catalogFilterAuthor === "All" || (b.author || "").toLowerCase() === catalogFilterAuthor.toLowerCase();
+		const matchesPublisher = catalogFilterPublisher === "All" || bookPublisher.toLowerCase() === catalogFilterPublisher.toLowerCase();
+		return matchesSearch && matchesCategory && matchesAuthor && matchesPublisher;
 	});
 	const filteredOrders = orders.filter((o) => `${o.id} ${o.customerName} ${o.customerPhone} ${o.customerEmail || ""} ${o.status} ${o.deliveryAddress}`.toLowerCase().includes(searchQuery.toLowerCase()));
 	const filteredCustomers = customers.filter((c) => `${c.name} ${c.email} ${c.phone || ""}`.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -2345,6 +2347,21 @@ function AdminViews({ activeSection, searchQuery, onNavigateSection }) {
 				avgRating: 0
 			});
 			const item = map.get(author);
+			item.titlesCount++;
+			item.books.push(b);
+		});
+		return Array.from(map.values()).sort((a, b) => b.titlesCount - a.titlesCount);
+	}, [books]);
+	const distinctPublishers = (0, import_react.useMemo)(() => {
+		const map = /* @__PURE__ */ new Map();
+		books.forEach((b) => {
+			const pub = b.publisher && b.publisher.trim() ? b.publisher.trim() : b.author ? `${b.author} Imprint` : "Independent / Self Published";
+			if (!map.has(pub)) map.set(pub, {
+				name: pub,
+				titlesCount: 0,
+				books: []
+			});
+			const item = map.get(pub);
 			item.titlesCount++;
 			item.books.push(b);
 		});
@@ -2890,7 +2907,7 @@ function AdminViews({ activeSection, searchQuery, onNavigateSection }) {
 							children: activeSection === "inventory" ? "Warehouse & Inventory Management" : "Books Catalog"
 						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 							className: "text-xs text-muted-foreground",
-							children: "Manage book titles, front & secondary preview images, categories, subcategories, MRP, selling price & stock levels."
+							children: "Manage book titles, front & secondary preview images, authors, publishers, categories, MRP & stock levels."
 						})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 							className: "flex items-center gap-2",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
@@ -2906,279 +2923,658 @@ function AdminViews({ activeSection, searchQuery, onNavigateSection }) {
 							})]
 						})]
 					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl border border-border bg-card",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "flex flex-wrap items-center gap-2",
-							children: [
-								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-									className: "text-xs font-bold text-muted-foreground flex items-center gap-1",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Funnel, { className: "h-3.5 w-3.5" }), " Category:"]
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-									onClick: () => setCatalogFilterCategory("All"),
-									className: cn("px-3 py-1 rounded-full text-xs font-bold transition", catalogFilterCategory === "All" ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-secondary/80"),
-									children: [
-										"All (",
-										books.length,
-										")"
-									]
-								}),
-								dbCategories.map((c) => {
-									const cCount = books.filter((b) => b.category === c.name).length;
-									return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-										onClick: () => setCatalogFilterCategory(c.name),
-										className: cn("px-3 py-1 rounded-full text-xs font-semibold transition", catalogFilterCategory === c.name ? "bg-primary text-primary-foreground font-bold" : "bg-secondary text-foreground hover:bg-secondary/80"),
-										children: [
-											c.name,
-											" (",
-											cCount,
-											")"
-										]
-									}, c.id);
-								})
-							]
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "text-xs text-muted-foreground font-medium",
-							children: [
-								"Showing ",
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", { children: filteredBooks.length }),
-								" of ",
-								books.length,
-								" titles"
-							]
-						})]
-					}),
-					activeSection === "inventory" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "grid sm:grid-cols-3 gap-4",
+					activeSection === "books" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-secondary/80 border border-border/80 w-fit",
 						children: [
-							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								className: "p-4 rounded-xl border border-border bg-card",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									className: "text-xs font-bold text-muted-foreground uppercase",
-									children: "Total Warehouse Units"
-								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
-									className: "font-display text-2xl font-bold text-foreground mt-1",
-									children: [totalStockUnits, " Copies"]
-								})]
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+								type: "button",
+								onClick: () => setCatalogActiveTab("books"),
+								className: cn("px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2", catalogActiveTab === "books" ? "bg-card text-primary shadow-xs border border-border/60" : "text-muted-foreground hover:text-foreground hover:bg-card/50"),
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(BookOpen, { className: "h-4 w-4" }),
+									"Books List (",
+									books.length,
+									")"
+								]
 							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								className: "p-4 rounded-xl border border-border bg-card",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									className: "text-xs font-bold text-muted-foreground uppercase",
-									children: "Catalog Asset Valuation"
-								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
-									className: "font-display text-2xl font-bold text-emerald-600 mt-1",
-									children: ["₹", totalInventoryValuation.toLocaleString()]
-								})]
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+								type: "button",
+								onClick: () => setCatalogActiveTab("authors"),
+								className: cn("px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2", catalogActiveTab === "authors" ? "bg-card text-amber-600 shadow-xs border border-border/60" : "text-muted-foreground hover:text-foreground hover:bg-card/50"),
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Users, { className: "h-4 w-4" }),
+									"Authors Directory (",
+									distinctAuthors.length,
+									")"
+								]
 							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								className: "p-4 rounded-xl border border-border bg-card",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									className: "text-xs font-bold text-muted-foreground uppercase",
-									children: "Low Stock Warnings (<20)"
-								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
-									className: "font-display text-2xl font-bold text-amber-600 mt-1",
-									children: [lowStockBooks.length, " Titles"]
-								})]
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+								type: "button",
+								onClick: () => setCatalogActiveTab("publishers"),
+								className: cn("px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2", catalogActiveTab === "publishers" ? "bg-card text-blue-600 shadow-xs border border-border/60" : "text-muted-foreground hover:text-foreground hover:bg-card/50"),
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Building, { className: "h-4 w-4" }),
+									"Publishers & Imprints (",
+									distinctPublishers.length,
+									")"
+								]
 							})
 						]
 					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-						className: "rounded-2xl border border-border bg-card shadow-xs overflow-hidden",
-						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-							className: "overflow-x-auto",
-							children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("table", {
-								className: "w-full text-xs text-left",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("thead", {
-									className: "bg-secondary/60 text-muted-foreground font-semibold border-b border-border",
-									children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("tr", { children: [
-										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("th", {
-											className: "p-3.5",
-											children: "Cover"
+					(catalogActiveTab === "books" || activeSection === "inventory") && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "space-y-3 p-4 rounded-2xl border border-border bg-card shadow-xs",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex flex-wrap items-center justify-between gap-3",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "flex flex-wrap items-center gap-1.5",
+									children: [
+										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+											className: "text-xs font-bold text-muted-foreground flex items-center gap-1 mr-1",
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Funnel, { className: "h-3.5 w-3.5" }), " Category:"]
 										}),
-										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("th", {
-											className: "p-3.5",
-											children: "Title & Author"
-										}),
-										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("th", {
-											className: "p-3.5",
-											children: "Category / Sub-Category"
-										}),
-										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("th", {
-											className: "p-3.5",
-											children: "Cost & MRP"
-										}),
-										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("th", {
-											className: "p-3.5",
-											children: "Discount %"
-										}),
-										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("th", {
-											className: "p-3.5",
-											children: "Stock Level"
-										}),
-										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("th", {
-											className: "p-3.5",
-											children: "Rating"
-										}),
-										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("th", {
-											className: "p-3.5 text-right",
-											children: "Actions"
-										})
-									] })
-								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("tbody", {
-									className: "divide-y divide-border/60",
-									children: filteredBooks.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("tr", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-										colSpan: 8,
-										className: "p-8 text-center text-muted-foreground",
-										children: "No books found. Click \"Add New Book\" to add your first title!"
-									}) }) : filteredBooks.map((b) => {
-										const isImg = b.cover && (b.cover.startsWith("http") || b.cover.startsWith("/"));
-										const mrpVal = b.oldPrice || b.old_price;
-										const disc = b.discountPercent || b.discount_percent || (mrpVal && mrpVal > b.price ? Math.round((mrpVal - b.price) / mrpVal * 100) : 0);
-										const sub = b.subCategory || b.sub_category;
-										const currentStock = b.stock ?? 30;
-										return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("tr", {
-											className: "hover:bg-secondary/20 transition",
+										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+											type: "button",
+											onClick: () => setCatalogFilterCategory("All"),
+											className: cn("px-3 py-1 rounded-full text-xs font-bold transition", catalogFilterCategory === "All" ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-secondary/80"),
 											children: [
-												/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-													className: "p-3.5",
-													children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-														className: "relative h-12 w-9 rounded-md overflow-hidden bg-secondary border border-border/80 shadow-2xs shrink-0",
-														children: [isImg ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
-															src: b.cover,
-															alt: b.title,
-															className: "h-full w-full object-cover"
-														}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-															className: cn("h-full w-full flex items-center justify-center text-[7px] text-white font-bold p-0.5 text-center", b.cover || "bg-primary"),
-															children: b.title.slice(0, 8)
-														}), (b.image2 || b.image_2) && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-															className: "absolute bottom-0.5 right-0.5 bg-black/70 text-[7px] text-white px-0.5 rounded font-bold",
-															title: "Dual 2-Image Gallery",
-															children: "2🖼"
-														})]
+												"All (",
+												books.length,
+												")"
+											]
+										}),
+										dbCategories.map((c) => {
+											const cCount = books.filter((b) => b.category.toLowerCase() === c.name.toLowerCase()).length;
+											return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+												type: "button",
+												onClick: () => setCatalogFilterCategory(c.name),
+												className: cn("px-3 py-1 rounded-full text-xs font-semibold transition", catalogFilterCategory.toLowerCase() === c.name.toLowerCase() ? "bg-primary text-primary-foreground font-bold" : "bg-secondary text-foreground hover:bg-secondary/80"),
+												children: [
+													c.name,
+													" (",
+													cCount,
+													")"
+												]
+											}, c.id);
+										})
+									]
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "text-xs text-muted-foreground font-medium",
+									children: [
+										"Showing ",
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", { children: filteredBooks.length }),
+										" of ",
+										books.length,
+										" titles"
+									]
+								})]
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex flex-wrap items-center gap-3 pt-3 border-t border-border/60",
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "flex items-center gap-2",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+											className: "text-xs font-bold text-muted-foreground flex items-center gap-1",
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Users, { className: "h-3.5 w-3.5 text-amber-600" }), " Author:"]
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("select", {
+											value: catalogFilterAuthor,
+											onChange: (e) => setCatalogFilterAuthor(e.target.value),
+											className: "h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-medium text-foreground cursor-pointer outline-none focus:border-primary",
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("option", {
+												value: "All",
+												children: [
+													"All Authors (",
+													distinctAuthors.length,
+													")"
+												]
+											}), distinctAuthors.map((a) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("option", {
+												value: a.name,
+												children: [
+													a.name,
+													" (",
+													a.titlesCount,
+													")"
+												]
+											}, a.name))]
+										})]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "flex items-center gap-2",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+											className: "text-xs font-bold text-muted-foreground flex items-center gap-1",
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Building, { className: "h-3.5 w-3.5 text-blue-600" }), " Publisher:"]
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("select", {
+											value: catalogFilterPublisher,
+											onChange: (e) => setCatalogFilterPublisher(e.target.value),
+											className: "h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-medium text-foreground cursor-pointer outline-none focus:border-primary",
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("option", {
+												value: "All",
+												children: [
+													"All Publishers (",
+													distinctPublishers.length,
+													")"
+												]
+											}), distinctPublishers.map((p) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("option", {
+												value: p.name,
+												children: [
+													p.name,
+													" (",
+													p.titlesCount,
+													")"
+												]
+											}, p.name))]
+										})]
+									}),
+									(catalogFilterCategory !== "All" || catalogFilterAuthor !== "All" || catalogFilterPublisher !== "All") && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "flex flex-wrap items-center gap-2 ml-auto",
+										children: [
+											catalogFilterAuthor !== "All" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+												className: "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 font-bold text-[11px] border border-amber-500/20",
+												children: [
+													"Author: ",
+													catalogFilterAuthor,
+													/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+														type: "button",
+														onClick: () => setCatalogFilterAuthor("All"),
+														className: "hover:text-destructive ml-0.5",
+														children: "✕"
 													})
-												}),
-												/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("td", {
-													className: "p-3.5 font-medium max-w-[200px]",
-													children: [
-														/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-															className: "font-bold text-foreground text-sm font-display truncate",
-															children: b.title
-														}),
-														/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
-															className: "text-[11px] text-muted-foreground truncate",
-															children: ["by ", b.author]
-														}),
-														b.featured && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-															className: "inline-block mt-0.5 text-[9px] font-bold text-amber-600 bg-amber-500/10 px-1.5 py-0.2 rounded border border-amber-500/30",
-															children: "★ Featured Showcase"
-														})
-													]
-												}),
-												/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-													className: "p-3.5",
-													children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-														className: "flex flex-col gap-1",
-														children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-															className: "px-2 py-0.5 rounded-full bg-secondary text-primary font-bold text-[10px] w-fit",
-															children: b.category
-														}), sub && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-															className: "text-[10px] text-muted-foreground font-medium pl-1",
-															children: ["› ", sub]
-														})]
+												]
+											}),
+											catalogFilterPublisher !== "All" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+												className: "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-300 font-bold text-[11px] border border-blue-500/20",
+												children: [
+													"Publisher: ",
+													catalogFilterPublisher,
+													/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+														type: "button",
+														onClick: () => setCatalogFilterPublisher("All"),
+														className: "hover:text-destructive ml-0.5",
+														children: "✕"
 													})
-												}),
-												/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("td", {
-													className: "p-3.5",
-													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
-														className: "font-bold text-foreground text-sm font-display",
-														children: ["₹", b.price]
-													}), mrpVal && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
-														className: "text-[10px] text-muted-foreground line-through",
-														children: [
-															"₹",
-															mrpVal,
-															" MRP"
-														]
-													})]
-												}),
-												/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-													className: "p-3.5",
-													children: disc > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-														className: "px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-extrabold text-[11px]",
-														children: [disc, "% OFF"]
-													}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-														className: "text-muted-foreground text-[11px]",
-														children: "Standard"
-													})
-												}),
-												/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-													className: "p-3.5",
-													children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-														className: "flex items-center gap-1.5",
-														children: [
-															/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-																onClick: () => handleStockAdjust(b.id, currentStock, -5),
-																className: "h-6 w-6 rounded bg-secondary hover:bg-muted text-foreground font-bold flex items-center justify-center text-xs transition",
-																title: "Decrease stock by 5",
-																children: "-"
-															}),
-															/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-																className: cn("px-2 py-0.5 rounded-full font-bold text-[11px] min-w-[50px] text-center", currentStock >= 20 ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : currentStock > 0 ? "bg-amber-500/10 text-amber-700 dark:text-amber-300" : "bg-red-500/10 text-red-700 dark:text-red-300"),
-																children: currentStock
-															}),
-															/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-																onClick: () => handleStockAdjust(b.id, currentStock, 5),
-																className: "h-6 w-6 rounded bg-secondary hover:bg-muted text-foreground font-bold flex items-center justify-center text-xs transition",
-																title: "Increase stock by 5",
-																children: "+"
-															})
-														]
-													})
-												}),
-												/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
-													className: "p-3.5",
-													children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-														className: "flex items-center gap-1",
-														children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Star, { className: "h-3.5 w-3.5 fill-amber-400 text-amber-400" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-															className: "font-bold text-foreground",
-															children: b.rating || 4.5
-														})]
-													})
-												}),
-												/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("td", {
-													className: "p-3.5 text-right space-x-1 whitespace-nowrap",
-													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-														size: "sm",
-														variant: "ghost",
-														className: "h-8 text-xs text-primary hover:bg-secondary rounded-lg",
-														onClick: () => handleOpenEditBook(b),
-														title: "Edit Book Details",
-														children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PenLine, { className: "h-3.5 w-3.5" })
-													}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-														size: "sm",
-														variant: "ghost",
-														className: "h-8 text-xs text-destructive hover:bg-destructive/10 rounded-lg",
-														onClick: async () => {
-															if (confirm(`Remove "${b.title}" from bookstore catalog?`)) try {
-																await api.deleteBook(b.id);
-																toast.success(`Removed "${b.title}"`);
-																loadData();
-															} catch (err) {
-																toast.error(err instanceof Error ? err.message : "Failed to delete book");
-															}
-														},
-														title: "Delete Book",
-														children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, { className: "h-3.5 w-3.5" })
-													})]
+												]
+											}),
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+												type: "button",
+												onClick: () => {
+													setCatalogFilterCategory("All");
+													setCatalogFilterAuthor("All");
+													setCatalogFilterPublisher("All");
+												},
+												className: "text-xs font-bold text-primary hover:underline ml-1",
+												children: "Reset All Filters"
+											})
+										]
+									})
+								]
+							})]
+						}),
+						activeSection === "inventory" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "grid sm:grid-cols-3 gap-4",
+							children: [
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "p-4 rounded-xl border border-border bg-card",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+										className: "text-xs font-bold text-muted-foreground uppercase",
+										children: "Total Warehouse Units"
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+										className: "font-display text-2xl font-bold text-foreground mt-1",
+										children: [totalStockUnits, " Copies"]
+									})]
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "p-4 rounded-xl border border-border bg-card",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+										className: "text-xs font-bold text-muted-foreground uppercase",
+										children: "Catalog Asset Valuation"
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+										className: "font-display text-2xl font-bold text-emerald-600 mt-1",
+										children: ["₹", totalInventoryValuation.toLocaleString()]
+									})]
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "p-4 rounded-xl border border-border bg-card",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+										className: "text-xs font-bold text-muted-foreground uppercase",
+										children: "Low Stock Warnings (<20)"
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+										className: "font-display text-2xl font-bold text-amber-600 mt-1",
+										children: [lowStockBooks.length, " Titles"]
+									})]
+								})
+							]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "rounded-2xl border border-border bg-card shadow-xs overflow-hidden",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								className: "overflow-x-auto",
+								children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("table", {
+									className: "w-full text-xs text-left",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("thead", {
+										className: "bg-secondary/60 text-muted-foreground font-semibold border-b border-border",
+										children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("tr", { children: [
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("th", {
+												className: "p-3.5",
+												children: "Cover"
+											}),
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("th", {
+												className: "p-3.5",
+												children: "Title, Author & Publisher"
+											}),
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("th", {
+												className: "p-3.5",
+												children: "Category / Sub-Category"
+											}),
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("th", {
+												className: "p-3.5",
+												children: "Cost & MRP"
+											}),
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("th", {
+												className: "p-3.5",
+												children: "Discount %"
+											}),
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("th", {
+												className: "p-3.5",
+												children: "Stock Level"
+											}),
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("th", {
+												className: "p-3.5",
+												children: "Rating"
+											}),
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("th", {
+												className: "p-3.5 text-right",
+												children: "Actions"
+											})
+										] })
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("tbody", {
+										className: "divide-y divide-border/60",
+										children: filteredBooks.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("tr", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("td", {
+											colSpan: 8,
+											className: "p-8 text-center text-muted-foreground",
+											children: [
+												"No books match the current filters.",
+												" ",
+												(catalogFilterAuthor !== "All" || catalogFilterPublisher !== "All" || catalogFilterCategory !== "All") && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+													type: "button",
+													onClick: () => {
+														setCatalogFilterCategory("All");
+														setCatalogFilterAuthor("All");
+														setCatalogFilterPublisher("All");
+													},
+													className: "text-primary font-bold hover:underline",
+													children: "Clear all filters"
 												})
 											]
-										}, b.id);
-									})
-								})]
+										}) }) : filteredBooks.map((b) => {
+											const isImg = b.cover && (b.cover.startsWith("http") || b.cover.startsWith("/"));
+											const mrpVal = b.oldPrice || b.old_price;
+											const disc = b.discountPercent || b.discount_percent || (mrpVal && mrpVal > b.price ? Math.round((mrpVal - b.price) / mrpVal * 100) : 0);
+											const sub = b.subCategory || b.sub_category;
+											const currentStock = b.stock ?? 30;
+											return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("tr", {
+												className: "hover:bg-secondary/20 transition",
+												children: [
+													/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
+														className: "p-3.5",
+														children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+															className: "relative h-12 w-9 rounded-md overflow-hidden bg-secondary border border-border/80 shadow-2xs shrink-0",
+															children: [isImg ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
+																src: b.cover,
+																alt: b.title,
+																className: "h-full w-full object-cover"
+															}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+																className: cn("h-full w-full flex items-center justify-center text-[7px] text-white font-bold p-0.5 text-center", b.cover || "bg-primary"),
+																children: b.title.slice(0, 8)
+															}), (b.image2 || b.image_2) && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+																className: "absolute bottom-0.5 right-0.5 bg-black/70 text-[7px] text-white px-0.5 rounded font-bold",
+																title: "Dual 2-Image Gallery",
+																children: "2🖼"
+															})]
+														})
+													}),
+													/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("td", {
+														className: "p-3.5 font-medium max-w-[220px]",
+														children: [
+															/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+																className: "font-bold text-foreground text-sm font-display truncate",
+																children: b.title
+															}),
+															/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+																className: "text-[11px] text-muted-foreground truncate",
+																children: [
+																	"by",
+																	" ",
+																	/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+																		type: "button",
+																		onClick: () => setCatalogFilterAuthor(b.author),
+																		className: "text-foreground hover:text-primary hover:underline font-semibold",
+																		title: `Filter books by "${b.author}"`,
+																		children: b.author
+																	})
+																]
+															}),
+															b.publisher && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+																className: "text-[10px] text-muted-foreground/80 truncate flex items-center gap-1 mt-0.5",
+																children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Building, { className: "h-3 w-3 text-blue-600 shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+																	type: "button",
+																	onClick: () => setCatalogFilterPublisher(b.publisher || "All"),
+																	className: "hover:text-primary hover:underline",
+																	title: `Filter books by "${b.publisher}"`,
+																	children: b.publisher
+																})]
+															}),
+															b.featured && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+																className: "inline-block mt-0.5 text-[9px] font-bold text-amber-600 bg-amber-500/10 px-1.5 py-0.2 rounded border border-amber-500/30",
+																children: "★ Featured Showcase"
+															})
+														]
+													}),
+													/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
+														className: "p-3.5",
+														children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+															className: "flex flex-col gap-1",
+															children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+																className: "px-2 py-0.5 rounded-full bg-secondary text-primary font-bold text-[10px] w-fit",
+																children: b.category
+															}), sub && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+																className: "text-[10px] text-muted-foreground font-medium pl-1",
+																children: ["› ", sub]
+															})]
+														})
+													}),
+													/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("td", {
+														className: "p-3.5",
+														children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+															className: "font-bold text-foreground text-sm font-display",
+															children: ["₹", b.price]
+														}), mrpVal && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+															className: "text-[10px] text-muted-foreground line-through",
+															children: [
+																"₹",
+																mrpVal,
+																" MRP"
+															]
+														})]
+													}),
+													/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
+														className: "p-3.5",
+														children: disc > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+															className: "px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-extrabold text-[11px]",
+															children: [disc, "% OFF"]
+														}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+															className: "text-muted-foreground text-[11px]",
+															children: "Standard"
+														})
+													}),
+													/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
+														className: "p-3.5",
+														children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+															className: "flex items-center gap-1.5",
+															children: [
+																/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+																	onClick: () => handleStockAdjust(b.id, currentStock, -5),
+																	className: "h-6 w-6 rounded bg-secondary hover:bg-muted text-foreground font-bold flex items-center justify-center text-xs transition",
+																	title: "Decrease stock by 5",
+																	children: "-"
+																}),
+																/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+																	className: cn("px-2 py-0.5 rounded-full font-bold text-[11px] min-w-[50px] text-center", currentStock >= 20 ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : currentStock > 0 ? "bg-amber-500/10 text-amber-700 dark:text-amber-300" : "bg-red-500/10 text-red-700 dark:text-red-300"),
+																	children: currentStock
+																}),
+																/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+																	onClick: () => handleStockAdjust(b.id, currentStock, 5),
+																	className: "h-6 w-6 rounded bg-secondary hover:bg-muted text-foreground font-bold flex items-center justify-center text-xs transition",
+																	title: "Increase stock by 5",
+																	children: "+"
+																})
+															]
+														})
+													}),
+													/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
+														className: "p-3.5",
+														children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+															className: "flex items-center gap-1",
+															children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Star, { className: "h-3.5 w-3.5 fill-amber-400 text-amber-400" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+																className: "font-bold text-foreground",
+																children: b.rating || 4.5
+															})]
+														})
+													}),
+													/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("td", {
+														className: "p-3.5 text-right space-x-1 whitespace-nowrap",
+														children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+															size: "sm",
+															variant: "ghost",
+															className: "h-8 text-xs text-primary hover:bg-secondary rounded-lg",
+															onClick: () => handleOpenEditBook(b),
+															title: "Edit Book Details",
+															children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PenLine, { className: "h-3.5 w-3.5" })
+														}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+															size: "sm",
+															variant: "ghost",
+															className: "h-8 text-xs text-destructive hover:bg-destructive/10 rounded-lg",
+															onClick: async () => {
+																if (confirm(`Remove "${b.title}" from bookstore catalog?`)) try {
+																	await api.deleteBook(b.id);
+																	toast.success(`Removed "${b.title}"`);
+																	loadData();
+																} catch (err) {
+																	toast.error(err instanceof Error ? err.message : "Failed to delete book");
+																}
+															},
+															title: "Delete Book",
+															children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, { className: "h-3.5 w-3.5" })
+														})]
+													})
+												]
+											}, b.id);
+										})
+									})]
+								})
 							})
 						})
+					] }),
+					activeSection === "books" && catalogActiveTab === "authors" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "space-y-4",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl border border-border bg-card",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h3", {
+								className: "font-display font-bold text-lg text-foreground flex items-center gap-2",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Users, { className: "h-5 w-5 text-amber-600" }), " Vetted Authors & Creators"]
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+								className: "text-xs text-muted-foreground",
+								children: [
+									"Directory of ",
+									distinctAuthors.length,
+									" authors featured in the catalog. Click any author to view all their books."
+								]
+							})] }), catalogFilterAuthor !== "All" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
+								size: "sm",
+								variant: "outline",
+								onClick: () => setCatalogFilterAuthor("All"),
+								className: "text-xs rounded-full gap-1 h-8",
+								children: [
+									"Clear Filter (",
+									catalogFilterAuthor,
+									")"
+								]
+							})]
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "grid sm:grid-cols-2 lg:grid-cols-3 gap-4",
+							children: distinctAuthors.map((author) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "p-5 rounded-2xl border border-border bg-card shadow-xs space-y-3 hover:border-amber-500/50 transition",
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "flex items-center justify-between",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+											className: "flex items-center gap-2.5",
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+												className: "h-9 w-9 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 font-display font-bold flex items-center justify-center text-sm",
+												children: author.name.slice(0, 1).toUpperCase()
+											}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h4", {
+												className: "font-display font-bold text-foreground text-sm",
+												children: author.name
+											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+												className: "text-[10px] text-muted-foreground font-semibold",
+												children: "Author & Edition Contributor"
+											})] })]
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+											className: "px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 font-bold text-[10px] border border-amber-500/20",
+											children: [
+												author.titlesCount,
+												" ",
+												author.titlesCount === 1 ? "Title" : "Titles"
+											]
+										})]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "space-y-1 text-xs pt-1 border-t border-border/60",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+											className: "text-[10px] font-bold text-muted-foreground uppercase",
+											children: "Featured Works:"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+											className: "space-y-0.5",
+											children: author.books.slice(0, 3).map((b) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+												className: "text-[11px] text-foreground font-medium truncate flex items-center gap-1.5",
+												children: [
+													/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "h-1 w-1 rounded-full bg-amber-600" }),
+													b.title,
+													" ",
+													/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+														className: "text-muted-foreground",
+														children: [
+															"(₹",
+															b.price,
+															")"
+														]
+													})
+												]
+											}, b.id))
+										})]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+										className: "pt-2 border-t border-border/40",
+										children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
+											size: "sm",
+											variant: "outline",
+											onClick: () => {
+												setCatalogFilterAuthor(author.name);
+												setCatalogActiveTab("books");
+											},
+											className: "w-full text-xs font-bold gap-1.5 rounded-xl h-8 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10",
+											children: [
+												/* @__PURE__ */ (0, import_jsx_runtime.jsx)(BookOpen, { className: "h-3.5 w-3.5" }),
+												"View ",
+												author.titlesCount,
+												" ",
+												author.titlesCount === 1 ? "Book" : "Books"
+											]
+										})
+									})
+								]
+							}, author.name))
+						})]
+					}),
+					activeSection === "books" && catalogActiveTab === "publishers" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "space-y-4",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl border border-border bg-card",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h3", {
+								className: "font-display font-bold text-lg text-foreground flex items-center gap-2",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Building, { className: "h-5 w-5 text-blue-600" }), " Publishers & Imprints"]
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+								className: "text-xs text-muted-foreground",
+								children: [
+									"Directory of ",
+									distinctPublishers.length,
+									" publishers and imprints. Click any publisher to view associated catalogue titles."
+								]
+							})] }), catalogFilterPublisher !== "All" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
+								size: "sm",
+								variant: "outline",
+								onClick: () => setCatalogFilterPublisher("All"),
+								className: "text-xs rounded-full gap-1 h-8",
+								children: [
+									"Clear Filter (",
+									catalogFilterPublisher,
+									")"
+								]
+							})]
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "grid sm:grid-cols-2 lg:grid-cols-3 gap-4",
+							children: distinctPublishers.map((pub) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "p-5 rounded-2xl border border-border bg-card shadow-xs space-y-3 hover:border-blue-500/50 transition",
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "flex items-center justify-between",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+											className: "flex items-center gap-2.5",
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+												className: "h-9 w-9 rounded-full bg-blue-500/10 text-blue-600 font-display font-bold flex items-center justify-center text-sm",
+												children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Building, { className: "h-4 w-4" })
+											}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h4", {
+												className: "font-display font-bold text-foreground text-sm",
+												children: pub.name
+											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+												className: "text-[10px] text-muted-foreground font-semibold",
+												children: "Publishing House / Imprint"
+											})] })]
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+											className: "px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-300 font-bold text-[10px] border border-blue-500/20",
+											children: [
+												pub.titlesCount,
+												" ",
+												pub.titlesCount === 1 ? "Title" : "Titles"
+											]
+										})]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "space-y-1 text-xs pt-1 border-t border-border/60",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+											className: "text-[10px] font-bold text-muted-foreground uppercase",
+											children: "Featured Works:"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+											className: "space-y-0.5",
+											children: pub.books.slice(0, 3).map((b) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+												className: "text-[11px] text-foreground font-medium truncate flex items-center gap-1.5",
+												children: [
+													/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "h-1 w-1 rounded-full bg-blue-600" }),
+													b.title,
+													" ",
+													/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+														className: "text-muted-foreground",
+														children: [
+															"(₹",
+															b.price,
+															")"
+														]
+													})
+												]
+											}, b.id))
+										})]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+										className: "pt-2 border-t border-border/40",
+										children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
+											size: "sm",
+											variant: "outline",
+											onClick: () => {
+												setCatalogFilterPublisher(pub.name);
+												setCatalogActiveTab("books");
+											},
+											className: "w-full text-xs font-bold gap-1.5 rounded-xl h-8 text-blue-700 dark:text-blue-300 hover:bg-blue-500/10",
+											children: [
+												/* @__PURE__ */ (0, import_jsx_runtime.jsx)(BookOpen, { className: "h-3.5 w-3.5" }),
+												"View ",
+												pub.titlesCount,
+												" ",
+												pub.titlesCount === 1 ? "Book" : "Books"
+											]
+										})
+									})
+								]
+							}, pub.name))
+						})]
 					}),
 					showAddBook && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 						className: "fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4",
@@ -3193,7 +3589,7 @@ function AdminViews({ activeSection, searchQuery, onNavigateSection }) {
 										children: editingBookId ? "Edit Book Details" : "Add New Book to Catalogue"
 									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 										className: "text-[11px] text-muted-foreground",
-										children: "Fill in book details, multiple images, categories, MRP and discount prices."
+										children: "Fill in book details, author, publisher, multiple images, categories, MRP and discount prices."
 									})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 										type: "button",
 										onClick: () => {
@@ -3205,26 +3601,54 @@ function AdminViews({ activeSection, searchQuery, onNavigateSection }) {
 									})]
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									className: "grid grid-cols-1 sm:grid-cols-2 gap-3",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
-										className: "font-bold block mb-1",
-										children: "Book Title / Name *"
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-										required: true,
-										value: newTitle,
-										onChange: (e) => setNewTitle(e.target.value),
-										placeholder: "e.g. The Secret Garden",
-										className: "w-full h-9 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary text-foreground"
-									})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
-										className: "font-bold block mb-1",
-										children: "Author Name *"
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-										required: true,
-										value: newAuthor,
-										onChange: (e) => setNewAuthor(e.target.value),
-										placeholder: "e.g. Frances Hodgson Burnett",
-										className: "w-full h-9 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary text-foreground"
-									})] })]
+									className: "grid grid-cols-1 sm:grid-cols-3 gap-3",
+									children: [
+										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
+											className: "font-bold block mb-1",
+											children: "Book Title / Name *"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+											required: true,
+											value: newTitle,
+											onChange: (e) => setNewTitle(e.target.value),
+											placeholder: "e.g. The Secret Garden",
+											className: "w-full h-9 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary text-foreground"
+										})] }),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
+												className: "font-bold block mb-1",
+												children: "Author Name *"
+											}),
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+												required: true,
+												value: newAuthor,
+												onChange: (e) => setNewAuthor(e.target.value),
+												placeholder: "e.g. Frances Hodgson Burnett",
+												list: "admin-authors-list",
+												className: "w-full h-9 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary text-foreground"
+											}),
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("datalist", {
+												id: "admin-authors-list",
+												children: distinctAuthors.map((a) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: a.name }, a.name))
+											})
+										] }),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
+												className: "font-bold block mb-1",
+												children: "Publisher / Imprint"
+											}),
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+												value: newPublisher,
+												onChange: (e) => setNewPublisher(e.target.value),
+												placeholder: "e.g. Penguin Classics / Harper",
+												list: "admin-publishers-list",
+												className: "w-full h-9 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary text-foreground"
+											}),
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("datalist", {
+												id: "admin-publishers-list",
+												children: distinctPublishers.map((p) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: p.name }, p.name))
+											})
+										] })
+									]
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 									className: "grid grid-cols-1 sm:grid-cols-2 gap-3",
@@ -4297,74 +4721,180 @@ function AdminViews({ activeSection, searchQuery, onNavigateSection }) {
 				}, r.id))
 			})]
 		});
-		if (activeSection === "authors" || activeSection === "publishers") return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			className: "space-y-5",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				className: "flex flex-wrap items-center justify-between gap-4",
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
-					className: "font-display text-2xl font-bold text-foreground",
-					children: activeSection === "publishers" ? "Publishers & Imprints" : "Vetted Authors & Creators"
-				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-					className: "text-xs text-muted-foreground",
-					children: "Authors and publishing imprints currently featured across the bookstore catalogue."
-				})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-					className: "text-xs text-muted-foreground font-bold",
-					children: [distinctAuthors.length, " Distinct Creators"]
-				})]
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-				className: "grid sm:grid-cols-2 lg:grid-cols-3 gap-4",
-				children: distinctAuthors.map((author) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "p-5 rounded-2xl border border-border bg-card shadow-xs space-y-3",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "flex items-center justify-between",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "flex items-center gap-2.5",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-								className: "h-9 w-9 rounded-full bg-primary/10 text-primary font-display font-bold flex items-center justify-center text-sm",
-								children: author.name.slice(0, 1).toUpperCase()
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h4", {
-								className: "font-display font-bold text-foreground text-sm",
-								children: author.name
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-								className: "text-[10px] text-muted-foreground font-semibold",
-								children: "Author & Edition Contributor"
-							})] })]
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-							className: "px-2 py-0.5 rounded-full bg-primary text-primary-foreground font-bold text-[10px]",
-							children: [
-								author.titlesCount,
-								" ",
-								author.titlesCount === 1 ? "Title" : "Titles"
-							]
-						})]
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "space-y-1 text-xs pt-1 border-t border-border/60",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-							className: "text-[10px] font-bold text-muted-foreground uppercase",
-							children: "Featured Works:"
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-							className: "space-y-0.5",
-							children: author.books.slice(0, 3).map((b) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
-								className: "text-[11px] text-foreground font-medium truncate flex items-center gap-1.5",
-								children: [
-									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "h-1 w-1 rounded-full bg-primary" }),
-									b.title,
-									" ",
-									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-										className: "text-muted-foreground",
-										children: [
-											"(₹",
-											b.price,
-											")"
-										]
-									})
-								]
-							}, b.id))
-						})]
+		if (activeSection === "authors" || activeSection === "publishers") {
+			const isPub = activeSection === "publishers";
+			return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "space-y-5",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl border border-border bg-card",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h2", {
+						className: "font-display text-2xl font-bold text-foreground flex items-center gap-2",
+						children: [isPub ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Building, { className: "h-6 w-6 text-blue-600" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Users, { className: "h-6 w-6 text-amber-600" }), isPub ? "Publishers & Imprints" : "Vetted Authors & Creators"]
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+						className: "text-xs text-muted-foreground",
+						children: isPub ? `Directory of ${distinctPublishers.length} publishing houses and imprints featured across the bookstore catalogue.` : `Directory of ${distinctAuthors.length} authors and edition creators featured across the bookstore catalogue.`
+					})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						className: "flex items-center gap-2",
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
+							size: "sm",
+							onClick: () => {
+								setCatalogActiveTab("books");
+								if (onNavigateSection) onNavigateSection("books");
+							},
+							className: "gap-1.5 text-xs font-bold rounded-full bg-primary text-primary-foreground",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(BookOpen, { className: "h-4 w-4" }), " Go to Books Catalog"]
+						})
 					})]
-				}, author.name))
-			})]
-		});
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "grid sm:grid-cols-2 lg:grid-cols-3 gap-4",
+					children: isPub ? distinctPublishers.map((pub) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "p-5 rounded-2xl border border-border bg-card shadow-xs space-y-3 hover:border-blue-500/50 transition",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex items-center justify-between",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "flex items-center gap-2.5",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+										className: "h-9 w-9 rounded-full bg-blue-500/10 text-blue-600 font-display font-bold flex items-center justify-center text-sm",
+										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Building, { className: "h-4 w-4" })
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h4", {
+										className: "font-display font-bold text-foreground text-sm",
+										children: pub.name
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+										className: "text-[10px] text-muted-foreground font-semibold",
+										children: "Publishing House / Imprint"
+									})] })]
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+									className: "px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-300 font-bold text-[10px] border border-blue-500/20",
+									children: [
+										pub.titlesCount,
+										" ",
+										pub.titlesCount === 1 ? "Title" : "Titles"
+									]
+								})]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "space-y-1 text-xs pt-1 border-t border-border/60",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+									className: "text-[10px] font-bold text-muted-foreground uppercase",
+									children: "Featured Works:"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+									className: "space-y-0.5",
+									children: pub.books.slice(0, 3).map((b) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+										className: "text-[11px] text-foreground font-medium truncate flex items-center gap-1.5",
+										children: [
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "h-1 w-1 rounded-full bg-blue-600" }),
+											b.title,
+											" ",
+											/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+												className: "text-muted-foreground",
+												children: [
+													"(₹",
+													b.price,
+													")"
+												]
+											})
+										]
+									}, b.id))
+								})]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								className: "pt-2 border-t border-border/40",
+								children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
+									size: "sm",
+									variant: "outline",
+									onClick: () => {
+										setCatalogFilterPublisher(pub.name);
+										setCatalogActiveTab("books");
+										if (onNavigateSection) onNavigateSection("books");
+									},
+									className: "w-full text-xs font-bold gap-1.5 rounded-xl h-8 text-blue-700 dark:text-blue-300 hover:bg-blue-500/10",
+									children: [
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(BookOpen, { className: "h-3.5 w-3.5" }),
+										"View ",
+										pub.titlesCount,
+										" ",
+										pub.titlesCount === 1 ? "Book" : "Books"
+									]
+								})
+							})
+						]
+					}, pub.name)) : distinctAuthors.map((author) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "p-5 rounded-2xl border border-border bg-card shadow-xs space-y-3 hover:border-amber-500/50 transition",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex items-center justify-between",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "flex items-center gap-2.5",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+										className: "h-9 w-9 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 font-display font-bold flex items-center justify-center text-sm",
+										children: author.name.slice(0, 1).toUpperCase()
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h4", {
+										className: "font-display font-bold text-foreground text-sm",
+										children: author.name
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+										className: "text-[10px] text-muted-foreground font-semibold",
+										children: "Author & Edition Contributor"
+									})] })]
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+									className: "px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 font-bold text-[10px] border border-amber-500/20",
+									children: [
+										author.titlesCount,
+										" ",
+										author.titlesCount === 1 ? "Title" : "Titles"
+									]
+								})]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "space-y-1 text-xs pt-1 border-t border-border/60",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+									className: "text-[10px] font-bold text-muted-foreground uppercase",
+									children: "Featured Works:"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+									className: "space-y-0.5",
+									children: author.books.slice(0, 3).map((b) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+										className: "text-[11px] text-foreground font-medium truncate flex items-center gap-1.5",
+										children: [
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "h-1 w-1 rounded-full bg-amber-600" }),
+											b.title,
+											" ",
+											/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+												className: "text-muted-foreground",
+												children: [
+													"(₹",
+													b.price,
+													")"
+												]
+											})
+										]
+									}, b.id))
+								})]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								className: "pt-2 border-t border-border/40",
+								children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
+									size: "sm",
+									variant: "outline",
+									onClick: () => {
+										setCatalogFilterAuthor(author.name);
+										setCatalogActiveTab("books");
+										if (onNavigateSection) onNavigateSection("books");
+									},
+									className: "w-full text-xs font-bold gap-1.5 rounded-xl h-8 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10",
+									children: [
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(BookOpen, { className: "h-3.5 w-3.5" }),
+										"View ",
+										author.titlesCount,
+										" ",
+										author.titlesCount === 1 ? "Book" : "Books"
+									]
+								})
+							})
+						]
+					}, author.name))
+				})]
+			});
+		}
 		if (activeSection === "categories") return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CategoryManager, {
 			onNavigateToSubCategories: (catId) => {
 				setSelectedSubCatParentId(catId || null);

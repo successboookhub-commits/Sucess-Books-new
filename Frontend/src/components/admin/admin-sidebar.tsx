@@ -63,8 +63,6 @@ export function AdminSidebar({
       items: [
         { id: "categories", label: "Categories" },
         { id: "sub-categories", label: "Sub Categories" },
-        { id: "authors", label: "Authors" },
-        { id: "publishers", label: "Publishers" },
         { id: "books", label: "Books" },
         { id: "inventory", label: "Inventory" },
       ],

@@ -13,6 +13,7 @@ export type Book = {
   id: number;
   title: string;
   author: string;
+  publisher?: string;
   category: string;
   subCategory?: string;
   sub_category?: string;

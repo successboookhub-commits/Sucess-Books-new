@@ -3,7 +3,7 @@ import { o as require_jsx_runtime } from "../_libs/@radix-ui/react-collection+[.
 import { n as useCart } from "./cart-BogyCPoq.mjs";
 import { t as Button } from "./button-CKfowhiz.mjs";
 import { g as Link } from "../_libs/@tanstack/react-router+[...].mjs";
-import { Et as BookOpen, U as MapPin, V as MessageCircle, ft as Compass, h as Sparkles, jt as ArrowRight, kt as Award, nt as HeartHandshake, r as Users, s as Truck, v as ShieldCheck } from "../_libs/lucide-react.mjs";
+import { At as Award, Dt as BookOpen, Mt as ArrowRight, U as MapPin, V as MessageCircle, ft as Compass, h as Sparkles, nt as HeartHandshake, r as Users, s as Truck, v as ShieldCheck } from "../_libs/lucide-react.mjs";
 //#region node_modules/.nitro/vite/services/ssr/assets/about-ElyWDuuK.js
 var import_jsx_runtime = require_jsx_runtime();
 function About() {

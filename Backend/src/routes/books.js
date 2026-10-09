@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { db } from "../db/database.js";
+import { saveBase64Image } from "../utils/imageStorage.js";
 
 const router = Router();
 
@@ -31,7 +32,7 @@ router.get("/categories", async (req, res) => {
 // GET all books with search, category, subcategory, and sort filters
 router.get("/", async (req, res) => {
   try {
-    const { category, subCategory, sub_category, search, sort, featured } = req.query;
+    const { category, subCategory, sub_category, search, sort, featured, author, publisher } = req.query;
 
     let query = "SELECT * FROM books WHERE 1=1";
     const params = [];
@@ -49,10 +50,20 @@ router.get("/", async (req, res) => {
       params.push(selectedSubCategory);
     }
 
+    if (author && author !== "All") {
+      query += " AND author = ?";
+      params.push(author);
+    }
+
+    if (publisher && publisher !== "All") {
+      query += " AND publisher = ?";
+      params.push(publisher);
+    }
+
     if (search && search.trim()) {
-      query += " AND (title LIKE ? OR author LIKE ? OR category LIKE ? OR sub_category LIKE ?)";
+      query += " AND (title LIKE ? OR author LIKE ? OR publisher LIKE ? OR category LIKE ? OR sub_category LIKE ?)";
       const term = `%${search.trim()}%`;
-      params.push(term, term, term, term);
+      params.push(term, term, term, term, term);
     }
 
     if (featured === "true" || featured === "1") {
@@ -85,6 +96,7 @@ router.get("/", async (req, res) => {
         id: b.id,
         title: b.title,
         author: b.author,
+        publisher: b.publisher || "",
         category: b.category,
         subCategory: b.sub_category || "",
         sub_category: b.sub_category || "",
@@ -145,6 +157,7 @@ router.get("/:id", async (req, res) => {
         id: book.id,
         title: book.title,
         author: book.author,
+        publisher: book.publisher || "",
         category: book.category,
         subCategory: book.sub_category || "",
         sub_category: book.sub_category || "",
@@ -180,6 +193,7 @@ router.post("/", async (req, res) => {
     const {
       title,
       author,
+      publisher,
       category,
       subCategory,
       sub_category,
@@ -211,10 +225,19 @@ router.post("/", async (req, res) => {
     }
 
     const finalSubCat = subCategory || sub_category || null;
+    const finalPublisher = publisher && publisher.trim() ? publisher.trim() : null;
     const rawOldPrice = oldPrice ?? old_price ?? mrp ?? originalPrice;
     const finalOldPrice = rawOldPrice !== undefined && rawOldPrice !== null && rawOldPrice !== "" ? parseFloat(rawOldPrice) : null;
-    const finalCover = cover || image || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=600&auto=format&fit=crop";
-    const finalImage2 = image2 || image_2 || null;
+    
+    let finalCover = cover || image || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=600&auto=format&fit=crop";
+    let finalImage2 = image2 || image_2 || null;
+
+    if (finalCover && typeof finalCover === "string" && finalCover.startsWith("data:image")) {
+      finalCover = await saveBase64Image(finalCover);
+    }
+    if (finalImage2 && typeof finalImage2 === "string" && finalImage2.startsWith("data:image")) {
+      finalImage2 = await saveBase64Image(finalImage2);
+    }
 
     let finalDiscount = Number(discountPercent ?? discount_percent) || 0;
     if (finalOldPrice && finalOldPrice > finalPrice) {
@@ -224,11 +247,12 @@ router.post("/", async (req, res) => {
     const isFeaturedVal = (featured || is_featured) ? 1 : 0;
 
     const result = await db.run(`
-      INSERT INTO books (title, author, category, sub_category, price, old_price, discount_percent, rating, reviews_count, cover, image_2, label, description, stock, featured)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 5.0, 0, ?, ?, ?, ?, ?, ?)
+      INSERT INTO books (title, author, publisher, category, sub_category, price, old_price, discount_percent, rating, reviews_count, cover, image_2, label, description, stock, featured)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 5.0, 0, ?, ?, ?, ?, ?, ?)
     `, [
       title,
       author,
+      finalPublisher,
       category,
       finalSubCat,
       finalPrice,
@@ -258,6 +282,7 @@ router.post("/", async (req, res) => {
         id: newBook.id,
         title: newBook.title,
         author: newBook.author,
+        publisher: newBook.publisher || "",
         category: newBook.category,
         subCategory: newBook.sub_category,
         sub_category: newBook.sub_category,
@@ -297,6 +322,7 @@ router.put("/:id", async (req, res) => {
     const {
       title = existing.title,
       author = existing.author,
+      publisher = existing.publisher,
       category = existing.category,
       subCategory = existing.sub_category,
       sub_category = existing.sub_category,
@@ -321,8 +347,17 @@ router.put("/:id", async (req, res) => {
     const rawOldPrice = oldPrice ?? old_price ?? mrp ?? originalPrice ?? existing.old_price;
     const finalOldPrice = rawOldPrice !== undefined && rawOldPrice !== null && rawOldPrice !== "" ? parseFloat(rawOldPrice) : null;
     const finalSubCat = subCategory || sub_category || null;
-    const finalCover = cover || image || existing.cover;
-    const finalImage2 = image2 || image_2 || existing.image_2 || null;
+    const finalPublisher = publisher !== undefined ? (publisher && publisher.trim() ? publisher.trim() : null) : existing.publisher;
+
+    let finalCover = cover || image || existing.cover;
+    let finalImage2 = image2 || image_2 || existing.image_2 || null;
+
+    if (finalCover && typeof finalCover === "string" && finalCover.startsWith("data:image")) {
+      finalCover = await saveBase64Image(finalCover);
+    }
+    if (finalImage2 && typeof finalImage2 === "string" && finalImage2.startsWith("data:image")) {
+      finalImage2 = await saveBase64Image(finalImage2);
+    }
 
     let finalDiscount = 0;
     if (finalOldPrice && finalOldPrice > finalPrice) {
@@ -333,11 +368,12 @@ router.put("/:id", async (req, res) => {
 
     await db.run(`
       UPDATE books 
-      SET title = ?, author = ?, category = ?, sub_category = ?, price = ?, old_price = ?, discount_percent = ?, cover = ?, image_2 = ?, label = ?, description = ?, stock = ?, featured = ?
+      SET title = ?, author = ?, publisher = ?, category = ?, sub_category = ?, price = ?, old_price = ?, discount_percent = ?, cover = ?, image_2 = ?, label = ?, description = ?, stock = ?, featured = ?
       WHERE id = ?
     `, [
       title,
       author,
+      finalPublisher,
       category,
       finalSubCat,
       finalPrice,
@@ -367,6 +403,7 @@ router.put("/:id", async (req, res) => {
         id: updated.id,
         title: updated.title,
         author: updated.author,
+        publisher: updated.publisher || "",
         category: updated.category,
         subCategory: updated.sub_category,
         sub_category: updated.sub_category,

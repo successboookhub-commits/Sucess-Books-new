@@ -6,7 +6,7 @@ import { o as require_jsx_runtime } from "../_libs/@radix-ui/react-collection+[.
 import { n as useCart } from "./cart-BogyCPoq.mjs";
 import { t as Button } from "./button-CKfowhiz.mjs";
 import { _ as useNavigate, g as Link } from "../_libs/@tanstack/react-router+[...].mjs";
-import { A as Play, Et as BookOpen, P as Pause, S as Search, bt as ChevronRight, g as ShoppingBag, h as Sparkles, jt as ArrowRight, lt as ExternalLink, m as Star, n as X, p as Tag, s as Truck, v as ShieldCheck, w as RotateCw, xt as ChevronLeft } from "../_libs/lucide-react.mjs";
+import { A as Play, Dt as BookOpen, Mt as ArrowRight, P as Pause, S as Search, bt as ChevronRight, g as ShoppingBag, h as Sparkles, lt as ExternalLink, m as Star, n as X, p as Tag, s as Truck, v as ShieldCheck, w as RotateCw, xt as ChevronLeft } from "../_libs/lucide-react.mjs";
 import { n as BookDetailModal, t as BookCard } from "./book-card-Rmw6Gdkb.mjs";
 //#region node_modules/.nitro/vite/services/ssr/assets/routes-CZALVP4j.js
 var import_react = /* @__PURE__ */ __toESM(require_react());

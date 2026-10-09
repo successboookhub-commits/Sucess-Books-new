@@ -5,7 +5,7 @@ import { u as require_react } from "../_libs/@floating-ui/react-dom+[...].mjs";
 import { o as require_jsx_runtime } from "../_libs/@radix-ui/react-collection+[...].mjs";
 import { n as useCart } from "./cart-BogyCPoq.mjs";
 import { n as cn, t as Button } from "./button-CKfowhiz.mjs";
-import { Ct as Check, Et as BookOpen, V as MessageCircle, Z as Layers, ct as Eye, g as ShoppingBag, k as Plus, m as Star, pt as Clock, s as Truck, tt as Heart, v as ShieldCheck, x as Send } from "../_libs/lucide-react.mjs";
+import { Ct as Check, Dt as BookOpen, V as MessageCircle, Z as Layers, ct as Eye, g as ShoppingBag, k as Plus, m as Star, pt as Clock, s as Truck, tt as Heart, v as ShieldCheck, x as Send } from "../_libs/lucide-react.mjs";
 import { n as toast } from "../_libs/sonner.mjs";
 import { i as useWishlist } from "./wishlist-DvsCkM1j.mjs";
 import { a as DialogTitle, n as DialogContent, t as Dialog } from "./dialog-C-FEQyPT.mjs";

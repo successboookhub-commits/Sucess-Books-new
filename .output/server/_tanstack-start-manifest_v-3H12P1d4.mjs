@@ -1,4 +1,4 @@
-//#region node_modules/.nitro/vite/services/ssr/assets/_tanstack-start-manifest_v-BCBeEO_q.js
+//#region node_modules/.nitro/vite/services/ssr/assets/_tanstack-start-manifest_v-3H12P1d4.js
 var tsrStartManifest = () => ({ routes: {
 	__root__: {
 		filePath: "D:/Freelancing/Sucessbookhub/Frontend/src/routes/__root.tsx",
@@ -15,7 +15,7 @@ var tsrStartManifest = () => ({ routes: {
 			"/terms"
 		],
 		preloads: [
-			"/assets/index-CqgyCQP8.js",
+			"/assets/index-03b7XZQK.js",
 			"/assets/createLucideIcon-BfZogB2V.js",
 			"/assets/link-BQhbMAEl.js",
 			"/assets/preload-helper-PYkFbxrK.js",
@@ -29,7 +29,7 @@ var tsrStartManifest = () => ({ routes: {
 			"/assets/book-open-CVw-I5P1.js",
 			"/assets/search-HGcPZjpq.js",
 			"/assets/chevron-down-BnvS7aMP.js",
-			"/assets/admin-Bmqy5JGj.js",
+			"/assets/admin-D0_JTPG8.js",
 			"/assets/circle-check-Co11zhBR.js",
 			"/assets/clock-q0gNZWlP.js",
 			"/assets/file-text-BhQN5vPp.js",
@@ -51,7 +51,7 @@ var tsrStartManifest = () => ({ routes: {
 		scripts: [{ attrs: {
 			type: "module",
 			async: !0,
-			src: "/assets/index-CqgyCQP8.js"
+			src: "/assets/index-03b7XZQK.js"
 		} }]
 	},
 	"/": {
@@ -83,7 +83,7 @@ var tsrStartManifest = () => ({ routes: {
 		filePath: "D:/Freelancing/Sucessbookhub/Frontend/src/routes/admin.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/admin-kSVBqpUi.js",
+			"/assets/admin-CvMRylbY.js",
 			"/assets/useNavigate-BoELgxfH.js",
 			"/assets/external-link-Cv28W478.js",
 			"/assets/tag-B_1aP3S8.js",

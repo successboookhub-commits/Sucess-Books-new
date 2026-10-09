@@ -144,8 +144,12 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
   const [newFeatured, setNewFeatured] = useState(false);
   const [savingBook, setSavingBook] = useState(false);
 
-  // Category filter state for Books/Inventory view
+  // Category, Author & Publisher filter states for Books Catalog
   const [catalogFilterCategory, setCatalogFilterCategory] = useState("All");
+  const [catalogActiveTab, setCatalogActiveTab] = useState<"books" | "authors" | "publishers">("books");
+  const [catalogFilterAuthor, setCatalogFilterAuthor] = useState("All");
+  const [catalogFilterPublisher, setCatalogFilterPublisher] = useState("All");
+  const [newPublisher, setNewPublisher] = useState("");
 
   // Load initial data from backend
   const loadData = async () => {
@@ -239,6 +243,7 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
     setEditingBookId(null);
     setNewTitle("");
     setNewAuthor("");
+    setNewPublisher("");
     setNewCategory(dbCategories.length > 0 ? dbCategories[0].name : "Classics");
     setNewSubCategory("");
     setNewPrice("");
@@ -256,6 +261,7 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
     setEditingBookId(b.id);
     setNewTitle(b.title || "");
     setNewAuthor(b.author || "");
+    setNewPublisher(b.publisher || "");
     setNewCategory(b.category || (dbCategories.length > 0 ? dbCategories[0].name : "Classics"));
     setNewSubCategory(b.subCategory || b.sub_category || "");
     setNewPrice(b.price ? String(b.price) : "");
@@ -288,6 +294,7 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
       const payload = {
         title: newTitle.trim(),
         author: newAuthor.trim(),
+        publisher: newPublisher.trim() || undefined,
         category: newCategory,
         subCategory: newSubCategory.trim() || undefined,
         sub_category: newSubCategory.trim() || undefined,
@@ -323,13 +330,16 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
     }
   };
 
-  // Filter books according to top header search & category dropdown
+  // Filter books according to top header search, category, author, and publisher dropdowns
   const filteredBooks = books.filter((b) => {
-    const matchesSearch = `${b.title} ${b.author} ${b.category} ${b.subCategory || ""} ${b.sub_category || ""}`
+    const bookPublisher = (b.publisher && b.publisher.trim()) ? b.publisher.trim() : (b.author ? `${b.author} Imprint` : "Independent");
+    const matchesSearch = `${b.title} ${b.author} ${b.publisher || ""} ${b.category} ${b.subCategory || ""} ${b.sub_category || ""}`
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
     const matchesCategory = catalogFilterCategory === "All" || b.category.toLowerCase() === catalogFilterCategory.toLowerCase();
-    return matchesSearch && matchesCategory;
+    const matchesAuthor = catalogFilterAuthor === "All" || (b.author || "").toLowerCase() === catalogFilterAuthor.toLowerCase();
+    const matchesPublisher = catalogFilterPublisher === "All" || bookPublisher.toLowerCase() === catalogFilterPublisher.toLowerCase();
+    return matchesSearch && matchesCategory && matchesAuthor && matchesPublisher;
   });
 
   // Filter orders according to search
@@ -377,6 +387,21 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
         map.set(author, { name: author, titlesCount: 0, books: [], avgRating: 0 });
       }
       const item = map.get(author)!;
+      item.titlesCount++;
+      item.books.push(b);
+    });
+    return Array.from(map.values()).sort((a, b) => b.titlesCount - a.titlesCount);
+  }, [books]);
+
+  // Distinct publishers calculation
+  const distinctPublishers = useMemo(() => {
+    const map = new Map<string, { name: string; titlesCount: number; books: Book[] }>();
+    books.forEach((b) => {
+      const pub = (b.publisher && b.publisher.trim()) ? b.publisher.trim() : (b.author ? `${b.author} Imprint` : "Independent / Self Published");
+      if (!map.has(pub)) {
+        map.set(pub, { name: pub, titlesCount: 0, books: [] });
+      }
+      const item = map.get(pub)!;
       item.titlesCount++;
       item.books.push(b);
     });
@@ -834,7 +859,7 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
                 {activeSection === "inventory" ? "Warehouse & Inventory Management" : "Books Catalog"}
               </h2>
               <p className="text-xs text-muted-foreground">
-                Manage book titles, front &amp; secondary preview images, categories, subcategories, MRP, selling price &amp; stock levels.
+                Manage book titles, front &amp; secondary preview images, authors, publishers, categories, MRP &amp; stock levels.
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -847,233 +872,546 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
             </div>
           </div>
 
-          {/* Filter Toolbar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl border border-border bg-card">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-bold text-muted-foreground flex items-center gap-1">
-                <Filter className="h-3.5 w-3.5" /> Category:
-              </span>
+          {/* Sub-view switcher tabs for Book Catalog: Books List, Authors Directory, Publishers & Imprints */}
+          {activeSection === "books" && (
+            <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-secondary/80 border border-border/80 w-fit">
               <button
-                onClick={() => setCatalogFilterCategory("All")}
+                type="button"
+                onClick={() => setCatalogActiveTab("books")}
                 className={cn(
-                  "px-3 py-1 rounded-full text-xs font-bold transition",
-                  catalogFilterCategory === "All" ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-secondary/80"
+                  "px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2",
+                  catalogActiveTab === "books"
+                    ? "bg-card text-primary shadow-xs border border-border/60"
+                    : "text-muted-foreground hover:text-foreground hover:bg-card/50"
                 )}
               >
-                All ({books.length})
+                <BookOpen className="h-4 w-4" />
+                Books List ({books.length})
               </button>
-              {dbCategories.map((c) => {
-                const cCount = books.filter((b) => b.category === c.name).length;
-                return (
-                  <button
-                    key={c.id}
-                    onClick={() => setCatalogFilterCategory(c.name)}
-                    className={cn(
-                      "px-3 py-1 rounded-full text-xs font-semibold transition",
-                      catalogFilterCategory === c.name
-                        ? "bg-primary text-primary-foreground font-bold"
-                        : "bg-secondary text-foreground hover:bg-secondary/80"
-                    )}
+              <button
+                type="button"
+                onClick={() => setCatalogActiveTab("authors")}
+                className={cn(
+                  "px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2",
+                  catalogActiveTab === "authors"
+                    ? "bg-card text-amber-600 shadow-xs border border-border/60"
+                    : "text-muted-foreground hover:text-foreground hover:bg-card/50"
+                )}
+              >
+                <Users className="h-4 w-4" />
+                Authors Directory ({distinctAuthors.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setCatalogActiveTab("publishers")}
+                className={cn(
+                  "px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2",
+                  catalogActiveTab === "publishers"
+                    ? "bg-card text-blue-600 shadow-xs border border-border/60"
+                    : "text-muted-foreground hover:text-foreground hover:bg-card/50"
+                )}
+              >
+                <Building className="h-4 w-4" />
+                Publishers &amp; Imprints ({distinctPublishers.length})
+              </button>
+            </div>
+          )}
+
+          {/* 1. BOOKS LIST TAB (OR INVENTORY VIEW) */}
+          {(catalogActiveTab === "books" || activeSection === "inventory") && (
+            <>
+              {/* Filter Toolbar */}
+              <div className="space-y-3 p-4 rounded-2xl border border-border bg-card shadow-xs">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  {/* Category Pills */}
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-xs font-bold text-muted-foreground flex items-center gap-1 mr-1">
+                      <Filter className="h-3.5 w-3.5" /> Category:
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setCatalogFilterCategory("All")}
+                      className={cn(
+                        "px-3 py-1 rounded-full text-xs font-bold transition",
+                        catalogFilterCategory === "All" ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-secondary/80"
+                      )}
+                    >
+                      All ({books.length})
+                    </button>
+                    {dbCategories.map((c) => {
+                      const cCount = books.filter((b) => b.category.toLowerCase() === c.name.toLowerCase()).length;
+                      return (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => setCatalogFilterCategory(c.name)}
+                          className={cn(
+                            "px-3 py-1 rounded-full text-xs font-semibold transition",
+                            catalogFilterCategory.toLowerCase() === c.name.toLowerCase()
+                              ? "bg-primary text-primary-foreground font-bold"
+                              : "bg-secondary text-foreground hover:bg-secondary/80"
+                          )}
+                        >
+                          {c.name} ({cCount})
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="text-xs text-muted-foreground font-medium">
+                    Showing <strong>{filteredBooks.length}</strong> of {books.length} titles
+                  </div>
+                </div>
+
+                {/* Author & Publisher Dropdown Selectors */}
+                <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-border/60">
+                  {/* Author Filter Dropdown */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-muted-foreground flex items-center gap-1">
+                      <Users className="h-3.5 w-3.5 text-amber-600" /> Author:
+                    </span>
+                    <select
+                      value={catalogFilterAuthor}
+                      onChange={(e) => setCatalogFilterAuthor(e.target.value)}
+                      className="h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-medium text-foreground cursor-pointer outline-none focus:border-primary"
+                    >
+                      <option value="All">All Authors ({distinctAuthors.length})</option>
+                      {distinctAuthors.map((a) => (
+                        <option key={a.name} value={a.name}>
+                          {a.name} ({a.titlesCount})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Publisher Filter Dropdown */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-muted-foreground flex items-center gap-1">
+                      <Building className="h-3.5 w-3.5 text-blue-600" /> Publisher:
+                    </span>
+                    <select
+                      value={catalogFilterPublisher}
+                      onChange={(e) => setCatalogFilterPublisher(e.target.value)}
+                      className="h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-medium text-foreground cursor-pointer outline-none focus:border-primary"
+                    >
+                      <option value="All">All Publishers ({distinctPublishers.length})</option>
+                      {distinctPublishers.map((p) => (
+                        <option key={p.name} value={p.name}>
+                          {p.name} ({p.titlesCount})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Active Filter Indicators & Reset Button */}
+                  {(catalogFilterCategory !== "All" || catalogFilterAuthor !== "All" || catalogFilterPublisher !== "All") && (
+                    <div className="flex flex-wrap items-center gap-2 ml-auto">
+                      {catalogFilterAuthor !== "All" && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 font-bold text-[11px] border border-amber-500/20">
+                          Author: {catalogFilterAuthor}
+                          <button type="button" onClick={() => setCatalogFilterAuthor("All")} className="hover:text-destructive ml-0.5">
+                            ✕
+                          </button>
+                        </span>
+                      )}
+                      {catalogFilterPublisher !== "All" && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-300 font-bold text-[11px] border border-blue-500/20">
+                          Publisher: {catalogFilterPublisher}
+                          <button type="button" onClick={() => setCatalogFilterPublisher("All")} className="hover:text-destructive ml-0.5">
+                            ✕
+                          </button>
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCatalogFilterCategory("All");
+                          setCatalogFilterAuthor("All");
+                          setCatalogFilterPublisher("All");
+                        }}
+                        className="text-xs font-bold text-primary hover:underline ml-1"
+                      >
+                        Reset All Filters
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Inventory Summary Cards if on inventory view */}
+              {activeSection === "inventory" && (
+                <div className="grid sm:grid-cols-3 gap-4">
+                  <div className="p-4 rounded-xl border border-border bg-card">
+                    <span className="text-xs font-bold text-muted-foreground uppercase">Total Warehouse Units</span>
+                    <p className="font-display text-2xl font-bold text-foreground mt-1">{totalStockUnits} Copies</p>
+                  </div>
+                  <div className="p-4 rounded-xl border border-border bg-card">
+                    <span className="text-xs font-bold text-muted-foreground uppercase">Catalog Asset Valuation</span>
+                    <p className="font-display text-2xl font-bold text-emerald-600 mt-1">₹{totalInventoryValuation.toLocaleString()}</p>
+                  </div>
+                  <div className="p-4 rounded-xl border border-border bg-card">
+                    <span className="text-xs font-bold text-muted-foreground uppercase">Low Stock Warnings (&lt;20)</span>
+                    <p className="font-display text-2xl font-bold text-amber-600 mt-1">{lowStockBooks.length} Titles</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Books Table */}
+              <div className="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-left">
+                    <thead className="bg-secondary/60 text-muted-foreground font-semibold border-b border-border">
+                      <tr>
+                        <th className="p-3.5">Cover</th>
+                        <th className="p-3.5">Title, Author &amp; Publisher</th>
+                        <th className="p-3.5">Category / Sub-Category</th>
+                        <th className="p-3.5">Cost &amp; MRP</th>
+                        <th className="p-3.5">Discount %</th>
+                        <th className="p-3.5">Stock Level</th>
+                        <th className="p-3.5">Rating</th>
+                        <th className="p-3.5 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/60">
+                      {filteredBooks.length === 0 ? (
+                        <tr>
+                          <td colSpan={8} className="p-8 text-center text-muted-foreground">
+                            No books match the current filters.{" "}
+                            {(catalogFilterAuthor !== "All" || catalogFilterPublisher !== "All" || catalogFilterCategory !== "All") && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setCatalogFilterCategory("All");
+                                  setCatalogFilterAuthor("All");
+                                  setCatalogFilterPublisher("All");
+                                }}
+                                className="text-primary font-bold hover:underline"
+                              >
+                                Clear all filters
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredBooks.map((b) => {
+                          const isImg = b.cover && (b.cover.startsWith("http") || b.cover.startsWith("/"));
+                          const mrpVal = b.oldPrice || b.old_price;
+                          const disc = b.discountPercent || b.discount_percent || (mrpVal && mrpVal > b.price ? Math.round(((mrpVal - b.price) / mrpVal) * 100) : 0);
+                          const sub = b.subCategory || b.sub_category;
+                          const currentStock = b.stock ?? 30;
+
+                          return (
+                            <tr key={b.id} className="hover:bg-secondary/20 transition">
+                              {/* Cover Thumbnail */}
+                              <td className="p-3.5">
+                                <div className="relative h-12 w-9 rounded-md overflow-hidden bg-secondary border border-border/80 shadow-2xs shrink-0">
+                                  {isImg ? (
+                                    <img src={b.cover} alt={b.title} className="h-full w-full object-cover" />
+                                  ) : (
+                                    <div className={cn("h-full w-full flex items-center justify-center text-[7px] text-white font-bold p-0.5 text-center", b.cover || "bg-primary")}>
+                                      {b.title.slice(0, 8)}
+                                    </div>
+                                  )}
+                                  {(b.image2 || b.image_2) && (
+                                    <span className="absolute bottom-0.5 right-0.5 bg-black/70 text-[7px] text-white px-0.5 rounded font-bold" title="Dual 2-Image Gallery">
+                                      2🖼
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+
+                              {/* Title, Author & Publisher */}
+                              <td className="p-3.5 font-medium max-w-[220px]">
+                                <p className="font-bold text-foreground text-sm font-display truncate">{b.title}</p>
+                                <p className="text-[11px] text-muted-foreground truncate">
+                                  by{" "}
+                                  <button
+                                    type="button"
+                                    onClick={() => setCatalogFilterAuthor(b.author)}
+                                    className="text-foreground hover:text-primary hover:underline font-semibold"
+                                    title={`Filter books by "${b.author}"`}
+                                  >
+                                    {b.author}
+                                  </button>
+                                </p>
+                                {b.publisher && (
+                                  <p className="text-[10px] text-muted-foreground/80 truncate flex items-center gap-1 mt-0.5">
+                                    <Building className="h-3 w-3 text-blue-600 shrink-0" />
+                                    <button
+                                      type="button"
+                                      onClick={() => setCatalogFilterPublisher(b.publisher || "All")}
+                                      className="hover:text-primary hover:underline"
+                                      title={`Filter books by "${b.publisher}"`}
+                                    >
+                                      {b.publisher}
+                                    </button>
+                                  </p>
+                                )}
+                                {b.featured && (
+                                  <span className="inline-block mt-0.5 text-[9px] font-bold text-amber-600 bg-amber-500/10 px-1.5 py-0.2 rounded border border-amber-500/30">
+                                    ★ Featured Showcase
+                                  </span>
+                                )}
+                              </td>
+
+                              {/* Category & SubCategory */}
+                              <td className="p-3.5">
+                                <div className="flex flex-col gap-1">
+                                  <span className="px-2 py-0.5 rounded-full bg-secondary text-primary font-bold text-[10px] w-fit">
+                                    {b.category}
+                                  </span>
+                                  {sub && (
+                                    <span className="text-[10px] text-muted-foreground font-medium pl-1">
+                                      › {sub}
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+
+                              {/* Cost & MRP */}
+                              <td className="p-3.5">
+                                <p className="font-bold text-foreground text-sm font-display">₹{b.price}</p>
+                                {mrpVal && (
+                                  <p className="text-[10px] text-muted-foreground line-through">₹{mrpVal} MRP</p>
+                                )}
+                              </td>
+
+                              {/* Discount */}
+                              <td className="p-3.5">
+                                {disc > 0 ? (
+                                  <span className="px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-extrabold text-[11px]">
+                                    {disc}% OFF
+                                  </span>
+                                ) : (
+                                  <span className="text-muted-foreground text-[11px]">Standard</span>
+                                )}
+                              </td>
+
+                              {/* Stock with 1-click Quick Adjust */}
+                              <td className="p-3.5">
+                                <div className="flex items-center gap-1.5">
+                                  <button
+                                    onClick={() => handleStockAdjust(b.id, currentStock, -5)}
+                                    className="h-6 w-6 rounded bg-secondary hover:bg-muted text-foreground font-bold flex items-center justify-center text-xs transition"
+                                    title="Decrease stock by 5"
+                                  >
+                                    -
+                                  </button>
+                                  <span className={cn(
+                                    "px-2 py-0.5 rounded-full font-bold text-[11px] min-w-[50px] text-center",
+                                    currentStock >= 20 ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" :
+                                    currentStock > 0 ? "bg-amber-500/10 text-amber-700 dark:text-amber-300" :
+                                    "bg-red-500/10 text-red-700 dark:text-red-300"
+                                  )}>
+                                    {currentStock}
+                                  </span>
+                                  <button
+                                    onClick={() => handleStockAdjust(b.id, currentStock, 5)}
+                                    className="h-6 w-6 rounded bg-secondary hover:bg-muted text-foreground font-bold flex items-center justify-center text-xs transition"
+                                    title="Increase stock by 5"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              </td>
+
+                              {/* Rating */}
+                              <td className="p-3.5">
+                                <div className="flex items-center gap-1">
+                                  <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                                  <span className="font-bold text-foreground">{b.rating || 4.5}</span>
+                                </div>
+                              </td>
+
+                              {/* Actions */}
+                              <td className="p-3.5 text-right space-x-1 whitespace-nowrap">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-8 text-xs text-primary hover:bg-secondary rounded-lg"
+                                  onClick={() => handleOpenEditBook(b)}
+                                  title="Edit Book Details"
+                                >
+                                  <Edit3 className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-8 text-xs text-destructive hover:bg-destructive/10 rounded-lg"
+                                  onClick={async () => {
+                                    if (confirm(`Remove "${b.title}" from bookstore catalog?`)) {
+                                      try {
+                                        await api.deleteBook(b.id);
+                                        toast.success(`Removed "${b.title}"`);
+                                        loadData();
+                                      } catch (err: unknown) {
+                                        toast.error(err instanceof Error ? err.message : "Failed to delete book");
+                                      }
+                                    }
+                                  }}
+                                  title="Delete Book"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* 2. AUTHORS DIRECTORY SUB-VIEW */}
+          {activeSection === "books" && catalogActiveTab === "authors" && (
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl border border-border bg-card">
+                <div>
+                  <h3 className="font-display font-bold text-lg text-foreground flex items-center gap-2">
+                    <Users className="h-5 w-5 text-amber-600" /> Vetted Authors &amp; Creators
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Directory of {distinctAuthors.length} authors featured in the catalog. Click any author to view all their books.
+                  </p>
+                </div>
+                {catalogFilterAuthor !== "All" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setCatalogFilterAuthor("All")}
+                    className="text-xs rounded-full gap-1 h-8"
                   >
-                    {c.name} ({cCount})
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="text-xs text-muted-foreground font-medium">
-              Showing <strong>{filteredBooks.length}</strong> of {books.length} titles
-            </div>
-          </div>
-
-          {/* Inventory Summary Cards if on inventory view */}
-          {activeSection === "inventory" && (
-            <div className="grid sm:grid-cols-3 gap-4">
-              <div className="p-4 rounded-xl border border-border bg-card">
-                <span className="text-xs font-bold text-muted-foreground uppercase">Total Warehouse Units</span>
-                <p className="font-display text-2xl font-bold text-foreground mt-1">{totalStockUnits} Copies</p>
+                    Clear Filter ({catalogFilterAuthor})
+                  </Button>
+                )}
               </div>
-              <div className="p-4 rounded-xl border border-border bg-card">
-                <span className="text-xs font-bold text-muted-foreground uppercase">Catalog Asset Valuation</span>
-                <p className="font-display text-2xl font-bold text-emerald-600 mt-1">₹{totalInventoryValuation.toLocaleString()}</p>
-              </div>
-              <div className="p-4 rounded-xl border border-border bg-card">
-                <span className="text-xs font-bold text-muted-foreground uppercase">Low Stock Warnings (&lt;20)</span>
-                <p className="font-display text-2xl font-bold text-amber-600 mt-1">{lowStockBooks.length} Titles</p>
+
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {distinctAuthors.map((author) => (
+                  <div key={author.name} className="p-5 rounded-2xl border border-border bg-card shadow-xs space-y-3 hover:border-amber-500/50 transition">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="h-9 w-9 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 font-display font-bold flex items-center justify-center text-sm">
+                          {author.name.slice(0, 1).toUpperCase()}
+                        </div>
+                        <div>
+                          <h4 className="font-display font-bold text-foreground text-sm">{author.name}</h4>
+                          <p className="text-[10px] text-muted-foreground font-semibold">Author &amp; Edition Contributor</p>
+                        </div>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 font-bold text-[10px] border border-amber-500/20">
+                        {author.titlesCount} {author.titlesCount === 1 ? "Title" : "Titles"}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1 text-xs pt-1 border-t border-border/60">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase">Featured Works:</p>
+                      <div className="space-y-0.5">
+                        {author.books.slice(0, 3).map((b) => (
+                          <p key={b.id} className="text-[11px] text-foreground font-medium truncate flex items-center gap-1.5">
+                            <span className="h-1 w-1 rounded-full bg-amber-600" />
+                            {b.title} <span className="text-muted-foreground">(₹{b.price})</span>
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-border/40">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setCatalogFilterAuthor(author.name);
+                          setCatalogActiveTab("books");
+                        }}
+                        className="w-full text-xs font-bold gap-1.5 rounded-xl h-8 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10"
+                      >
+                        <BookOpen className="h-3.5 w-3.5" />
+                        View {author.titlesCount} {author.titlesCount === 1 ? "Book" : "Books"}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
 
-          {/* Books Table */}
-          <div className="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-secondary/60 text-muted-foreground font-semibold border-b border-border">
-                  <tr>
-                    <th className="p-3.5">Cover</th>
-                    <th className="p-3.5">Title &amp; Author</th>
-                    <th className="p-3.5">Category / Sub-Category</th>
-                    <th className="p-3.5">Cost &amp; MRP</th>
-                    <th className="p-3.5">Discount %</th>
-                    <th className="p-3.5">Stock Level</th>
-                    <th className="p-3.5">Rating</th>
-                    <th className="p-3.5 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/60">
-                  {filteredBooks.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="p-8 text-center text-muted-foreground">
-                        No books found. Click "Add New Book" to add your first title!
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredBooks.map((b) => {
-                      const isImg = b.cover && (b.cover.startsWith("http") || b.cover.startsWith("/"));
-                      const mrpVal = b.oldPrice || b.old_price;
-                      const disc = b.discountPercent || b.discount_percent || (mrpVal && mrpVal > b.price ? Math.round(((mrpVal - b.price) / mrpVal) * 100) : 0);
-                      const sub = b.subCategory || b.sub_category;
-                      const currentStock = b.stock ?? 30;
+          {/* 3. PUBLISHERS & IMPRINTS SUB-VIEW */}
+          {activeSection === "books" && catalogActiveTab === "publishers" && (
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl border border-border bg-card">
+                <div>
+                  <h3 className="font-display font-bold text-lg text-foreground flex items-center gap-2">
+                    <Building className="h-5 w-5 text-blue-600" /> Publishers &amp; Imprints
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Directory of {distinctPublishers.length} publishers and imprints. Click any publisher to view associated catalogue titles.
+                  </p>
+                </div>
+                {catalogFilterPublisher !== "All" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setCatalogFilterPublisher("All")}
+                    className="text-xs rounded-full gap-1 h-8"
+                  >
+                    Clear Filter ({catalogFilterPublisher})
+                  </Button>
+                )}
+              </div>
 
-                      return (
-                        <tr key={b.id} className="hover:bg-secondary/20 transition">
-                          {/* Cover Thumbnail */}
-                          <td className="p-3.5">
-                            <div className="relative h-12 w-9 rounded-md overflow-hidden bg-secondary border border-border/80 shadow-2xs shrink-0">
-                              {isImg ? (
-                                <img src={b.cover} alt={b.title} className="h-full w-full object-cover" />
-                              ) : (
-                                <div className={cn("h-full w-full flex items-center justify-center text-[7px] text-white font-bold p-0.5 text-center", b.cover || "bg-primary")}>
-                                  {b.title.slice(0, 8)}
-                                </div>
-                              )}
-                              {(b.image2 || b.image_2) && (
-                                <span className="absolute bottom-0.5 right-0.5 bg-black/70 text-[7px] text-white px-0.5 rounded font-bold" title="Dual 2-Image Gallery">
-                                  2🖼
-                                </span>
-                              )}
-                            </div>
-                          </td>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {distinctPublishers.map((pub) => (
+                  <div key={pub.name} className="p-5 rounded-2xl border border-border bg-card shadow-xs space-y-3 hover:border-blue-500/50 transition">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="h-9 w-9 rounded-full bg-blue-500/10 text-blue-600 font-display font-bold flex items-center justify-center text-sm">
+                          <Building className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <h4 className="font-display font-bold text-foreground text-sm">{pub.name}</h4>
+                          <p className="text-[10px] text-muted-foreground font-semibold">Publishing House / Imprint</p>
+                        </div>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-300 font-bold text-[10px] border border-blue-500/20">
+                        {pub.titlesCount} {pub.titlesCount === 1 ? "Title" : "Titles"}
+                      </span>
+                    </div>
 
-                          {/* Title & Author */}
-                          <td className="p-3.5 font-medium max-w-[200px]">
-                            <p className="font-bold text-foreground text-sm font-display truncate">{b.title}</p>
-                            <p className="text-[11px] text-muted-foreground truncate">by {b.author}</p>
-                            {b.featured && (
-                              <span className="inline-block mt-0.5 text-[9px] font-bold text-amber-600 bg-amber-500/10 px-1.5 py-0.2 rounded border border-amber-500/30">
-                                ★ Featured Showcase
-                              </span>
-                            )}
-                          </td>
+                    <div className="space-y-1 text-xs pt-1 border-t border-border/60">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase">Featured Works:</p>
+                      <div className="space-y-0.5">
+                        {pub.books.slice(0, 3).map((b) => (
+                          <p key={b.id} className="text-[11px] text-foreground font-medium truncate flex items-center gap-1.5">
+                            <span className="h-1 w-1 rounded-full bg-blue-600" />
+                            {b.title} <span className="text-muted-foreground">(₹{b.price})</span>
+                          </p>
+                        ))}
+                      </div>
+                    </div>
 
-                          {/* Category & SubCategory */}
-                          <td className="p-3.5">
-                            <div className="flex flex-col gap-1">
-                              <span className="px-2 py-0.5 rounded-full bg-secondary text-primary font-bold text-[10px] w-fit">
-                                {b.category}
-                              </span>
-                              {sub && (
-                                <span className="text-[10px] text-muted-foreground font-medium pl-1">
-                                  › {sub}
-                                </span>
-                              )}
-                            </div>
-                          </td>
-
-                          {/* Cost & MRP */}
-                          <td className="p-3.5">
-                            <p className="font-bold text-foreground text-sm font-display">₹{b.price}</p>
-                            {mrpVal && (
-                              <p className="text-[10px] text-muted-foreground line-through">₹{mrpVal} MRP</p>
-                            )}
-                          </td>
-
-                          {/* Discount */}
-                          <td className="p-3.5">
-                            {disc > 0 ? (
-                              <span className="px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-extrabold text-[11px]">
-                                {disc}% OFF
-                              </span>
-                            ) : (
-                              <span className="text-muted-foreground text-[11px]">Standard</span>
-                            )}
-                          </td>
-
-                          {/* Stock with 1-click Quick Adjust */}
-                          <td className="p-3.5">
-                            <div className="flex items-center gap-1.5">
-                              <button
-                                onClick={() => handleStockAdjust(b.id, currentStock, -5)}
-                                className="h-6 w-6 rounded bg-secondary hover:bg-muted text-foreground font-bold flex items-center justify-center text-xs transition"
-                                title="Decrease stock by 5"
-                              >
-                                -
-                              </button>
-                              <span className={cn(
-                                "px-2 py-0.5 rounded-full font-bold text-[11px] min-w-[50px] text-center",
-                                currentStock >= 20 ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" :
-                                currentStock > 0 ? "bg-amber-500/10 text-amber-700 dark:text-amber-300" :
-                                "bg-red-500/10 text-red-700 dark:text-red-300"
-                              )}>
-                                {currentStock}
-                              </span>
-                              <button
-                                onClick={() => handleStockAdjust(b.id, currentStock, 5)}
-                                className="h-6 w-6 rounded bg-secondary hover:bg-muted text-foreground font-bold flex items-center justify-center text-xs transition"
-                                title="Increase stock by 5"
-                              >
-                                +
-                              </button>
-                            </div>
-                          </td>
-
-                          {/* Rating */}
-                          <td className="p-3.5">
-                            <div className="flex items-center gap-1">
-                              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                              <span className="font-bold text-foreground">{b.rating || 4.5}</span>
-                            </div>
-                          </td>
-
-                          {/* Actions */}
-                          <td className="p-3.5 text-right space-x-1 whitespace-nowrap">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-8 text-xs text-primary hover:bg-secondary rounded-lg"
-                              onClick={() => handleOpenEditBook(b)}
-                              title="Edit Book Details"
-                            >
-                              <Edit3 className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-8 text-xs text-destructive hover:bg-destructive/10 rounded-lg"
-                              onClick={async () => {
-                                if (confirm(`Remove "${b.title}" from bookstore catalog?`)) {
-                                  try {
-                                    await api.deleteBook(b.id);
-                                    toast.success(`Removed "${b.title}"`);
-                                    loadData();
-                                  } catch (err: unknown) {
-                                    toast.error(err instanceof Error ? err.message : "Failed to delete book");
-                                  }
-                                }
-                              }}
-                              title="Delete Book"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
+                    <div className="pt-2 border-t border-border/40">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setCatalogFilterPublisher(pub.name);
+                          setCatalogActiveTab("books");
+                        }}
+                        className="w-full text-xs font-bold gap-1.5 rounded-xl h-8 text-blue-700 dark:text-blue-300 hover:bg-blue-500/10"
+                      >
+                        <BookOpen className="h-3.5 w-3.5" />
+                        View {pub.titlesCount} {pub.titlesCount === 1 ? "Book" : "Books"}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Add / Edit Book Modal */}
           {showAddBook && (
@@ -1088,7 +1426,7 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
                       {editingBookId ? "Edit Book Details" : "Add New Book to Catalogue"}
                     </h3>
                     <p className="text-[11px] text-muted-foreground">
-                      Fill in book details, multiple images, categories, MRP and discount prices.
+                      Fill in book details, author, publisher, multiple images, categories, MRP and discount prices.
                     </p>
                   </div>
                   <button
@@ -1103,8 +1441,8 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
                   </button>
                 </div>
 
-                {/* Title & Author */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Title, Author & Publisher */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="font-bold block mb-1">Book Title / Name *</label>
                     <input
@@ -1122,8 +1460,29 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
                       value={newAuthor}
                       onChange={(e) => setNewAuthor(e.target.value)}
                       placeholder="e.g. Frances Hodgson Burnett"
+                      list="admin-authors-list"
                       className="w-full h-9 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary text-foreground"
                     />
+                    <datalist id="admin-authors-list">
+                      {distinctAuthors.map((a) => (
+                        <option key={a.name} value={a.name} />
+                      ))}
+                    </datalist>
+                  </div>
+                  <div>
+                    <label className="font-bold block mb-1">Publisher / Imprint</label>
+                    <input
+                      value={newPublisher}
+                      onChange={(e) => setNewPublisher(e.target.value)}
+                      placeholder="e.g. Penguin Classics / Harper"
+                      list="admin-publishers-list"
+                      className="w-full h-9 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary text-foreground"
+                    />
+                    <datalist id="admin-publishers-list">
+                      {distinctPublishers.map((p) => (
+                        <option key={p.name} value={p.name} />
+                      ))}
+                    </datalist>
                   </div>
                 </div>
 
@@ -1916,53 +2275,131 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
       );
     }
 
-    // 9. Catalog: Authors Tab
+    // 9. Catalog: Authors / Publishers Direct Navigation Fallback
     if (activeSection === "authors" || activeSection === "publishers") {
+      const isPub = activeSection === "publishers";
       return (
         <div className="space-y-5">
-          <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl border border-border bg-card">
             <div>
-              <h2 className="font-display text-2xl font-bold text-foreground">
-                {activeSection === "publishers" ? "Publishers & Imprints" : "Vetted Authors & Creators"}
+              <h2 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
+                {isPub ? <Building className="h-6 w-6 text-blue-600" /> : <Users className="h-6 w-6 text-amber-600" />}
+                {isPub ? "Publishers & Imprints" : "Vetted Authors & Creators"}
               </h2>
               <p className="text-xs text-muted-foreground">
-                Authors and publishing imprints currently featured across the bookstore catalogue.
+                {isPub
+                  ? `Directory of ${distinctPublishers.length} publishing houses and imprints featured across the bookstore catalogue.`
+                  : `Directory of ${distinctAuthors.length} authors and edition creators featured across the bookstore catalogue.`}
               </p>
             </div>
-            <span className="text-xs text-muted-foreground font-bold">{distinctAuthors.length} Distinct Creators</span>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                onClick={() => {
+                  setCatalogActiveTab("books");
+                  if (onNavigateSection) onNavigateSection("books");
+                }}
+                className="gap-1.5 text-xs font-bold rounded-full bg-primary text-primary-foreground"
+              >
+                <BookOpen className="h-4 w-4" /> Go to Books Catalog
+              </Button>
+            </div>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {distinctAuthors.map((author) => (
-              <div key={author.name} className="p-5 rounded-2xl border border-border bg-card shadow-xs space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="h-9 w-9 rounded-full bg-primary/10 text-primary font-display font-bold flex items-center justify-center text-sm">
-                      {author.name.slice(0, 1).toUpperCase()}
+            {isPub
+              ? distinctPublishers.map((pub) => (
+                  <div key={pub.name} className="p-5 rounded-2xl border border-border bg-card shadow-xs space-y-3 hover:border-blue-500/50 transition">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="h-9 w-9 rounded-full bg-blue-500/10 text-blue-600 font-display font-bold flex items-center justify-center text-sm">
+                          <Building className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <h4 className="font-display font-bold text-foreground text-sm">{pub.name}</h4>
+                          <p className="text-[10px] text-muted-foreground font-semibold">Publishing House / Imprint</p>
+                        </div>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-300 font-bold text-[10px] border border-blue-500/20">
+                        {pub.titlesCount} {pub.titlesCount === 1 ? "Title" : "Titles"}
+                      </span>
                     </div>
-                    <div>
-                      <h4 className="font-display font-bold text-foreground text-sm">{author.name}</h4>
-                      <p className="text-[10px] text-muted-foreground font-semibold">Author &amp; Edition Contributor</p>
-                    </div>
-                  </div>
-                  <span className="px-2 py-0.5 rounded-full bg-primary text-primary-foreground font-bold text-[10px]">
-                    {author.titlesCount} {author.titlesCount === 1 ? "Title" : "Titles"}
-                  </span>
-                </div>
 
-                <div className="space-y-1 text-xs pt-1 border-t border-border/60">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase">Featured Works:</p>
-                  <div className="space-y-0.5">
-                    {author.books.slice(0, 3).map((b) => (
-                      <p key={b.id} className="text-[11px] text-foreground font-medium truncate flex items-center gap-1.5">
-                        <span className="h-1 w-1 rounded-full bg-primary" />
-                        {b.title} <span className="text-muted-foreground">(₹{b.price})</span>
-                      </p>
-                    ))}
+                    <div className="space-y-1 text-xs pt-1 border-t border-border/60">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase">Featured Works:</p>
+                      <div className="space-y-0.5">
+                        {pub.books.slice(0, 3).map((b) => (
+                          <p key={b.id} className="text-[11px] text-foreground font-medium truncate flex items-center gap-1.5">
+                            <span className="h-1 w-1 rounded-full bg-blue-600" />
+                            {b.title} <span className="text-muted-foreground">(₹{b.price})</span>
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-border/40">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setCatalogFilterPublisher(pub.name);
+                          setCatalogActiveTab("books");
+                          if (onNavigateSection) onNavigateSection("books");
+                        }}
+                        className="w-full text-xs font-bold gap-1.5 rounded-xl h-8 text-blue-700 dark:text-blue-300 hover:bg-blue-500/10"
+                      >
+                        <BookOpen className="h-3.5 w-3.5" />
+                        View {pub.titlesCount} {pub.titlesCount === 1 ? "Book" : "Books"}
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </div>
-            ))}
+                ))
+              : distinctAuthors.map((author) => (
+                  <div key={author.name} className="p-5 rounded-2xl border border-border bg-card shadow-xs space-y-3 hover:border-amber-500/50 transition">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="h-9 w-9 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 font-display font-bold flex items-center justify-center text-sm">
+                          {author.name.slice(0, 1).toUpperCase()}
+                        </div>
+                        <div>
+                          <h4 className="font-display font-bold text-foreground text-sm">{author.name}</h4>
+                          <p className="text-[10px] text-muted-foreground font-semibold">Author &amp; Edition Contributor</p>
+                        </div>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 font-bold text-[10px] border border-amber-500/20">
+                        {author.titlesCount} {author.titlesCount === 1 ? "Title" : "Titles"}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1 text-xs pt-1 border-t border-border/60">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase">Featured Works:</p>
+                      <div className="space-y-0.5">
+                        {author.books.slice(0, 3).map((b) => (
+                          <p key={b.id} className="text-[11px] text-foreground font-medium truncate flex items-center gap-1.5">
+                            <span className="h-1 w-1 rounded-full bg-amber-600" />
+                            {b.title} <span className="text-muted-foreground">(₹{b.price})</span>
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-border/40">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setCatalogFilterAuthor(author.name);
+                          setCatalogActiveTab("books");
+                          if (onNavigateSection) onNavigateSection("books");
+                        }}
+                        className="w-full text-xs font-bold gap-1.5 rounded-xl h-8 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10"
+                      >
+                        <BookOpen className="h-3.5 w-3.5" />
+                        View {author.titlesCount} {author.titlesCount === 1 ? "Book" : "Books"}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
           </div>
         </div>
       );
