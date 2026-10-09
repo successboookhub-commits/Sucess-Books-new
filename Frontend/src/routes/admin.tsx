@@ -9,8 +9,8 @@ import { ShieldAlert, LogIn, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/admin")({
-  validateSearch: (search: Record<string, unknown>): { tab?: AdminSection } => ({
-    tab: typeof search.tab === "string" ? (search.tab as AdminSection) : undefined,
+  validateSearch: (search: Record<string, unknown>): { tab?: AdminSection | undefined } => ({
+    tab: typeof search["tab"] === "string" ? (search["tab"] as AdminSection) : undefined,
   }),
   head: () => ({
     meta: [

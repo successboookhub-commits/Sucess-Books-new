@@ -172,10 +172,13 @@ export function BookDetailModal({ book, open, onOpenChange, onSelectBook }: Book
                   </span>
                 )}
 
-                {isActiveImgUrl ? (
+                {isActiveImgUrl && !activeImageUrl.startsWith("bg-") ? (
                   <img
                     src={activeImageUrl}
                     alt={book.title}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=800";
+                    }}
                     className="w-full h-full object-cover transition duration-300"
                   />
                 ) : (

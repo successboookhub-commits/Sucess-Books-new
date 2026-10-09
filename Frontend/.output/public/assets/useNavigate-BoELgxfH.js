@@ -1,1 +1,0 @@
-import{c as e,u as t}from"./createLucideIcon-BfZogB2V.js";import{r as n}from"./link-BQhbMAEl.js";var r=t(e(),1);function i(e){let t=n();return r.useCallback(n=>t.navigate({...n,from:n.from??e?.from}),[e?.from,t])}export{i as t};

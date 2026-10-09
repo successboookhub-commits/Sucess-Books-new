@@ -167,62 +167,77 @@ export function SiteHeader() {
 
             {/* Customer User Authentication Menu */}
             {isUserLoggedIn && user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="rounded-full h-8.5 w-8.5 sm:h-9 sm:w-auto p-0 sm:px-3 gap-1.5 text-xs font-bold border-amber-300 bg-amber-50/70 text-amber-950 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-700/50 justify-center"
-                    aria-label="User Account"
-                  >
+              <div className="flex items-center gap-0.5 sm:gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  asChild
+                  className="rounded-full h-8.5 w-8.5 sm:h-9 sm:w-auto p-0 sm:px-3 gap-1.5 text-xs font-bold border-amber-300 bg-amber-50/70 text-amber-950 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-700/50 justify-center shadow-2xs cursor-pointer"
+                  title="Open User Dashboard"
+                  aria-label="Open User Dashboard"
+                >
+                  <Link to="/account">
                     <User className="h-3.5 w-3.5 text-amber-600" />
                     <span className="hidden sm:inline max-w-[90px] truncate">
                       {user.name ? user.name.split(" ")[0] : "Account"}
                     </span>
-                    <ChevronDown className="h-3 w-3 opacity-60 hidden sm:inline" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 rounded-xl p-1.5 shadow-xl border-border bg-card">
-                  <DropdownMenuLabel className="font-normal px-2 py-1.5">
-                    <div className="text-xs font-bold text-foreground truncate">{user.name || "Customer"}</div>
-                    <div className="text-[11px] text-muted-foreground truncate">{user.email}</div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to="/account" search={{ tab: "profile" }} className="flex items-center gap-2 cursor-pointer text-xs py-2">
-                      <User className="h-3.5 w-3.5 text-amber-600" />
-                      <span>My Dashboard & Profile</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/account" search={{ tab: "orders" }} className="flex items-center gap-2 cursor-pointer text-xs py-2">
-                      <Package className="h-3.5 w-3.5 text-amber-600" />
-                      <span>My Orders & Invoices</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/account" search={{ tab: "addresses" }} className="flex items-center gap-2 cursor-pointer text-xs py-2">
-                      <MapPin className="h-3.5 w-3.5 text-amber-600" />
-                      <span>Saved Addresses</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setWishlistOpen(true)}
-                    className="flex items-center gap-2 cursor-pointer text-xs py-2"
-                  >
-                    <Heart className="h-3.5 w-3.5 text-red-500" />
-                    <span>My Wishlist ({wishlistCount})</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={handleUserLogout}
-                    className="flex items-center gap-2 cursor-pointer text-xs py-2 text-destructive focus:text-destructive"
-                  >
-                    <LogOut className="h-3.5 w-3.5" />
-                    <span>Sign Out</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                  </Link>
+                </Button>
+
+                {/* Quick User Dropdown Options & Logout */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8.5 w-6 sm:h-9 sm:w-7 p-0 rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary/60 cursor-pointer"
+                      aria-label="Account options menu"
+                    >
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56 rounded-xl p-1.5 shadow-xl border-border bg-card">
+                    <DropdownMenuLabel className="font-normal px-2 py-1.5">
+                      <div className="text-xs font-bold text-foreground truncate">{user.name || "Customer"}</div>
+                      <div className="text-[11px] text-muted-foreground truncate">{user.email}</div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/account" search={{ tab: "orders" }} className="flex items-center gap-2 cursor-pointer text-xs py-2">
+                        <Package className="h-3.5 w-3.5 text-amber-600" />
+                        <span>My Orders & Invoices</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/account" search={{ tab: "addresses" }} className="flex items-center gap-2 cursor-pointer text-xs py-2">
+                        <MapPin className="h-3.5 w-3.5 text-amber-600" />
+                        <span>Saved Addresses</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/account" search={{ tab: "profile" }} className="flex items-center gap-2 cursor-pointer text-xs py-2">
+                        <User className="h-3.5 w-3.5 text-amber-600" />
+                        <span>Profile & Settings</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setWishlistOpen(true)}
+                      className="flex items-center gap-2 cursor-pointer text-xs py-2"
+                    >
+                      <Heart className="h-3.5 w-3.5 text-red-500" />
+                      <span>My Wishlist ({wishlistCount})</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={handleUserLogout}
+                      className="flex items-center gap-2 cursor-pointer text-xs py-2 text-destructive focus:text-destructive"
+                    >
+                      <LogOut className="h-3.5 w-3.5" />
+                      <span>Sign Out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             ) : (
               <Button
                 variant="outline"

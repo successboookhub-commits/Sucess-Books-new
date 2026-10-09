@@ -18,10 +18,10 @@ import { api, type Category } from "@/lib/api";
 import { useCart } from "@/lib/cart";
 
 export const Route = createFileRoute("/shop")({
-  validateSearch: (search: Record<string, unknown>): { category?: string; subCategory?: string; q?: string } => ({
-    category: typeof search.category === "string" ? search.category : undefined,
-    subCategory: typeof search.subCategory === "string" ? search.subCategory : undefined,
-    q: typeof search.q === "string" ? search.q : undefined,
+  validateSearch: (search: Record<string, unknown>): { category?: string | undefined; subCategory?: string | undefined; q?: string | undefined } => ({
+    category: typeof search["category"] === "string" ? search["category"] : undefined,
+    subCategory: typeof search["subCategory"] === "string" ? search["subCategory"] : undefined,
+    q: typeof search["q"] === "string" ? search["q"] : undefined,
   }),
   head: () => ({
     meta: [
@@ -441,6 +441,9 @@ function Shop() {
                           <img
                             src={cat.image}
                             alt={cat.name}
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1476275466078-4007374efbbe?q=80&w=800&auto=format&fit=crop";
+                            }}
                             className="h-full w-full object-cover group-hover:scale-115 transition-transform duration-500"
                             loading="lazy"
                           />

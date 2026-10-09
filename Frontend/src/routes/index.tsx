@@ -410,6 +410,9 @@ function Index() {
                             <img
                               src={cat.image}
                               alt={cat.name}
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1476275466078-4007374efbbe?q=80&w=800&auto=format&fit=crop";
+                              }}
                               className="h-full w-full object-cover group-hover:scale-115 transition-transform duration-500"
                               loading="lazy"
                             />

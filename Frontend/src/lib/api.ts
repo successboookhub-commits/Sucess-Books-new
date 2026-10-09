@@ -1036,12 +1036,12 @@ export type Category = {
 };
 
 export const fallbackCategoryList: Category[] = [
-  { id: 1, name: "Classics", slug: "classics", description: "Timeless masterworks of literature.", image: "", status: "active" },
-  { id: 2, name: "Self Help", slug: "self-help", description: "Personal growth and productivity.", image: "", status: "active" },
-  { id: 3, name: "Science & Nature", slug: "science-nature", description: "Cosmology and natural sciences.", image: "", status: "active" },
-  { id: 4, name: "Poetry & Letters", slug: "poetry-letters", description: "Poetry collections and correspondence.", image: "", status: "active" },
-  { id: 5, name: "Children & YA", slug: "children-ya", description: "Stories for young readers.", image: "", status: "active" },
-  { id: 6, name: "Philosophy", slug: "philosophy", description: "Philosophical treaties and wisdom.", image: "", status: "active" },
-  { id: 7, name: "Fiction", slug: "fiction", description: "Novels and contemporary fiction.", image: "", status: "active" }
+  { id: 1, name: "Classics", slug: "classics", description: "Timeless masterworks of literature.", image: "https://images.unsplash.com/photo-1476275466078-4007374efbbe?q=80&w=800&auto=format&fit=crop", status: "active" },
+  { id: 2, name: "Self Help", slug: "self-help", description: "Personal growth and productivity.", image: "https://images.unsplash.com/photo-1506784983877-45594efa4cbe?q=80&w=800&auto=format&fit=crop", status: "active" },
+  { id: 3, name: "Science & Nature", slug: "science-nature", description: "Cosmology and natural sciences.", image: "https://images.unsplash.com/photo-1507668077129-56e32842fceb?q=80&w=800&auto=format&fit=crop", status: "active" },
+  { id: 4, name: "Poetry & Letters", slug: "poetry-letters", description: "Poetry collections and correspondence.", image: "https://images.unsplash.com/photo-1455390582262-044cdead277a?q=80&w=800&auto=format&fit=crop", status: "active" },
+  { id: 5, name: "Children & YA", slug: "children-ya", description: "Stories for young readers.", image: "https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=800&auto=format&fit=crop", status: "active" },
+  { id: 6, name: "Philosophy", slug: "philosophy", description: "Philosophical treaties and wisdom.", image: "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=800&auto=format&fit=crop", status: "active" },
+  { id: 7, name: "Fiction", slug: "fiction", description: "Novels and contemporary fiction.", image: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=800&auto=format&fit=crop", status: "active" }
 ];
 

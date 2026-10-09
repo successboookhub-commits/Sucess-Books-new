@@ -95,12 +95,15 @@ export function BookCard({ book, compact = false }: { book: Book; compact?: bool
           )}
 
           {/* Image Display / Stylized Book Cover */}
-          {isImageCover ? (
-            <div className="relative h-full w-full overflow-hidden">
+          {book.cover && !book.cover.startsWith("bg-") ? (
+            <div className="relative h-full w-full overflow-hidden bg-secondary/40">
               <img
-                src={hovered && hasSecondImage ? (book.image2 || book.image_2) : book.cover}
+                src={hovered && hasSecondImage ? (book.image2 || book.image_2 || book.cover) : book.cover}
                 alt={book.title}
                 loading="lazy"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=800";
+                }}
                 className="h-full w-full object-cover transition-all duration-500 group-hover:scale-105"
               />
             </div>
