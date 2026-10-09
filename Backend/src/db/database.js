@@ -749,58 +749,86 @@ export async function initDatabase() {
     console.log("[Database] Local SQLite engine explicitly requested (USE_SQLITE=true).");
     await initSQLite();
   } else {
-    // Attempt MySQL connection using multiple candidate hosts.
-    // On Linux/Hostinger, 127.0.0.1 is required for TCP loopback (localhost attempts Unix domain socket).
+    // Attempt MySQL connection using multiple candidate hosts and casing variations.
+    // On Linux/Hostinger, 127.0.0.1 is required for TCP loopback (localhost resolves to IPv6 ::1 or attempts Unix socket).
     const candidateHosts = [
-      process.env.DB_HOST,
       "127.0.0.1",
+      process.env.DB_HOST && process.env.DB_HOST !== "localhost" ? process.env.DB_HOST : null,
       "localhost"
     ].filter(Boolean);
     const uniqueHosts = [...new Set(candidateHosts)];
 
-    const user = process.env.DB_USER || "u803044110_Successbookhub";
-    const password = process.env.DB_PASSWORD || "Successbookhub@123";
-    const database = process.env.DB_NAME || "u803044110_Successbookhub";
+    const rawUser = process.env.DB_USER || "u803044110_Successbookhub";
+    const candidateUsers = [
+      "u803044110_Successbookhub",
+      rawUser.replace(/^U(\d+)/i, "u$1"),
+      rawUser.toLowerCase(),
+      rawUser
+    ];
+    const uniqueUsers = [...new Set(candidateUsers)];
+
+    const rawDb = process.env.DB_NAME || "u803044110_Successbookhub";
+    const candidateDbs = [
+      "u803044110_Successbookhub",
+      rawDb.replace(/^U(\d+)/i, "u$1"),
+      rawDb.toLowerCase(),
+      rawDb
+    ];
+    const uniqueDbs = [...new Set(candidateDbs)];
+
+    const candidatePasswords = [
+      process.env.DB_PASSWORD,
+      "Successbookhub@123"
+    ].filter(Boolean);
+    const uniquePasswords = [...new Set(candidatePasswords)];
+
     const port = Number(process.env.DB_PORT) || 3306;
 
     let connected = false;
     let lastErr = null;
 
+    connectionAttempt:
     for (const host of uniqueHosts) {
-      try {
-        console.log(`[Database] Attempting MySQL connection to ${database} on ${host}:${port}...`);
-        const poolConfig = {
-          host,
-          user,
-          password: password || "",
-          database,
-          port,
-          connectTimeout: 8000,
-          waitForConnections: true,
-          connectionLimit: 15,
-          queueLimit: 0,
-          enableKeepAlive: true,
-          keepAliveInitialDelay: 0,
-          charset: "utf8mb4"
-        };
+      for (const user of uniqueUsers) {
+        for (const database of uniqueDbs) {
+          for (const password of uniquePasswords) {
+            try {
+              console.log(`[Database] Attempting MySQL connection to ${database} as ${user} on ${host}:${port}...`);
+              const poolConfig = {
+                host,
+                user,
+                password,
+                database,
+                port,
+                connectTimeout: 4000,
+                waitForConnections: true,
+                connectionLimit: 15,
+                queueLimit: 0,
+                enableKeepAlive: true,
+                keepAliveInitialDelay: 0,
+                charset: "utf8mb4"
+              };
 
-        const testPool = mysql.createPool(poolConfig);
-        const connection = await testPool.getConnection();
-        connection.release();
+              const testPool = mysql.createPool(poolConfig);
+              const connection = await testPool.getConnection();
+              connection.release();
 
-        pool = testPool;
-        isMySQL = true;
-        db.isMySQL = true;
-        db.activeHost = host;
-        db.activeDatabase = database;
-        db.activeUser = user;
-        db.lastError = null;
-        connected = true;
-        console.log(`[Database] MySQL connected successfully: ${database} on ${host}:${port}`);
-        break;
-      } catch (err) {
-        lastErr = err;
-        console.warn(`[Database] MySQL connection attempt failed for ${host}:`, err.message);
+              pool = testPool;
+              isMySQL = true;
+              db.isMySQL = true;
+              db.activeHost = host;
+              db.activeDatabase = database;
+              db.activeUser = user;
+              db.lastError = null;
+              connected = true;
+              console.log(`[Database] MySQL connected successfully: ${database} as ${user} on ${host}:${port}`);
+              break connectionAttempt;
+            } catch (err) {
+              lastErr = err;
+              console.warn(`[Database] MySQL attempt failed (${user}@${host}):`, err.message);
+            }
+          }
+        }
       }
     }
 
