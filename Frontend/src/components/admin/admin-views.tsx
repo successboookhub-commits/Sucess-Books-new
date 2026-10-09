@@ -49,14 +49,28 @@ import {
   Globe,
   HelpCircle,
   Award,
-  BookMarked
+  BookMarked,
+  Gift,
+  Save,
+  ToggleLeft,
+  ToggleRight,
+  X
 } from "lucide-react";
 import { type AdminSection } from "./admin-types";
 import { CategoryManager } from "./category-manager";
 import { SubCategoryManager } from "./subcategory-manager";
 import { TaxInvoiceModal } from "@/components/invoice/tax-invoice-modal";
 import { Button } from "@/components/ui/button";
-import { api, type OrderData, type Category, type SubCategory, type UserAddress } from "@/lib/api";
+import {
+  api,
+  type OrderData,
+  type Category,
+  type SubCategory,
+  type UserAddress,
+  type Coupon,
+  type StoreSettings,
+  type ContentBlock
+} from "@/lib/api";
 import { categories as defaultCategories, type Book, STORE } from "@/lib/books";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -78,6 +92,35 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
   const [dbSubCategories, setDbSubCategories] = useState<SubCategory[]>([]);
   const [selectedSubCatParentId, setSelectedSubCatParentId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Coupons state
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [showCouponModal, setShowCouponModal] = useState(false);
+  const [editingCouponId, setEditingCouponId] = useState<number | null>(null);
+  const [couponCode, setCouponCode] = useState("");
+  const [couponType, setCouponType] = useState<"percentage" | "flat">("percentage");
+  const [couponValue, setCouponValue] = useState("");
+  const [couponMinOrder, setCouponMinOrder] = useState("");
+  const [couponMaxDiscount, setCouponMaxDiscount] = useState("");
+  const [couponStatus, setCouponStatus] = useState<"active" | "inactive">("active");
+  const [savingCoupon, setSavingCoupon] = useState(false);
+
+  // Settings state
+  const [settings, setSettings] = useState<StoreSettings>({});
+  const [savingSettings, setSavingSettings] = useState(false);
+
+  // Content Blocks state
+  const [contentBlocks, setContentBlocks] = useState<ContentBlock[]>([]);
+  const [showContentModal, setShowContentModal] = useState(false);
+  const [editingContentId, setEditingContentId] = useState<number | null>(null);
+  const [contentTitle, setContentTitle] = useState("");
+  const [contentSubtitle, setContentSubtitle] = useState("");
+  const [contentImage, setContentImage] = useState("");
+  const [contentLinkUrl, setContentLinkUrl] = useState("");
+  const [contentBody, setContentBody] = useState("");
+  const [contentOrder, setContentOrder] = useState("0");
+  const [contentStatus, setContentStatus] = useState<"active" | "inactive">("active");
+  const [savingContent, setSavingContent] = useState(false);
 
   // Invoice modal state
   const [selectedInvoiceOrderId, setSelectedInvoiceOrderId] = useState<string | null>(null);
@@ -115,7 +158,10 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
         fetchedCustomers,
         fetchedAddresses,
         fetchedReviews,
-        fetchedStats
+        fetchedStats,
+        fetchedCoupons,
+        fetchedSettings,
+        fetchedContent
       ] = await Promise.all([
         api.getBooks(),
         api.getAllOrders().catch(() => []),
@@ -124,7 +170,10 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
         api.getAllCustomers().catch(() => []),
         api.getAllCustomerAddresses().catch(() => []),
         api.getAllReviews().catch(() => []),
-        api.getDashboardStats().catch(() => null)
+        api.getDashboardStats().catch(() => null),
+        api.getCoupons().catch(() => []),
+        api.getSettings().catch(() => ({})),
+        api.getContentBlocks().catch(() => [])
       ]);
 
       setBooks(fetchedBooks || []);
@@ -135,6 +184,9 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
       setAddresses(fetchedAddresses || []);
       setReviews(fetchedReviews || []);
       setDashboardStats(fetchedStats || null);
+      setCoupons(fetchedCoupons || []);
+      setSettings(fetchedSettings || {});
+      setContentBlocks(fetchedContent || []);
 
       if (fetchedCats && fetchedCats.length > 0 && !newCategory) {
         setNewCategory(fetchedCats[0].name);
@@ -303,6 +355,18 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
     `${r.userName} ${r.bookTitle} ${r.comment}`.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Filter coupons
+  const filteredCoupons = coupons.filter((c) =>
+    `${c.code} ${c.discountType || c.discount_type || ""} ${c.status}`.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Filter content blocks for active section
+  const filteredContentBlocks = contentBlocks.filter((cb) => {
+    const matchesType = cb.type === activeSection;
+    const matchesSearch = `${cb.title} ${cb.subtitle || ""} ${cb.content || ""}`.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesType && matchesSearch;
+  });
+
   // Distinct authors calculation
   const distinctAuthors = useMemo(() => {
     const map = new Map<string, { name: string; titlesCount: number; books: Book[]; avgRating: number }>();
@@ -318,12 +382,203 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
     return Array.from(map.values()).sort((a, b) => b.titlesCount - a.titlesCount);
   }, [books]);
 
-  // Total calculations
-  const totalRevenue = dashboardStats?.totalRevenue || (orders.reduce((sum, o) => sum + (o.total || 0), 0) + 14850);
-  const totalOrdersCount = dashboardStats?.totalOrders || (orders.length + 38);
+  // Total calculations without fake offsets
+  const totalRevenue = dashboardStats?.totalRevenue !== undefined ? Number(dashboardStats.totalRevenue) : orders.reduce((sum, o) => sum + (o.total || 0), 0);
+  const totalOrdersCount = dashboardStats?.totalOrders !== undefined ? Number(dashboardStats.totalOrders) : orders.length;
   const totalStockUnits = books.reduce((sum, b) => sum + (b.stock || 0), 0);
   const totalInventoryValuation = books.reduce((sum, b) => sum + ((b.price || 0) * (b.stock || 0)), 0);
   const lowStockBooks = books.filter(b => (b.stock || 0) < 20);
+
+  // Coupon action handlers
+  const handleOpenAddCoupon = () => {
+    setEditingCouponId(null);
+    setCouponCode("");
+    setCouponType("percentage");
+    setCouponValue("");
+    setCouponMinOrder("0");
+    setCouponMaxDiscount("");
+    setCouponStatus("active");
+    setShowCouponModal(true);
+  };
+
+  const handleOpenEditCoupon = (c: Coupon) => {
+    setEditingCouponId(c.id);
+    setCouponCode(c.code);
+    setCouponType(c.discountType || c.discount_type || "percentage");
+    setCouponValue(String(c.discountValue || c.discount_value || ""));
+    setCouponMinOrder(String(c.minOrder || c.min_order || "0"));
+    setCouponMaxDiscount(c.maxDiscount || c.max_discount ? String(c.maxDiscount || c.max_discount) : "");
+    setCouponStatus(c.status);
+    setShowCouponModal(true);
+  };
+
+  const handleSaveCoupon = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!couponCode.trim() || !couponValue) {
+      toast.error("Coupon code and discount value are required.");
+      return;
+    }
+    setSavingCoupon(true);
+    try {
+      const payload = {
+        code: couponCode.trim().toUpperCase(),
+        discountType: couponType,
+        discountValue: parseFloat(couponValue),
+        minOrder: parseFloat(couponMinOrder) || 0,
+        maxDiscount: couponMaxDiscount ? parseFloat(couponMaxDiscount) : undefined,
+        status: couponStatus
+      };
+      if (editingCouponId) {
+        await api.updateCoupon(editingCouponId, payload);
+        toast.success(`Coupon ${payload.code} updated!`);
+      } else {
+        await api.createCoupon(payload);
+        toast.success(`Coupon ${payload.code} created!`);
+      }
+      setShowCouponModal(false);
+      const refreshed = await api.getCoupons();
+      setCoupons(refreshed);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to save coupon");
+    } finally {
+      setSavingCoupon(false);
+    }
+  };
+
+  const handleDeleteCoupon = async (id: number, code: string) => {
+    if (!confirm(`Are you sure you want to permanently delete coupon "${code}"?`)) return;
+    try {
+      await api.deleteCoupon(id);
+      toast.success(`Coupon "${code}" deleted.`);
+      setCoupons(prev => prev.filter(c => c.id !== id));
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete coupon");
+    }
+  };
+
+  const handleToggleCouponStatus = async (c: Coupon) => {
+    const nextStatus = (c.status === "active" ? "inactive" : "active") as "active" | "inactive";
+    try {
+      await api.updateCoupon(c.id, { status: nextStatus });
+      setCoupons(prev => prev.map(item => item.id === c.id ? { ...item, status: nextStatus } : item));
+      toast.success(`Coupon ${c.code} is now ${nextStatus}`);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to update status");
+    }
+  };
+
+  // Customer status handler
+  const handleToggleCustomerStatus = async (customerId: number, currentStatus: string, name: string) => {
+    const nextStatus = currentStatus === "blocked" ? "active" : "blocked";
+    if (!confirm(`Change customer "${name}" status to "${nextStatus.toUpperCase()}"?`)) return;
+    try {
+      await api.updateCustomerStatus(customerId, nextStatus);
+      setCustomers(prev => prev.map(c => c.id === customerId ? { ...c, status: nextStatus } : c));
+      toast.success(`Customer "${name}" status updated to ${nextStatus}`);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to update status");
+    }
+  };
+
+  // Content block action handlers
+  const handleOpenAddContent = () => {
+    setEditingContentId(null);
+    setContentTitle("");
+    setContentSubtitle("");
+    setContentImage("");
+    setContentLinkUrl("");
+    setContentBody("");
+    setContentOrder("0");
+    setContentStatus("active");
+    setShowContentModal(true);
+  };
+
+  const handleOpenEditContent = (cb: ContentBlock) => {
+    setEditingContentId(cb.id);
+    setContentTitle(cb.title);
+    setContentSubtitle(cb.subtitle || "");
+    setContentImage(cb.image || "");
+    setContentLinkUrl(cb.linkUrl || cb.link_url || "");
+    setContentBody(cb.content || "");
+    setContentOrder(String(cb.displayOrder || cb.display_order || 0));
+    setContentStatus(cb.status);
+    setShowContentModal(true);
+  };
+
+  const handleSaveContent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!contentTitle.trim()) {
+      toast.error("Title is required.");
+      return;
+    }
+    setSavingContent(true);
+    try {
+      const payload: Partial<ContentBlock> = {
+        type: activeSection,
+        title: contentTitle.trim(),
+        subtitle: contentSubtitle.trim() || undefined,
+        image: contentImage.trim() || undefined,
+        linkUrl: contentLinkUrl.trim() || undefined,
+        content: contentBody.trim() || undefined,
+        displayOrder: parseInt(contentOrder) || 0,
+        status: contentStatus
+      };
+      if (editingContentId) {
+        await api.updateContentBlock(editingContentId, payload);
+        toast.success("Content item updated!");
+      } else {
+        await api.createContentBlock(payload);
+        toast.success("Content item created!");
+      }
+      setShowContentModal(false);
+      const refreshed = await api.getContentBlocks();
+      setContentBlocks(refreshed);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to save content");
+    } finally {
+      setSavingContent(false);
+    }
+  };
+
+  const handleDeleteContent = async (id: number, title: string) => {
+    if (!confirm(`Are you sure you want to delete "${title}"?`)) return;
+    try {
+      await api.deleteContentBlock(id);
+      toast.success("Content deleted.");
+      setContentBlocks(prev => prev.filter(c => c.id !== id));
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete");
+    }
+  };
+
+  const handleToggleContentStatus = async (cb: ContentBlock) => {
+    const nextStatus = (cb.status === "active" ? "inactive" : "active") as "active" | "inactive";
+    try {
+      await api.updateContentBlock(cb.id, { status: nextStatus });
+      setContentBlocks(prev => prev.map(item => item.id === cb.id ? { ...item, status: nextStatus } : item));
+      toast.success(`Content status set to ${nextStatus}`);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to update status");
+    }
+  };
+
+  // Settings save handler
+  const handleSaveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingSettings(true);
+    try {
+      const cleanSettings: Record<string, string> = {};
+      Object.entries(settings).forEach(([k, v]) => {
+        if (typeof v === "string") cleanSettings[k] = v;
+      });
+      await api.updateSettings(cleanSettings);
+      toast.success("Store configurations persisted to database!");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to update settings");
+    } finally {
+      setSavingSettings(false);
+    }
+  };
 
   // ----------------------------------------------------
   // RENDER SECTIONS
@@ -1146,7 +1401,7 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
                               "bg-orange-100 text-orange-800"
                             )}
                           >
-                            {order.status}
+                            {o.status}
                           </span>
                         </td>
                         <td className="p-3.5 text-right">
@@ -1286,51 +1541,145 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
 
     // 5. Sales: Coupons & Promo Codes
     if (activeSection === "coupons") {
-      const couponsList = [
-        { code: "WELCOME100", discount: "₹100 FLAT OFF", minOrder: "₹599", status: "Active", used: 142 },
-        { code: "FESTIVE20", discount: "20% OFF", minOrder: "₹899", status: "Active", used: 89 },
-        { code: "FREESHIP", discount: "Free Delivery", minOrder: "₹499", status: "Active", used: 310 },
-        { code: "SUCCESS10", discount: "10% Instant", minOrder: "₹349", status: "Active", used: 64 },
-      ];
+      const activeCouponsCount = coupons.filter(c => c.status === "active").length;
+      const totalRedemptions = coupons.reduce((sum, c) => sum + (c.usageCount || c.usage_count || 0), 0);
 
       return (
         <div className="space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <h2 className="font-display text-2xl font-bold text-foreground">Coupons &amp; Promotional Codes</h2>
-              <p className="text-xs text-muted-foreground">Manage bookstore discounts, checkout vouchers, and seasonal coupons.</p>
+              <p className="text-xs text-muted-foreground">Manage persistent bookstore discount vouchers, order thresholds and percentage cuts.</p>
             </div>
-            <Button size="sm" className="rounded-full gap-1.5 text-xs font-bold" onClick={() => toast.info("New coupon creator configured.")}>
-              <Plus className="h-3.5 w-3.5" /> Create New Coupon
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" onClick={loadData} className="gap-1.5 text-xs rounded-full">
+                <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} /> Refresh
+              </Button>
+              <Button size="sm" className="rounded-full gap-1.5 text-xs font-bold" onClick={handleOpenAddCoupon}>
+                <Plus className="h-3.5 w-3.5" /> Create New Coupon
+              </Button>
+            </div>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {couponsList.map((c) => (
-              <div key={c.code} className="p-4 rounded-2xl border border-border bg-card shadow-xs space-y-3 relative overflow-hidden">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono font-bold text-sm text-primary bg-primary/10 px-2.5 py-1 rounded-lg">
-                    {c.code}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                    {c.status}
-                  </span>
-                </div>
-                <div>
-                  <p className="font-display font-bold text-lg text-foreground">{c.discount}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Min Order: {c.minOrder}</p>
-                </div>
-                <div className="flex items-center justify-between text-[11px] pt-2 border-t border-border text-muted-foreground">
-                  <span>{c.used} Readers Used</span>
-                  <button
-                    onClick={() => toast.success(`Coupon code ${c.code} copied`)}
-                    className="font-bold text-primary hover:underline"
-                  >
-                    Copy Code
-                  </button>
-                </div>
-              </div>
-            ))}
+          {/* Quick Metrics */}
+          <div className="grid sm:grid-cols-3 gap-4">
+            <div className="p-4 rounded-2xl border border-border bg-card shadow-xs">
+              <span className="text-xs font-bold text-muted-foreground uppercase">Total Coupons Created</span>
+              <p className="font-display text-2xl font-bold text-foreground mt-1">{coupons.length}</p>
+            </div>
+            <div className="p-4 rounded-2xl border border-border bg-card shadow-xs">
+              <span className="text-xs font-bold text-muted-foreground uppercase">Currently Active Offers</span>
+              <p className="font-display text-2xl font-bold text-emerald-600 mt-1">{activeCouponsCount}</p>
+            </div>
+            <div className="p-4 rounded-2xl border border-border bg-card shadow-xs">
+              <span className="text-xs font-bold text-muted-foreground uppercase">Total Redemptions</span>
+              <p className="font-display text-2xl font-bold text-primary mt-1">{totalRedemptions} orders</p>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead className="bg-secondary/60 text-muted-foreground font-semibold border-b border-border">
+                  <tr>
+                    <th className="p-3.5">Coupon Code</th>
+                    <th className="p-3.5">Discount Offer</th>
+                    <th className="p-3.5">Min Order Value</th>
+                    <th className="p-3.5">Times Used</th>
+                    <th className="p-3.5">Status</th>
+                    <th className="p-3.5">Created Date</th>
+                    <th className="p-3.5 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  {filteredCoupons.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                        No promotional coupons found. Click "Create New Coupon" to publish your first discount.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredCoupons.map((c) => {
+                      const isPct = (c.discountType || c.discount_type) === "percentage";
+                      const val = c.discountValue || c.discount_value || 0;
+                      const maxDisc = c.maxDiscount || c.max_discount;
+                      const minOrd = c.minOrder || c.min_order || 0;
+                      const uses = c.usageCount || c.usage_count || 0;
+
+                      return (
+                        <tr key={c.id} className="hover:bg-secondary/20 transition">
+                          <td className="p-3.5">
+                            <span className="font-mono font-bold text-sm text-primary bg-primary/10 px-2.5 py-1 rounded-lg inline-flex items-center gap-1.5">
+                              <Tag className="h-3 w-3" /> {c.code}
+                            </span>
+                          </td>
+                          <td className="p-3.5 font-bold text-foreground">
+                            {isPct ? `${val}% OFF` : `₹${val} Flat OFF`}
+                            {maxDisc ? <span className="text-[10px] text-muted-foreground font-normal ml-1">(Cap: ₹{maxDisc})</span> : null}
+                          </td>
+                          <td className="p-3.5 font-semibold text-foreground">
+                            {minOrd > 0 ? `₹${minOrd}` : "No Minimum"}
+                          </td>
+                          <td className="p-3.5">
+                            <span className="px-2 py-0.5 rounded-full bg-secondary font-bold text-[11px]">
+                              {uses} times
+                            </span>
+                          </td>
+                          <td className="p-3.5">
+                            <span
+                              className={cn(
+                                "px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase",
+                                c.status === "active" ? "bg-emerald-100 text-emerald-800" : "bg-muted text-muted-foreground"
+                              )}
+                            >
+                              {c.status}
+                            </span>
+                          </td>
+                          <td className="p-3.5 text-muted-foreground font-mono text-[10px]">
+                            {c.createdAt || c.created_at ? new Date(c.createdAt || c.created_at!).toLocaleDateString() : "Active"}
+                          </td>
+                          <td className="p-3.5 text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 text-xs px-2 gap-1 text-muted-foreground hover:text-foreground"
+                                onClick={() => handleToggleCouponStatus(c)}
+                                title={c.status === "active" ? "Deactivate Coupon" : "Activate Coupon"}
+                              >
+                                {c.status === "active" ? (
+                                  <ToggleRight className="h-4 w-4 text-emerald-600" />
+                                ) : (
+                                  <ToggleLeft className="h-4 w-4 text-muted-foreground" />
+                                )}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 text-xs px-2 gap-1 text-primary hover:bg-primary/10"
+                                onClick={() => handleOpenEditCoupon(c)}
+                                title="Edit Coupon"
+                              >
+                                <Edit3 className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 text-xs px-2 gap-1 text-destructive hover:bg-destructive/10"
+                                onClick={() => handleDeleteCoupon(c.id, c.code)}
+                                title="Delete Coupon"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       );
@@ -1362,44 +1711,68 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
                     <th className="p-3.5">Total Orders</th>
                     <th className="p-3.5">Saved Addresses</th>
                     <th className="p-3.5">Total Spent</th>
-                    <th className="p-3.5 text-right">Joined On</th>
+                    <th className="p-3.5">Status</th>
+                    <th className="p-3.5 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/60">
                   {filteredCustomers.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="p-8 text-center text-muted-foreground">
+                      <td colSpan={9} className="p-8 text-center text-muted-foreground">
                         No customer accounts found. When readers sign in via OTP, they will appear here.
                       </td>
                     </tr>
                   ) : (
-                    filteredCustomers.map((c) => (
-                      <tr key={c.id} className="hover:bg-secondary/20 transition">
-                        <td className="p-3.5 font-bold font-mono text-primary">#{c.id}</td>
-                        <td className="p-3.5 font-bold text-foreground flex items-center gap-2">
-                          <span className="h-7 w-7 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-xs">
-                            {c.name.slice(0, 1).toUpperCase()}
-                          </span>
-                          <span>{c.name}</span>
-                        </td>
-                        <td className="p-3.5 font-mono text-muted-foreground">{c.email}</td>
-                        <td className="p-3.5 font-semibold text-foreground">{c.phone}</td>
-                        <td className="p-3.5">
-                          <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold text-[11px]">
-                            {c.totalOrders} Orders
-                          </span>
-                        </td>
-                        <td className="p-3.5 font-semibold text-muted-foreground">
-                          {c.totalAddresses} Addresses
-                        </td>
-                        <td className="p-3.5 font-bold font-display text-sm text-foreground">
-                          ₹{c.totalSpent.toLocaleString()}
-                        </td>
-                        <td className="p-3.5 text-right text-muted-foreground font-mono text-[10px]">
-                          {c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "Active"}
-                        </td>
-                      </tr>
-                    ))
+                    filteredCustomers.map((c) => {
+                      const userStatus = c.status || "active";
+                      return (
+                        <tr key={c.id} className="hover:bg-secondary/20 transition">
+                          <td className="p-3.5 font-bold font-mono text-primary">#{c.id}</td>
+                          <td className="p-3.5 font-bold text-foreground flex items-center gap-2">
+                            <span className="h-7 w-7 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-xs">
+                              {c.name ? c.name.slice(0, 1).toUpperCase() : "R"}
+                            </span>
+                            <span>{c.name || "Reader"}</span>
+                          </td>
+                          <td className="p-3.5 font-mono text-muted-foreground">{c.email}</td>
+                          <td className="p-3.5 font-semibold text-foreground">{c.phone || "—"}</td>
+                          <td className="p-3.5">
+                            <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold text-[11px]">
+                              {c.totalOrders || 0} Orders
+                            </span>
+                          </td>
+                          <td className="p-3.5 font-semibold text-muted-foreground">
+                            {c.totalAddresses || 0} Addresses
+                          </td>
+                          <td className="p-3.5 font-bold font-display text-sm text-foreground">
+                            ₹{(c.totalSpent || 0).toLocaleString()}
+                          </td>
+                          <td className="p-3.5">
+                            <span
+                              className={cn(
+                                "px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase",
+                                userStatus === "blocked" ? "bg-red-100 text-red-800" : "bg-emerald-100 text-emerald-800"
+                              )}
+                            >
+                              {userStatus}
+                            </span>
+                          </td>
+                          <td className="p-3.5 text-right">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className={cn(
+                                "h-7 text-xs font-semibold rounded-lg gap-1",
+                                userStatus === "blocked" ? "text-emerald-600 hover:bg-emerald-50" : "text-amber-600 hover:bg-amber-50"
+                              )}
+                              onClick={() => handleToggleCustomerStatus(c.id, userStatus, c.name || c.email)}
+                            >
+                              {userStatus === "blocked" ? "Unblock" : "Block"}
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
@@ -1716,63 +2089,136 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
     // 13. Settings & Configuration Views
     if (activeSection.includes("settings") || activeSection === "delivery-charges" || activeSection === "tax-settings" || activeSection === "social-links" || activeSection === "contact-details" || activeSection === "email-settings") {
       return (
-        <div className="space-y-6 max-w-3xl">
-          <div>
-            <h2 className="font-display text-2xl font-bold text-foreground capitalize">
-              {activeSection.replace(/-/g, " ")}
-            </h2>
-            <p className="text-xs text-muted-foreground">Configure bookstore details, tax GST parameters, free delivery threshold &amp; support channels.</p>
+        <div className="space-y-6 max-w-4xl">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h2 className="font-display text-2xl font-bold text-foreground capitalize">
+                {activeSection.replace(/-/g, " ")}
+              </h2>
+              <p className="text-xs text-muted-foreground">Persist official bookstore details, tax GST parameters, free delivery threshold &amp; support channels directly to database.</p>
+            </div>
+            <Button size="sm" variant="outline" onClick={loadData} className="gap-1.5 text-xs rounded-full">
+              <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} /> Reload Settings
+            </Button>
           </div>
 
-          <div className="p-6 rounded-2xl border border-border bg-card shadow-xs space-y-5 text-xs">
+          <form onSubmit={handleSaveSettings} className="p-6 sm:p-7 rounded-2xl border border-border bg-card shadow-xs space-y-5 text-xs">
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <label className="font-bold text-foreground block mb-1">Official Bookstore Name</label>
-                <input readOnly value={STORE.name} className="w-full h-9 rounded-lg border border-border bg-muted/40 px-3 font-semibold text-foreground" />
+                <label className="font-bold text-foreground block mb-1">Official Bookstore Name *</label>
+                <input
+                  required
+                  value={settings.store_name ?? STORE.name}
+                  onChange={(e) => setSettings(prev => ({ ...prev, store_name: e.target.value }))}
+                  className="w-full h-9 rounded-lg border border-border bg-background px-3 font-semibold text-foreground outline-none focus:border-primary"
+                />
               </div>
               <div>
                 <label className="font-bold text-foreground block mb-1">Store Tagline</label>
-                <input readOnly value={STORE.tagline} className="w-full h-9 rounded-lg border border-border bg-muted/40 px-3 font-semibold text-foreground" />
+                <input
+                  value={settings.store_tagline ?? STORE.tagline}
+                  onChange={(e) => setSettings(prev => ({ ...prev, store_tagline: e.target.value }))}
+                  className="w-full h-9 rounded-lg border border-border bg-background px-3 font-semibold text-foreground outline-none focus:border-primary"
+                />
               </div>
             </div>
 
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <label className="font-bold text-foreground block mb-1">Customer Support Email</label>
-                <input readOnly value={STORE.email} className="w-full h-9 rounded-lg border border-border bg-muted/40 px-3 font-semibold text-foreground" />
+                <label className="font-bold text-foreground block mb-1">Customer Support Email *</label>
+                <input
+                  type="email"
+                  required
+                  value={settings.store_email ?? STORE.email}
+                  onChange={(e) => setSettings(prev => ({ ...prev, store_email: e.target.value }))}
+                  className="w-full h-9 rounded-lg border border-border bg-background px-3 font-semibold text-foreground outline-none focus:border-primary"
+                />
               </div>
               <div>
-                <label className="font-bold text-foreground block mb-1">Official WhatsApp &amp; Helpline</label>
-                <input readOnly value={STORE.phone} className="w-full h-9 rounded-lg border border-border bg-muted/40 px-3 font-semibold text-foreground" />
+                <label className="font-bold text-foreground block mb-1">Official Helpline Phone</label>
+                <input
+                  value={settings.store_phone ?? STORE.phone}
+                  onChange={(e) => setSettings(prev => ({ ...prev, store_phone: e.target.value }))}
+                  className="w-full h-9 rounded-lg border border-border bg-background px-3 font-semibold text-foreground outline-none focus:border-primary"
+                />
               </div>
             </div>
 
             <div className="grid sm:grid-cols-3 gap-4">
               <div>
-                <label className="font-bold text-foreground block mb-1">Free Delivery Minimum</label>
-                <input readOnly value="₹799" className="w-full h-9 rounded-lg border border-border bg-muted/40 px-3 font-bold text-emerald-600" />
+                <label className="font-bold text-foreground block mb-1">WhatsApp Business Number</label>
+                <input
+                  value={settings.whatsapp_number ?? "919876543210"}
+                  onChange={(e) => setSettings(prev => ({ ...prev, whatsapp_number: e.target.value }))}
+                  placeholder="e.g. 919876543210"
+                  className="w-full h-9 rounded-lg border border-border bg-background px-3 font-mono font-bold text-primary outline-none focus:border-primary"
+                />
               </div>
               <div>
-                <label className="font-bold text-foreground block mb-1">Standard Delivery Fee</label>
-                <input readOnly value="₹49" className="w-full h-9 rounded-lg border border-border bg-muted/40 px-3 font-semibold text-foreground" />
+                <label className="font-bold text-foreground block mb-1">Free Delivery Minimum (₹)</label>
+                <input
+                  type="number"
+                  value={settings.free_delivery_min ?? "799"}
+                  onChange={(e) => setSettings(prev => ({ ...prev, free_delivery_min: e.target.value }))}
+                  className="w-full h-9 rounded-lg border border-border bg-background px-3 font-bold text-emerald-600 outline-none focus:border-primary"
+                />
               </div>
+              <div>
+                <label className="font-bold text-foreground block mb-1">Standard Delivery Fee (₹)</label>
+                <input
+                  type="number"
+                  value={settings.standard_delivery_fee ?? "49"}
+                  onChange={(e) => setSettings(prev => ({ ...prev, standard_delivery_fee: e.target.value }))}
+                  className="w-full h-9 rounded-lg border border-border bg-background px-3 font-semibold text-foreground outline-none focus:border-primary"
+                />
+              </div>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <label className="font-bold text-foreground block mb-1">Bookstore GSTIN</label>
-                <input readOnly value="36AABCS1429B1Z8" className="w-full h-9 rounded-lg border border-border bg-muted/40 px-3 font-mono font-bold text-primary" />
+                <input
+                  value={settings.store_gstin ?? "36AABCS1429B1Z8"}
+                  onChange={(e) => setSettings(prev => ({ ...prev, store_gstin: e.target.value }))}
+                  className="w-full h-9 rounded-lg border border-border bg-background px-3 font-mono font-bold text-primary outline-none focus:border-primary"
+                />
+              </div>
+              <div>
+                <label className="font-bold text-foreground block mb-1">Store Operating Hours</label>
+                <input
+                  value={settings.store_hours ?? "Mon – Sat: 10:00 AM – 8:30 PM"}
+                  onChange={(e) => setSettings(prev => ({ ...prev, store_hours: e.target.value }))}
+                  className="w-full h-9 rounded-lg border border-border bg-background px-3 font-semibold text-foreground outline-none focus:border-primary"
+                />
               </div>
             </div>
 
             <div>
               <label className="font-bold text-foreground block mb-1">Registered Headquarters Address</label>
-              <input readOnly value={STORE.address} className="w-full h-9 rounded-lg border border-border bg-muted/40 px-3 font-semibold text-foreground" />
+              <input
+                value={settings.store_address ?? STORE.address}
+                onChange={(e) => setSettings(prev => ({ ...prev, store_address: e.target.value }))}
+                className="w-full h-9 rounded-lg border border-border bg-background px-3 font-semibold text-foreground outline-none focus:border-primary"
+              />
             </div>
 
-            <div className="pt-2 flex justify-end">
-              <Button size="sm" className="rounded-full px-6 font-bold" onClick={() => toast.success("Store configurations updated successfully.")}>
-                Save Settings
+            <div>
+              <label className="font-bold text-foreground block mb-1">Top Announcement Bar Text</label>
+              <textarea
+                rows={2}
+                value={settings.announcement ?? "Free Pan-India Delivery on orders above ₹799 • Order directly online or via WhatsApp!"}
+                onChange={(e) => setSettings(prev => ({ ...prev, announcement: e.target.value }))}
+                className="w-full rounded-lg border border-border bg-background p-3 font-semibold text-foreground outline-none focus:border-primary resize-none"
+              />
+            </div>
+
+            <div className="pt-3 border-t border-border flex items-center justify-between">
+              <span className="text-[11px] text-muted-foreground">Changes are applied immediately to storefront pricing and headers.</span>
+              <Button size="sm" type="submit" disabled={savingSettings} className="rounded-full px-6 font-bold gap-1.5">
+                <Save className="h-3.5 w-3.5" /> {savingSettings ? "Saving Settings..." : "Save Settings to Database"}
               </Button>
             </div>
-          </div>
+          </form>
         </div>
       );
     }
@@ -1823,7 +2269,128 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
       );
     }
 
-    // Fallback view for content/other modules
+    // 15. Content Management: Hero Banners, Promo Banners, Testimonials, Blogs
+    if (activeSection === "hero-banners" || activeSection === "promo-banners" || activeSection === "testimonials" || activeSection === "blogs") {
+      const typeLabel = activeSection.replace(/-/g, " ");
+
+      return (
+        <div className="space-y-5">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h2 className="font-display text-2xl font-bold text-foreground capitalize">{typeLabel}</h2>
+              <p className="text-xs text-muted-foreground">Manage dynamic website content stored in database and rendered on the storefront.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" onClick={loadData} className="gap-1.5 text-xs rounded-full">
+                <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} /> Refresh
+              </Button>
+              <Button size="sm" className="rounded-full gap-1.5 text-xs font-bold capitalize" onClick={handleOpenAddContent}>
+                <Plus className="h-3.5 w-3.5" /> Add {typeLabel.slice(0, -1)}
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredContentBlocks.length === 0 ? (
+              <div className="col-span-full text-center py-12 text-muted-foreground text-xs rounded-2xl border border-dashed border-border p-8 bg-card">
+                <ImageIcon className="h-10 w-10 mx-auto text-muted-foreground/50 mb-2" />
+                <p className="font-semibold text-foreground">No content blocks found for {typeLabel}.</p>
+                <p className="mt-1">Click "Add {typeLabel.slice(0, -1)}" above to create a new record.</p>
+              </div>
+            ) : (
+              filteredContentBlocks.map((cb) => {
+                const img = cb.image;
+                const link = cb.linkUrl || cb.link_url;
+                return (
+                  <div key={cb.id} className="rounded-2xl border border-border bg-card shadow-xs overflow-hidden flex flex-col justify-between">
+                    <div>
+                      {img && (
+                        <div className="h-36 w-full bg-secondary overflow-hidden relative">
+                          <img src={img} alt={cb.title} className="w-full h-full object-cover" />
+                          <span
+                            className={cn(
+                              "absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase backdrop-blur-xs",
+                              cb.status === "active" ? "bg-emerald-600/90 text-white" : "bg-zinc-800/80 text-white"
+                            )}
+                          >
+                            {cb.status}
+                          </span>
+                        </div>
+                      )}
+                      <div className="p-4 space-y-2 text-xs">
+                        <div className="flex items-start justify-between gap-2">
+                          <h4 className="font-bold text-foreground text-sm leading-tight">{cb.title}</h4>
+                          {!img && (
+                            <span
+                              className={cn(
+                                "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase shrink-0",
+                                cb.status === "active" ? "bg-emerald-100 text-emerald-800" : "bg-muted text-muted-foreground"
+                              )}
+                            >
+                              {cb.status}
+                            </span>
+                          )}
+                        </div>
+                        {cb.subtitle && <p className="text-muted-foreground font-medium">{cb.subtitle}</p>}
+                        {cb.content && (
+                          <p className="text-muted-foreground leading-relaxed line-clamp-3 bg-secondary/30 p-2.5 rounded-lg border border-border/60">
+                            {cb.content}
+                          </p>
+                        )}
+                        {link && (
+                          <p className="text-primary font-mono text-[10px] truncate">
+                            Target: {link}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="p-3 border-t border-border flex items-center justify-between text-xs bg-secondary/20">
+                      <span className="text-[10px] text-muted-foreground font-mono">Order: #{cb.displayOrder ?? cb.display_order ?? 0}</span>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs px-2 gap-1 text-muted-foreground hover:text-foreground"
+                          onClick={() => handleToggleContentStatus(cb)}
+                          title="Toggle Status"
+                        >
+                          {cb.status === "active" ? (
+                            <ToggleRight className="h-4 w-4 text-emerald-600" />
+                          ) : (
+                            <ToggleLeft className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs px-2 gap-1 text-primary hover:bg-primary/10"
+                          onClick={() => handleOpenEditContent(cb)}
+                          title="Edit"
+                        >
+                          <Edit3 className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs px-2 gap-1 text-destructive hover:bg-destructive/10"
+                          onClick={() => handleDeleteContent(cb.id, cb.title)}
+                          title="Delete"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // Fallback view for other modules
     return (
       <div className="rounded-2xl border border-border bg-card p-8 shadow-xs space-y-6">
         <div className="flex items-center justify-between border-b border-border pb-4">
@@ -1852,6 +2419,226 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
   return (
     <>
       {renderSectionContent()}
+
+      {/* Coupon Add / Edit Modal */}
+      {showCouponModal && (
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-xs flex items-center justify-center p-4">
+          <form
+            onSubmit={handleSaveCoupon}
+            className="bg-card border border-border rounded-2xl p-6 sm:p-7 max-w-md w-full shadow-2xl space-y-4 text-xs animate-in zoom-in-95"
+          >
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div>
+                <h3 className="font-display text-xl font-bold text-primary">
+                  {editingCouponId ? "Edit Promotion Coupon" : "Create New Coupon"}
+                </h3>
+                <p className="text-[11px] text-muted-foreground">Define coupon code, discount percentage or flat amount and minimum order value.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCouponModal(false)}
+                className="text-muted-foreground hover:text-foreground text-sm font-bold p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div>
+              <label className="font-bold block mb-1">Coupon Code *</label>
+              <input
+                required
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                placeholder="e.g. FESTIVE20 or BOOKLOVE50"
+                className="w-full h-9 rounded-lg border border-border bg-background px-3 font-mono font-bold text-primary uppercase outline-none focus:border-primary"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-bold block mb-1">Discount Type *</label>
+                <select
+                  value={couponType}
+                  onChange={(e) => setCouponType(e.target.value as "percentage" | "flat")}
+                  className="w-full h-9 rounded-lg border border-border bg-background px-2.5 outline-none focus:border-primary font-semibold text-foreground cursor-pointer"
+                >
+                  <option value="percentage">Percentage (%)</option>
+                  <option value="flat">Flat Amount (₹)</option>
+                </select>
+              </div>
+              <div>
+                <label className="font-bold block mb-1">
+                  {couponType === "percentage" ? "Discount Percentage (%) *" : "Discount Amount (₹) *"}
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  value={couponValue}
+                  onChange={(e) => setCouponValue(e.target.value)}
+                  placeholder={couponType === "percentage" ? "e.g. 20" : "e.g. 100"}
+                  className="w-full h-9 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary font-bold text-foreground"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-bold block mb-1">Min Order Amount (₹)</label>
+                <input
+                  type="number"
+                  value={couponMinOrder}
+                  onChange={(e) => setCouponMinOrder(e.target.value)}
+                  placeholder="e.g. 499 (0 for none)"
+                  className="w-full h-9 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary font-semibold text-foreground"
+                />
+              </div>
+              <div>
+                <label className="font-bold block mb-1">Max Discount Cap (₹)</label>
+                <input
+                  type="number"
+                  value={couponMaxDiscount}
+                  onChange={(e) => setCouponMaxDiscount(e.target.value)}
+                  placeholder="e.g. 300 (Optional)"
+                  className="w-full h-9 rounded-lg border border-border bg-background px-3 outline-none focus:border-primary font-semibold text-foreground"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="font-bold block mb-1">Status</label>
+              <select
+                value={couponStatus}
+                onChange={(e) => setCouponStatus(e.target.value as "active" | "inactive")}
+                className="w-full h-9 rounded-lg border border-border bg-background px-2.5 outline-none focus:border-primary font-semibold text-foreground cursor-pointer"
+              >
+                <option value="active">Active (Available for checkout)</option>
+                <option value="inactive">Inactive (Disabled)</option>
+              </select>
+            </div>
+
+            <div className="pt-3 border-t border-border flex items-center justify-end gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => setShowCouponModal(false)} className="rounded-full px-4">
+                Cancel
+              </Button>
+              <Button type="submit" disabled={savingCoupon} size="sm" className="rounded-full px-6 font-bold">
+                {savingCoupon ? "Saving..." : editingCouponId ? "Update Coupon" : "Create Coupon"}
+              </Button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Content Add / Edit Modal */}
+      {showContentModal && (
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-xs flex items-center justify-center p-4">
+          <form
+            onSubmit={handleSaveContent}
+            className="bg-card border border-border rounded-2xl p-6 sm:p-7 max-w-lg w-full shadow-2xl space-y-4 text-xs animate-in zoom-in-95 max-h-[90vh] overflow-y-auto"
+          >
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div>
+                <h3 className="font-display text-xl font-bold text-primary capitalize">
+                  {editingContentId ? `Edit ${activeSection.replace(/-/g, " ").slice(0, -1)}` : `New ${activeSection.replace(/-/g, " ").slice(0, -1)}`}
+                </h3>
+                <p className="text-[11px] text-muted-foreground">Publish dynamic storefront media, headlines and promotional links.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowContentModal(false)}
+                className="text-muted-foreground hover:text-foreground text-sm font-bold p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div>
+              <label className="font-bold block mb-1">Title / Headline *</label>
+              <input
+                required
+                value={contentTitle}
+                onChange={(e) => setContentTitle(e.target.value)}
+                placeholder="e.g. Discover Stories That Shape Your Mind"
+                className="w-full h-9 rounded-lg border border-border bg-background px-3 font-semibold text-foreground outline-none focus:border-primary"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold block mb-1">Subtitle / Author / Attribution</label>
+              <input
+                value={contentSubtitle}
+                onChange={(e) => setContentSubtitle(e.target.value)}
+                placeholder="e.g. Handpicked classics and transforming reads"
+                className="w-full h-9 rounded-lg border border-border bg-background px-3 font-semibold text-foreground outline-none focus:border-primary"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-bold block mb-1">Image URL</label>
+                <input
+                  value={contentImage}
+                  onChange={(e) => setContentImage(e.target.value)}
+                  placeholder="https://images.unsplash.com/..."
+                  className="w-full h-9 rounded-lg border border-border bg-background px-3 font-mono text-[11px] outline-none focus:border-primary"
+                />
+              </div>
+              <div>
+                <label className="font-bold block mb-1">Target Link URL</label>
+                <input
+                  value={contentLinkUrl}
+                  onChange={(e) => setContentLinkUrl(e.target.value)}
+                  placeholder="e.g. /shop or /about"
+                  className="w-full h-9 rounded-lg border border-border bg-background px-3 font-mono text-[11px] outline-none focus:border-primary"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="font-bold block mb-1">Content Body / Description</label>
+              <textarea
+                rows={3}
+                value={contentBody}
+                onChange={(e) => setContentBody(e.target.value)}
+                placeholder="Detailed text content, blog body, or reader testimonial..."
+                className="w-full rounded-lg border border-border bg-background p-3 font-medium text-foreground outline-none focus:border-primary resize-none"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-bold block mb-1">Display Order</label>
+                <input
+                  type="number"
+                  value={contentOrder}
+                  onChange={(e) => setContentOrder(e.target.value)}
+                  className="w-full h-9 rounded-lg border border-border bg-background px-3 font-bold text-foreground outline-none focus:border-primary"
+                />
+              </div>
+              <div>
+                <label className="font-bold block mb-1">Status</label>
+                <select
+                  value={contentStatus}
+                  onChange={(e) => setContentStatus(e.target.value as "active" | "inactive")}
+                  className="w-full h-9 rounded-lg border border-border bg-background px-2.5 outline-none focus:border-primary font-semibold text-foreground cursor-pointer"
+                >
+                  <option value="active">Active (Visible)</option>
+                  <option value="inactive">Inactive (Hidden)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-border flex items-center justify-end gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => setShowContentModal(false)} className="rounded-full px-4">
+                Cancel
+              </Button>
+              <Button type="submit" disabled={savingContent} size="sm" className="rounded-full px-6 font-bold">
+                {savingContent ? "Saving..." : editingContentId ? "Update Content" : "Publish Content"}
+              </Button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Globally mounted Tax Invoice Modal */}
       {selectedInvoiceOrderId && (

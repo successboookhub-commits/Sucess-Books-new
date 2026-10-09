@@ -156,9 +156,9 @@ router.get("/me", requireAdminAuth, (req, res) => {
 router.get("/all-customers", async (req, res) => {
   try {
     const users = await db.all(`
-      SELECT u.id, u.name, u.email, u.phone, u.role, u.created_at,
+      SELECT u.id, u.name, u.email, u.phone, u.role, u.status, u.created_at,
              (SELECT COUNT(*) FROM orders o WHERE o.customer_email = u.email OR o.user_id = u.id) as total_orders,
-             (SELECT COALESCE(SUM(o.total), 0) FROM orders o WHERE o.customer_email = u.email OR o.user_id = u.id) as total_spent,
+             (SELECT COALESCE(SUM(o.total), 0) FROM orders o WHERE (o.customer_email = u.email OR o.user_id = u.id) AND o.status != 'cancelled') as total_spent,
              (SELECT COUNT(*) FROM user_addresses a WHERE a.user_email = u.email OR a.user_id = u.id) as total_addresses
       FROM users u
       ORDER BY u.id DESC
@@ -173,11 +173,42 @@ router.get("/all-customers", async (req, res) => {
         email: u.email,
         phone: u.phone || "—",
         role: u.role || "customer",
+        status: u.status || "active",
         totalOrders: Number(u.total_orders) || 0,
         totalSpent: Number(u.total_spent) || 0,
         totalAddresses: Number(u.total_addresses) || 0,
         createdAt: u.created_at
       }))
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * 4b. PATCH /api/auth/customers/:id/status
+ * Update customer status (active, blocked)
+ */
+router.patch("/customers/:id/status", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!status || !["active", "blocked", "inactive"].includes(status)) {
+      return res.status(400).json({ success: false, message: "Valid status ('active', 'blocked') required." });
+    }
+
+    const existing = await db.get("SELECT id, name, email FROM users WHERE id = ?", [id]);
+    if (!existing) {
+      return res.status(404).json({ success: false, message: "Customer not found." });
+    }
+
+    await db.run("UPDATE users SET status = ? WHERE id = ?", [status, id]);
+
+    return res.json({
+      success: true,
+      message: `Customer ${existing.name || existing.email} status updated to ${status}.`,
+      status
     });
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
@@ -291,25 +322,41 @@ router.delete("/reviews/:id", async (req, res) => {
  */
 router.get("/dashboard-stats", async (req, res) => {
   try {
-    const ordersCountRow = await db.get("SELECT COUNT(*) as total_orders, COALESCE(SUM(total), 0) as total_revenue FROM orders");
+    // Only count non-cancelled orders towards gross revenue
+    const revenueRow = await db.get("SELECT COALESCE(SUM(total), 0) as total_revenue, COUNT(*) as total_orders FROM orders WHERE status != 'cancelled'");
+    const totalOrdersRow = await db.get("SELECT COUNT(*) as all_orders FROM orders");
     const pendingOrdersRow = await db.get("SELECT COUNT(*) as pending_count FROM orders WHERE status = 'pending'");
+    const dispatchedOrdersRow = await db.get("SELECT COUNT(*) as dispatched_count FROM orders WHERE status = 'dispatched'");
+    const deliveredOrdersRow = await db.get("SELECT COUNT(*) as delivered_count FROM orders WHERE status = 'delivered'");
     const booksCountRow = await db.get("SELECT COUNT(*) as total_books, COALESCE(SUM(stock), 0) as total_stock, COALESCE(SUM(price * stock), 0) as inventory_value FROM books");
     const lowStockRow = await db.get("SELECT COUNT(*) as low_stock_count FROM books WHERE stock < 20");
     const usersCountRow = await db.get("SELECT COUNT(*) as total_users FROM users");
     const reviewsCountRow = await db.get("SELECT COUNT(*) as total_reviews FROM reviews");
+    const categoriesCountRow = await db.get("SELECT COUNT(*) as total_categories FROM categories");
+    const subCategoriesCountRow = await db.get("SELECT COUNT(*) as total_subcategories FROM sub_categories");
+
+    const totalOrders = Number(totalOrdersRow?.all_orders) || 0;
+    const totalRevenue = Number(revenueRow?.total_revenue) || 0;
+    const validOrdersCount = Number(revenueRow?.total_orders) || 0;
+    const avgOrderValue = validOrdersCount > 0 ? Math.round(totalRevenue / validOrdersCount) : 0;
 
     return res.json({
       success: true,
       stats: {
-        totalRevenue: Number(ordersCountRow?.total_revenue) || 0,
-        totalOrders: Number(ordersCountRow?.total_orders) || 0,
+        totalRevenue,
+        totalOrders,
         pendingOrders: Number(pendingOrdersRow?.pending_count) || 0,
+        dispatchedOrders: Number(dispatchedOrdersRow?.dispatched_count) || 0,
+        deliveredOrders: Number(deliveredOrdersRow?.delivered_count) || 0,
+        avgOrderValue,
         totalBooks: Number(booksCountRow?.total_books) || 0,
         totalStock: Number(booksCountRow?.total_stock) || 0,
         inventoryValue: Number(booksCountRow?.inventory_value) || 0,
         lowStockCount: Number(lowStockRow?.low_stock_count) || 0,
         totalUsers: Number(usersCountRow?.total_users) || 0,
-        totalReviews: Number(reviewsCountRow?.total_reviews) || 0
+        totalReviews: Number(reviewsCountRow?.total_reviews) || 0,
+        totalCategories: Number(categoriesCountRow?.total_categories) || 0,
+        totalSubCategories: Number(subCategoriesCountRow?.total_subcategories) || 0
       }
     });
   } catch (err) {

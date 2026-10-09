@@ -626,6 +626,33 @@ var House = createLucideIcon("house", [["path", {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var Image = createLucideIcon("image", [
+	["rect", {
+		width: "18",
+		height: "18",
+		x: "3",
+		y: "3",
+		rx: "2",
+		ry: "2",
+		key: "1m3agn"
+	}],
+	["circle", {
+		cx: "9",
+		cy: "9",
+		r: "2",
+		key: "af1f0g"
+	}],
+	["path", {
+		d: "m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21",
+		key: "1xmnt7"
+	}]
+]);
+/**
+* @license lucide-react v0.575.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var Instagram = createLucideIcon("instagram", [
 	["rect", {
 		width: "20",
@@ -1226,6 +1253,26 @@ var RotateCw = createLucideIcon("rotate-cw", [["path", {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var Save = createLucideIcon("save", [
+	["path", {
+		d: "M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z",
+		key: "1c8476"
+	}],
+	["path", {
+		d: "M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7",
+		key: "1ydtos"
+	}],
+	["path", {
+		d: "M7 3v4a1 1 0 0 0 1 1h7",
+		key: "t51u73"
+	}]
+]);
+/**
+* @license lucide-react v0.575.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var Search = createLucideIcon("search", [["path", {
 	d: "m21 21-4.34-4.34",
 	key: "14j7rj"
@@ -1377,6 +1424,44 @@ var Tag = createLucideIcon("tag", [["path", {
 	r: ".5",
 	fill: "currentColor",
 	key: "kqv944"
+}]]);
+/**
+* @license lucide-react v0.575.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var ToggleLeft = createLucideIcon("toggle-left", [["circle", {
+	cx: "9",
+	cy: "12",
+	r: "3",
+	key: "u3jwor"
+}], ["rect", {
+	width: "20",
+	height: "14",
+	x: "2",
+	y: "5",
+	rx: "7",
+	key: "g7kal2"
+}]]);
+/**
+* @license lucide-react v0.575.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var ToggleRight = createLucideIcon("toggle-right", [["circle", {
+	cx: "15",
+	cy: "12",
+	r: "3",
+	key: "1afu0r"
+}], ["rect", {
+	width: "20",
+	height: "14",
+	x: "2",
+	y: "5",
+	rx: "7",
+	key: "g7kal2"
 }]]);
 /**
 * @license lucide-react v0.575.0 - ISC
@@ -1569,4 +1654,4 @@ var Youtube = createLucideIcon("youtube", [["path", {
 	key: "1jp15x"
 }]]);
 //#endregion
-export { Funnel as $, PenLine as A, MapPin as B, Receipt as C, Bell as Ct, Play as D, ArrowRight as Dt, Plus as E, ArrowUpRight as Et, Package as F, LoaderCircle as G, LogOut as H, Minus as I, Layers as J, Library as K, MessageSquare as L, PanelLeftOpen as M, PanelLeftClose as N, Phone as O, ArrowLeft as Ot, Palette as P, HeartHandshake as Q, MessageCircle as R, RefreshCw as S, BookOpen as St, Printer as T, Award as Tt, LogIn as U, Mail as V, Lock as W, House as X, Instagram as Y, Heart as Z, ShieldAlert as _, ChevronLeft as _t, Upload as a, ExternalLink as at, Search as b, ChartColumn as bt, TriangleAlert as c, Compass as ct, Tag as d, CircleQuestionMark as dt, FolderPlus as et, Star as f, CirclePlus as ft, ShieldCheck as g, ChevronRight as gt, Shield as h, ChevronUp as ht, User as i, Eye as it, Pause as j, Pen as k, TrendingUp as l, Clock as lt, ShoppingBag as m, CircleAlert as mt, X as n, FileText as nt, Twitter as o, DollarSign as ot, Sparkles as p, CircleCheck as pt, LayoutDashboard as q, Users as r, Facebook as rt, Truck as s, CreditCard as st, Youtube as t, FolderOpen as tt, Trash2 as u, Circle as ut, Settings as v, ChevronDown as vt, QrCode as w, Banknote as wt, RotateCw as x, BookPlus as xt, Send as y, Check as yt, Menu as z };
+export { Image as $, Play as A, ArrowUpRight as At, MessageSquare as B, Save as C, Check as Ct, QrCode as D, Bell as Dt, Receipt as E, BookOpen as Et, PanelLeftOpen as F, LogOut as G, Menu as H, PanelLeftClose as I, LoaderCircle as J, LogIn as K, Palette as L, Pen as M, ArrowLeft as Mt, PenLine as N, Printer as O, Banknote as Ot, Pause as P, Instagram as Q, Package as R, Search as S, ChevronDown as St, RefreshCw as T, BookPlus as Tt, MapPin as U, MessageCircle as V, Mail as W, LayoutDashboard as X, Library as Y, Layers as Z, Shield as _, CircleCheck as _t, Upload as a, FolderOpen as at, Settings as b, ChevronRight as bt, TriangleAlert as c, Eye as ct, ToggleRight as d, CreditCard as dt, House as et, ToggleLeft as f, Compass as ft, ShoppingBag as g, CirclePlus as gt, Sparkles as h, CircleQuestionMark as ht, User as i, FolderPlus as it, Phone as j, ArrowRight as jt, Plus as k, Award as kt, TrendingUp as l, ExternalLink as lt, Star as m, Circle as mt, X as n, HeartHandshake as nt, Twitter as o, FileText as ot, Tag as p, Clock as pt, Lock as q, Users as r, Funnel as rt, Truck as s, Facebook as st, Youtube as t, Heart as tt, Trash2 as u, DollarSign as ut, ShieldCheck as v, CircleAlert as vt, RotateCw as w, ChartColumn as wt, Send as x, ChevronLeft as xt, ShieldAlert as y, ChevronUp as yt, Minus as z };

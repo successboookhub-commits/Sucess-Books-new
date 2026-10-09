@@ -1,7 +1,7 @@
 import { t as STORE } from "./books-L-o23q6K.mjs";
 import { o as require_jsx_runtime } from "../_libs/@radix-ui/react-collection+[...].mjs";
 import { g as Link } from "../_libs/@tanstack/react-router+[...].mjs";
-import { Ot as ArrowLeft, g as ShieldCheck } from "../_libs/lucide-react.mjs";
+import { Mt as ArrowLeft, v as ShieldCheck } from "../_libs/lucide-react.mjs";
 //#region node_modules/.nitro/vite/services/ssr/assets/privacy-CQqmSl0s.js
 var import_jsx_runtime = require_jsx_runtime();
 function PrivacyPolicyPage() {

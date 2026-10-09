@@ -596,7 +596,190 @@ export const api = {
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Failed to update stock");
     return data;
+  },
+
+  // Customer status update (active / blocked)
+  async updateCustomerStatus(customerId: number, status: "active" | "blocked"): Promise<{ success: boolean; message: string }> {
+    const res = await fetch(getApiEndpoint(`/api/auth/customers/${customerId}/status`), {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to update customer status");
+    return data;
+  },
+
+  // Coupons CRUD
+  async getCoupons(): Promise<Coupon[]> {
+    try {
+      const res = await fetch(getApiEndpoint("/api/coupons"));
+      const data = await res.json();
+      return data.data || [];
+    } catch {
+      return [];
+    }
+  },
+
+  async createCoupon(payload: {
+    code: string;
+    discountType?: "percentage" | "flat";
+    discountValue: number;
+    minOrder?: number;
+    maxDiscount?: number;
+    status?: "active" | "inactive";
+  }): Promise<Coupon> {
+    const res = await fetch(getApiEndpoint("/api/coupons"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to create coupon");
+    return data.data;
+  },
+
+  async updateCoupon(id: number, payload: Partial<Coupon>): Promise<Coupon> {
+    const res = await fetch(getApiEndpoint(`/api/coupons/${id}`), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to update coupon");
+    return data.data;
+  },
+
+  async deleteCoupon(id: number): Promise<{ success: boolean; message: string }> {
+    const res = await fetch(getApiEndpoint(`/api/coupons/${id}`), { method: "DELETE" });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to delete coupon");
+    return data;
+  },
+
+  async validateCoupon(code: string, orderAmount: number): Promise<{ success: boolean; discountAmount: number; finalTotal: number; coupon: Coupon; message: string }> {
+    const res = await fetch(getApiEndpoint("/api/coupons/validate"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code, orderAmount })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Invalid coupon code");
+    return data;
+  },
+
+  // Settings API
+  async getSettings(): Promise<StoreSettings> {
+    try {
+      const res = await fetch(getApiEndpoint("/api/settings"));
+      const data = await res.json();
+      return data.data || {};
+    } catch {
+      return {};
+    }
+  },
+
+  async updateSettings(settings: Record<string, string>): Promise<{ success: boolean; message: string; data: StoreSettings }> {
+    const res = await fetch(getApiEndpoint("/api/settings"), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ settings })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to update settings");
+    return data;
+  },
+
+  // Content Blocks CRUD (hero-banners, promo-banners, testimonials, blogs)
+  async getContentBlocks(type?: string): Promise<ContentBlock[]> {
+    try {
+      const url = getApiUrl("/api/content");
+      if (type) url.searchParams.set("type", type);
+      const res = await fetch(url.toString());
+      const data = await res.json();
+      return data.data || [];
+    } catch {
+      return [];
+    }
+  },
+
+  async createContentBlock(payload: Partial<ContentBlock>): Promise<ContentBlock> {
+    const res = await fetch(getApiEndpoint("/api/content"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to create content block");
+    return data.data;
+  },
+
+  async updateContentBlock(id: number, payload: Partial<ContentBlock>): Promise<ContentBlock> {
+    const res = await fetch(getApiEndpoint(`/api/content/${id}`), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to update content block");
+    return data.data;
+  },
+
+  async deleteContentBlock(id: number): Promise<{ success: boolean; message: string }> {
+    const res = await fetch(getApiEndpoint(`/api/content/${id}`), { method: "DELETE" });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to delete content block");
+    return data;
   }
+};
+
+export type Coupon = {
+  id: number;
+  code: string;
+  discountType: "percentage" | "flat";
+  discount_type?: "percentage" | "flat";
+  discountValue: number;
+  discount_value?: number;
+  minOrder: number;
+  min_order?: number;
+  maxDiscount?: number;
+  max_discount?: number;
+  status: "active" | "inactive";
+  usageCount: number;
+  usage_count?: number;
+  createdAt?: string;
+  created_at?: string;
+};
+
+export type StoreSettings = {
+  store_name?: string;
+  store_tagline?: string;
+  store_email?: string;
+  store_phone?: string;
+  whatsapp_number?: string;
+  free_delivery_min?: string;
+  standard_delivery_fee?: string;
+  store_gstin?: string;
+  store_address?: string;
+  store_hours?: string;
+  announcement?: string;
+  [key: string]: string | undefined;
+};
+
+export type ContentBlock = {
+  id: number;
+  type: "hero-banners" | "promo-banners" | "testimonials" | "blogs" | string;
+  title: string;
+  subtitle?: string;
+  image?: string;
+  linkUrl?: string;
+  link_url?: string;
+  content?: string;
+  status: "active" | "inactive";
+  displayOrder: number;
+  display_order?: number;
+  createdAt?: string;
+  created_at?: string;
 };
 
 export type UserProfile = {

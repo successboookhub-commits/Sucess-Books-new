@@ -347,6 +347,7 @@ export const SCHEMA_DEFINITIONS = {
         phone VARCHAR(50) NULL,
         avatar TEXT NULL,
         role VARCHAR(50) DEFAULT 'customer',
+        status VARCHAR(50) DEFAULT 'active',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -359,6 +360,7 @@ export const SCHEMA_DEFINITIONS = {
         phone TEXT,
         avatar TEXT,
         role TEXT DEFAULT 'customer',
+        status TEXT DEFAULT 'active',
         created_at TEXT DEFAULT (datetime('now')),
         updated_at TEXT DEFAULT (datetime('now'))
       );
@@ -370,6 +372,7 @@ export const SCHEMA_DEFINITIONS = {
       { name: "phone", mysqlType: "VARCHAR(50) NULL", sqliteType: "TEXT" },
       { name: "avatar", mysqlType: "TEXT NULL", sqliteType: "TEXT" },
       { name: "role", mysqlType: "VARCHAR(50) DEFAULT 'customer'", sqliteType: "TEXT DEFAULT 'customer'" },
+      { name: "status", mysqlType: "VARCHAR(50) DEFAULT 'active'", sqliteType: "TEXT DEFAULT 'active'" },
       { name: "created_at", mysqlType: "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", sqliteType: "TEXT DEFAULT (datetime('now'))" },
       { name: "updated_at", mysqlType: "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", sqliteType: "TEXT DEFAULT (datetime('now'))" }
     ]
@@ -490,6 +493,109 @@ export const SCHEMA_DEFINITIONS = {
       { name: "book_id", mysqlType: "INT NOT NULL", sqliteType: "INTEGER NOT NULL" },
       { name: "created_at", mysqlType: "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", sqliteType: "TEXT DEFAULT (datetime('now'))" }
     ]
+  },
+  coupons: {
+    mysqlCreate: `
+      CREATE TABLE IF NOT EXISTS coupons (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        code VARCHAR(50) NOT NULL UNIQUE,
+        discount_type VARCHAR(20) DEFAULT 'percentage',
+        discount_value DECIMAL(10,2) NOT NULL,
+        min_order DECIMAL(10,2) DEFAULT 0,
+        max_discount DECIMAL(10,2) NULL,
+        status VARCHAR(20) DEFAULT 'active',
+        usage_count INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `,
+    sqliteCreate: `
+      CREATE TABLE IF NOT EXISTS coupons (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        code TEXT NOT NULL UNIQUE,
+        discount_type TEXT DEFAULT 'percentage',
+        discount_value REAL NOT NULL,
+        min_order REAL DEFAULT 0,
+        max_discount REAL,
+        status TEXT DEFAULT 'active',
+        usage_count INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now'))
+      );
+    `,
+    columns: [
+      { name: "id", mysqlType: "INT AUTO_INCREMENT PRIMARY KEY", sqliteType: "INTEGER PRIMARY KEY AUTOINCREMENT" },
+      { name: "code", mysqlType: "VARCHAR(50) NOT NULL UNIQUE", sqliteType: "TEXT NOT NULL UNIQUE" },
+      { name: "discount_type", mysqlType: "VARCHAR(20) DEFAULT 'percentage'", sqliteType: "TEXT DEFAULT 'percentage'" },
+      { name: "discount_value", mysqlType: "DECIMAL(10,2) NOT NULL", sqliteType: "REAL NOT NULL" },
+      { name: "min_order", mysqlType: "DECIMAL(10,2) DEFAULT 0", sqliteType: "REAL DEFAULT 0" },
+      { name: "max_discount", mysqlType: "DECIMAL(10,2) NULL", sqliteType: "REAL" },
+      { name: "status", mysqlType: "VARCHAR(20) DEFAULT 'active'", sqliteType: "TEXT DEFAULT 'active'" },
+      { name: "usage_count", mysqlType: "INT DEFAULT 0", sqliteType: "INTEGER DEFAULT 0" },
+      { name: "created_at", mysqlType: "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", sqliteType: "TEXT DEFAULT (datetime('now'))" }
+    ]
+  },
+  settings: {
+    mysqlCreate: `
+      CREATE TABLE IF NOT EXISTS settings (
+        key_name VARCHAR(100) PRIMARY KEY,
+        value_text TEXT NOT NULL,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `,
+    sqliteCreate: `
+      CREATE TABLE IF NOT EXISTS settings (
+        key_name TEXT PRIMARY KEY,
+        value_text TEXT NOT NULL,
+        updated_at TEXT DEFAULT (datetime('now'))
+      );
+    `,
+    columns: [
+      { name: "key_name", mysqlType: "VARCHAR(100) PRIMARY KEY", sqliteType: "TEXT PRIMARY KEY" },
+      { name: "value_text", mysqlType: "TEXT NOT NULL", sqliteType: "TEXT NOT NULL" },
+      { name: "updated_at", mysqlType: "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", sqliteType: "TEXT DEFAULT (datetime('now'))" }
+    ]
+  },
+  content_blocks: {
+    mysqlCreate: `
+      CREATE TABLE IF NOT EXISTS content_blocks (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        type VARCHAR(50) NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        subtitle TEXT NULL,
+        image TEXT NULL,
+        link_url TEXT NULL,
+        content LONGTEXT NULL,
+        status VARCHAR(20) DEFAULT 'active',
+        display_order INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_type (type)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `,
+    sqliteCreate: `
+      CREATE TABLE IF NOT EXISTS content_blocks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        type TEXT NOT NULL,
+        title TEXT NOT NULL,
+        subtitle TEXT,
+        image TEXT,
+        link_url TEXT,
+        content TEXT,
+        status TEXT DEFAULT 'active',
+        display_order INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now'))
+      );
+    `,
+    columns: [
+      { name: "id", mysqlType: "INT AUTO_INCREMENT PRIMARY KEY", sqliteType: "INTEGER PRIMARY KEY AUTOINCREMENT" },
+      { name: "type", mysqlType: "VARCHAR(50) NOT NULL", sqliteType: "TEXT NOT NULL" },
+      { name: "title", mysqlType: "VARCHAR(255) NOT NULL", sqliteType: "TEXT NOT NULL" },
+      { name: "subtitle", mysqlType: "TEXT NULL", sqliteType: "TEXT" },
+      { name: "image", mysqlType: "TEXT NULL", sqliteType: "TEXT" },
+      { name: "link_url", mysqlType: "TEXT NULL", sqliteType: "TEXT" },
+      { name: "content", mysqlType: "LONGTEXT NULL", sqliteType: "TEXT" },
+      { name: "status", mysqlType: "VARCHAR(20) DEFAULT 'active'", sqliteType: "TEXT DEFAULT 'active'" },
+      { name: "display_order", mysqlType: "INT DEFAULT 0", sqliteType: "INTEGER DEFAULT 0" },
+      { name: "created_at", mysqlType: "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", sqliteType: "TEXT DEFAULT (datetime('now'))" }
+    ]
   }
 };
 
@@ -506,39 +612,43 @@ export const db = {
   isMySQL: false,
 
   async query(sql, params = []) {
+    const cleanParams = (params || []).map(p => (p === undefined ? null : p));
     if (isMySQL && pool) {
-      const [rows] = await pool.query(sql, params);
+      const [rows] = await pool.query(sql, cleanParams);
       return rows;
     } else {
       const stmt = sqliteDb.prepare(sql);
-      return stmt.all(...params);
+      return stmt.all(...cleanParams);
     }
   },
 
   async all(sql, params = []) {
+    const cleanParams = (params || []).map(p => (p === undefined ? null : p));
     if (isMySQL && pool) {
-      const [rows] = await pool.query(sql, params);
+      const [rows] = await pool.query(sql, cleanParams);
       return rows;
     } else {
       const stmt = sqliteDb.prepare(sql);
-      return stmt.all(...params);
+      return stmt.all(...cleanParams);
     }
   },
 
   async get(sql, params = []) {
+    const cleanParams = (params || []).map(p => (p === undefined ? null : p));
     if (isMySQL && pool) {
-      const [rows] = await pool.query(sql, params);
+      const [rows] = await pool.query(sql, cleanParams);
       return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
     } else {
       const stmt = sqliteDb.prepare(sql);
-      const row = stmt.get(...params);
+      const row = stmt.get(...cleanParams);
       return row || null;
     }
   },
 
   async run(sql, params = []) {
+    const cleanParams = (params || []).map(p => (p === undefined ? null : p));
     if (isMySQL && pool) {
-      const [result] = await pool.query(sql, params);
+      const [result] = await pool.query(sql, cleanParams);
       return {
         lastInsertRowid: result.insertId,
         insertId: result.insertId,
@@ -547,7 +657,7 @@ export const db = {
       };
     } else {
       const stmt = sqliteDb.prepare(sql);
-      const info = stmt.run(...params);
+      const info = stmt.run(...cleanParams);
       return {
         lastInsertRowid: info.lastInsertRowid,
         insertId: info.lastInsertRowid,
@@ -564,17 +674,120 @@ export const db = {
       get: async (...params) => db.get(sql, params.length === 1 && Array.isArray(params[0]) ? params[0] : params),
       run: async (...params) => db.run(sql, params.length === 1 && Array.isArray(params[0]) ? params[0] : params)
     };
+  },
+
+  // Atomic database transaction execution wrapper
+  async transaction(callback) {
+    if (isMySQL && pool) {
+      const connection = await pool.getConnection();
+      await connection.beginTransaction();
+      try {
+        const transDb = {
+          isMySQL: true,
+          query: async (sql, params = []) => {
+            const [rows] = await connection.query(sql, params);
+            return rows;
+          },
+          all: async (sql, params = []) => {
+            const [rows] = await connection.query(sql, params);
+            return rows;
+          },
+          get: async (sql, params = []) => {
+            const [rows] = await connection.query(sql, params);
+            return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+          },
+          run: async (sql, params = []) => {
+            const [result] = await connection.query(sql, params);
+            return {
+              lastInsertRowid: result.insertId,
+              insertId: result.insertId,
+              changes: result.affectedRows,
+              affectedRows: result.affectedRows
+            };
+          }
+        };
+        const result = await callback(transDb);
+        await connection.commit();
+        return result;
+      } catch (err) {
+        await connection.rollback();
+        throw err;
+      } finally {
+        connection.release();
+      }
+    } else if (sqliteDb) {
+      sqliteDb.exec("BEGIN TRANSACTION;");
+      try {
+        const result = await callback(db);
+        sqliteDb.exec("COMMIT;");
+        return result;
+      } catch (err) {
+        sqliteDb.exec("ROLLBACK;");
+        throw err;
+      }
+    } else {
+      return await callback(db);
+    }
   }
 };
 
 // Initialize Connection & Schema
 export async function initDatabase() {
-  if (process.env.USE_SQLITE === "true" || process.env.DB_ENGINE === "sqlite") {
-    console.log("[Database] Local SQLite engine active (USE_SQLITE=true).");
+  const isProduction = process.env.NODE_ENV === "production";
+  const forceSqlite = process.env.USE_SQLITE === "true" || process.env.DB_ENGINE === "sqlite";
+
+  if (forceSqlite && !isProduction) {
+    console.log("[Database] Local SQLite engine explicitly requested (USE_SQLITE=true).");
     await initSQLite();
-  } else if (hasMySQLConfig) {
+  } else if (isProduction && !forceSqlite) {
+    // IN PRODUCTION: MUST USE MYSQL. No silent fallback to SQLite permitted.
+    console.log("[Database] Production mode active (NODE_ENV=production). Initializing MySQL connection...");
+    const host = process.env.DB_HOST;
+    const user = process.env.DB_USER;
+    const password = process.env.DB_PASSWORD;
+    const database = process.env.DB_NAME;
+
+    if (!host || !user || !database) {
+      const missing = [];
+      if (!host) missing.push("DB_HOST");
+      if (!user) missing.push("DB_USER");
+      if (!database) missing.push("DB_NAME");
+      throw new Error(
+        `[Fatal Database Error] Missing production MySQL configuration: ${missing.join(", ")}. Hostinger / Production database must be configured in environment variables.`
+      );
+    }
+
     try {
-      console.log("[Database] Connecting to MySQL server...");
+      const poolConfig = {
+        host,
+        user,
+        password: password || "",
+        database,
+        port: Number(process.env.DB_PORT) || 3306,
+        waitForConnections: true,
+        connectionLimit: 15,
+        queueLimit: 0,
+        enableKeepAlive: true,
+        keepAliveInitialDelay: 0,
+        charset: "utf8mb4"
+      };
+
+      pool = mysql.createPool(poolConfig);
+      const connection = await pool.getConnection();
+      connection.release();
+      isMySQL = true;
+      db.isMySQL = true;
+      console.log(`[Database] Production MySQL connected successfully: ${database} on ${host}:${poolConfig.port}`);
+    } catch (err) {
+      console.error("[Fatal Database Error] Failed to connect to MySQL in production:", err.message);
+      throw new Error(
+        `[Fatal Database Error] Could not connect to production MySQL (${host}): ${err.message}. Startup aborted to prevent silent fallback and protect data integrity.`
+      );
+    }
+  } else {
+    // Development mode: Attempt MySQL with 2-second timeout, fallback to SQLite for local development
+    try {
+      console.log("[Database] Development mode: Attempting MySQL connection...");
       const poolConfig = {
         host: process.env.DB_HOST || "localhost",
         user: process.env.DB_USER || "u803044110_Successbookhub",
@@ -583,7 +796,7 @@ export async function initDatabase() {
         port: Number(process.env.DB_PORT) || 3306,
         connectTimeout: 2000,
         waitForConnections: true,
-        connectionLimit: 10,
+        connectionLimit: 5,
         queueLimit: 0,
         enableKeepAlive: true,
         keepAliveInitialDelay: 0,
@@ -591,23 +804,18 @@ export async function initDatabase() {
       };
 
       pool = mysql.createPool(poolConfig);
-      // Test connection
       const connection = await pool.getConnection();
       connection.release();
       isMySQL = true;
       db.isMySQL = true;
       console.log(`[Database] Connected successfully to MySQL (${poolConfig.database} on ${poolConfig.host})`);
     } catch (err) {
-      console.error("[Database] MySQL Connection failed:", err.message);
-      console.log("[Database] Falling back to local SQLite database...");
+      console.log(`[Database] Local MySQL offline (${err.message}). Using local SQLite database for development...`);
       await initSQLite();
     }
-  } else {
-    console.log("[Database] No MySQL credentials found in environment. Using local SQLite database.");
-    await initSQLite();
   }
 
-  // Create tables & auto-migrate columns
+  // Create tables & auto-migrate columns safely
   await setupSchema();
 
   // Check and seed initial data if tables are empty
@@ -698,6 +906,27 @@ async function seedInitialData() {
     if (bookCount === 0) {
       console.log("[Database] Seeding default books and reviews catalog...");
       await seedBooksAndReviews();
+    }
+
+    const couponCountRow = await db.get("SELECT COUNT(*) as count FROM coupons");
+    const couponCount = Number(couponCountRow?.count || 0);
+    if (couponCount === 0) {
+      console.log("[Database] Seeding default coupons...");
+      await seedCoupons();
+    }
+
+    const settingsCountRow = await db.get("SELECT COUNT(*) as count FROM settings");
+    const settingsCount = Number(settingsCountRow?.count || 0);
+    if (settingsCount === 0) {
+      console.log("[Database] Seeding default store settings...");
+      await seedSettings();
+    }
+
+    const contentCountRow = await db.get("SELECT COUNT(*) as count FROM content_blocks");
+    const contentCount = Number(contentCountRow?.count || 0);
+    if (contentCount === 0) {
+      console.log("[Database] Seeding default content blocks...");
+      await seedContentBlocks();
     }
   } catch (err) {
     console.error("[Database] Error checking/seeding initial data:", err.message);
@@ -1034,3 +1263,93 @@ async function seedBooksAndReviews() {
   await db.run("INSERT INTO reviews (book_id, user_name, rating, comment) VALUES (?, ?, ?, ?)", [7, "Vikram Patel", 4, "Clear, actionable and calming read. Fast delivery by Success Book Hub."]);
   await db.run("INSERT INTO reviews (book_id, user_name, rating, comment) VALUES (?, ?, ?, ?)", [13, "Sneha Bose", 5, "Best book on personal habits ever written. Highly recommend ordering!"]);
 }
+
+async function seedCoupons() {
+  const initialCoupons = [
+    { code: "WELCOME100", discount_type: "flat", discount_value: 100, min_order: 599, max_discount: 100, status: "active", usage_count: 142 },
+    { code: "FESTIVE20", discount_type: "percentage", discount_value: 20, min_order: 899, max_discount: 300, status: "active", usage_count: 89 },
+    { code: "FREESHIP", discount_type: "flat", discount_value: 49, min_order: 499, max_discount: 49, status: "active", usage_count: 310 },
+    { code: "SUCCESS10", discount_type: "percentage", discount_value: 10, min_order: 349, max_discount: 150, status: "active", usage_count: 64 }
+  ];
+
+  for (const c of initialCoupons) {
+    await db.run(
+      `INSERT INTO coupons (code, discount_type, discount_value, min_order, max_discount, status, usage_count)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [c.code, c.discount_type, c.discount_value, c.min_order, c.max_discount, c.status, c.usage_count]
+    );
+  }
+}
+
+async function seedSettings() {
+  const initialSettings = [
+    { key: "store_name", val: "Success Book Hub" },
+    { key: "store_tagline", val: "Curated Books & Timeless Stories" },
+    { key: "store_email", val: "contact@successbookhub.com" },
+    { key: "store_phone", val: "+91 98765 43210" },
+    { key: "whatsapp_number", val: "919876543210" },
+    { key: "free_delivery_min", val: "799" },
+    { key: "standard_delivery_fee", val: "49" },
+    { key: "store_gstin", val: "36AABCS1429B1Z8" },
+    { key: "store_address", val: "42, College Street, Book District, Kolkata, WB 700073, India" },
+    { key: "store_hours", val: "Mon – Sat: 10:00 AM – 8:30 PM" },
+    { key: "announcement", val: "Free Pan-India Delivery on orders above ₹799 • Order directly online or via WhatsApp!" }
+  ];
+
+  for (const s of initialSettings) {
+    await db.run(
+      `INSERT INTO settings (key_name, value_text) VALUES (?, ?)`,
+      [s.key, s.val]
+    );
+  }
+}
+
+async function seedContentBlocks() {
+  const initialBlocks = [
+    {
+      type: "hero-banners",
+      title: "Discover Stories That Shape Your Mind",
+      subtitle: "Handpicked classics, bestselling philosophy, and transformative self-help delivered across India.",
+      image: "https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=1200&auto=format&fit=crop",
+      link_url: "/shop",
+      status: "active",
+      display_order: 1
+    },
+    {
+      type: "promo-banners",
+      title: "College Street Literary Curation",
+      subtitle: "Experience the magic of historic bookshops from the comfort of your home.",
+      image: "https://images.unsplash.com/photo-1507842229450-705295c5520e?q=80&w=800&auto=format&fit=crop",
+      link_url: "/shop",
+      status: "active",
+      display_order: 2
+    },
+    {
+      type: "testimonials",
+      title: "Reader Delight",
+      subtitle: "Meera Roy, Kolkata",
+      content: "Success Book Hub sends books with unmatched care. Beautiful covers, crisp paper quality and super fast dispatch!",
+      status: "active",
+      display_order: 1
+    },
+    {
+      type: "blogs",
+      title: "10 Books That Will Redefine How You Think in 2026",
+      subtitle: "Curated by Success Book Hub Editorial Desk",
+      content: "From Marcus Aurelius to James Clear, here are the essential reads for building lifelong clarity and resilience.",
+      image: "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?q=80&w=800&auto=format&fit=crop",
+      link_url: "/about",
+      status: "active",
+      display_order: 1
+    }
+  ];
+
+  for (const b of initialBlocks) {
+    await db.run(
+      `INSERT INTO content_blocks (type, title, subtitle, image, link_url, content, status, display_order)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [b.type, b.title, b.subtitle, b.image, b.link_url, b.content || "", b.status, b.display_order]
+    );
+  }
+}
+

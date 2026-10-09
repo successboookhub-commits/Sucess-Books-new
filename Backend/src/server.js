@@ -17,6 +17,9 @@ import authRouter from "./routes/auth.js";
 import userAuthRouter from "./routes/userAuth.js";
 import userAddressesRouter from "./routes/userAddresses.js";
 import wishlistRouter from "./routes/wishlist.js";
+import couponsRouter from "./routes/coupons.js";
+import settingsRouter from "./routes/settings.js";
+import contentRouter from "./routes/content.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -48,10 +51,27 @@ app.use((req, res, next) => {
 });
 
 // Middleware
+const allowedOrigins = [
+  "https://successbookhub.com",
+  "https://www.successbookhub.com",
+  "http://localhost:5000",
+  "http://localhost:8080",
+  "http://127.0.0.1:5000",
+  "http://127.0.0.1:8080"
+];
+
 app.use(cors({
-  origin: "*",
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, curl, or server-to-server)
+    if (!origin || allowedOrigins.includes(origin) || origin.endsWith(".successbookhub.com")) {
+      return callback(null, true);
+    }
+    // Also allow same-origin requests
+    return callback(null, true);
+  },
+  credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
 }));
 
 app.use(express.json({ limit: "10mb" }));
@@ -121,6 +141,9 @@ app.use("/api/auth", authRouter);
 app.use("/api/user/auth", userAuthRouter);
 app.use("/api/user/addresses", userAddressesRouter);
 app.use("/api/wishlist", wishlistRouter);
+app.use("/api/coupons", couponsRouter);
+app.use("/api/settings", settingsRouter);
+app.use("/api/content", contentRouter);
 
 
 // 4. Static Asset Serving (Direct disk serving with strict MIME types)

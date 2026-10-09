@@ -83,38 +83,104 @@ router.post("/", optionalUserAuth, async (req, res) => {
     const parsedMrp = parseFloat(mrpTotal) || parsedSubtotal;
     const parsedDiscount = parseFloat(discountTotal) || Math.max(0, parsedMrp - parsedSubtotal);
     const total = parsedSubtotal + parsedDelivery;
+    const { couponCode } = req.body;
+
+    // 1. Prevent duplicate submissions: check if identical order placed within 15 seconds
+    try {
+      const recentDuplicate = await db.get(
+        `SELECT * FROM orders 
+         WHERE customer_phone = ? AND total = ? 
+         ORDER BY created_at DESC LIMIT 1`,
+        [customerPhone.trim(), total]
+      );
+      if (recentDuplicate && recentDuplicate.created_at) {
+        let createdMs = 0;
+        if (recentDuplicate.created_at instanceof Date) {
+          createdMs = recentDuplicate.created_at.getTime();
+        } else {
+          const str = String(recentDuplicate.created_at).trim();
+          createdMs = str.includes("T")
+            ? new Date(str.endsWith("Z") ? str : str + "Z").getTime()
+            : new Date(str.replace(" ", "T") + "Z").getTime();
+        }
+        const timeDiffMs = Math.abs(Date.now() - createdMs);
+        if (timeDiffMs < 15000) {
+          console.log(`[Orders] Idempotency: duplicate submission prevented for order #${recentDuplicate.id} (timeDiff: ${timeDiffMs}ms)`);
+          return res.status(200).json({
+            success: true,
+            duplicate: true,
+            idempotent: true,
+            message: "Order already received (duplicate submission prevented).",
+            data: {
+              orderId: recentDuplicate.id,
+              invoiceNo: recentDuplicate.invoice_no,
+              customerName: recentDuplicate.customer_name,
+              customerPhone: recentDuplicate.customer_phone,
+              customerEmail: recentDuplicate.customer_email,
+              total: Number(recentDuplicate.total),
+              status: recentDuplicate.status,
+              whatsappUrl: `https://wa.me/${process.env.WHATSAPP_NUMBER || "919876543210"}`
+            }
+          });
+        }
+      }
+    } catch {
+      // ignore check error and proceed
+    }
 
     const userId = req.user?.id || null;
     const finalEmail = (customerEmail || req.user?.email || "").trim().toLowerCase();
 
-    await db.run(`
-      INSERT INTO orders (
-        id, user_id, customer_name, customer_phone, customer_email, 
-        delivery_address, city, state, pincode, address_type, items_json, 
-        mrp_total, discount_total, subtotal, delivery_fee, total, payment_method, 
-        status, invoice_no, order_notes
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
-    `, [
-      orderId,
-      userId,
-      customerName.trim(),
-      customerPhone.trim(),
-      finalEmail,
-      deliveryAddress.trim(),
-      city.trim(),
-      state.trim(),
-      pincode.trim(),
-      addressType || "Home",
-      JSON.stringify(items),
-      parsedMrp,
-      parsedDiscount,
-      parsedSubtotal,
-      parsedDelivery,
-      total,
-      paymentMethod,
-      invoiceNo,
-      orderNotes.trim()
-    ]);
+    // 2. Persist order and update inventory stock atomically inside transaction
+    await db.transaction(async (tx) => {
+      await tx.run(`
+        INSERT INTO orders (
+          id, user_id, customer_name, customer_phone, customer_email, 
+          delivery_address, city, state, pincode, address_type, items_json, 
+          mrp_total, discount_total, subtotal, delivery_fee, total, payment_method, 
+          status, invoice_no, order_notes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
+      `, [
+        orderId,
+        userId,
+        customerName.trim(),
+        customerPhone.trim(),
+        finalEmail,
+        deliveryAddress.trim(),
+        city.trim(),
+        state.trim(),
+        pincode.trim(),
+        addressType || "Home",
+        JSON.stringify(items),
+        parsedMrp,
+        parsedDiscount,
+        parsedSubtotal,
+        parsedDelivery,
+        total,
+        paymentMethod,
+        invoiceNo,
+        orderNotes.trim()
+      ]);
+
+      // Decrement inventory stock for each ordered book
+      for (const item of items) {
+        if (item.id) {
+          const qty = parseInt(item.quantity) || 1;
+          await tx.run(
+            `UPDATE books SET stock = CASE WHEN stock >= ? THEN stock - ? ELSE 0 END WHERE id = ?`,
+            [qty, qty, item.id]
+          );
+        }
+      }
+
+      // If coupon used, increment its usage counter
+      if (couponCode && typeof couponCode === "string") {
+        await tx.run(
+          `UPDATE coupons SET usage_count = usage_count + 1 WHERE UPPER(code) = ?`,
+          [couponCode.trim().toUpperCase()]
+        );
+      }
+    });
 
     // Format WhatsApp message text
     const itemsText = items
