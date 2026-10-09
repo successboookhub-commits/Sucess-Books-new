@@ -146,10 +146,16 @@ export const api = {
   },
 
   // Place order
-  async createOrder(payload: CreateOrderPayload): Promise<{ orderId: string; whatsappUrl: string; total: number }> {
+  async createOrder(payload: CreateOrderPayload, customToken?: string | null): Promise<{ orderId: string; whatsappUrl: string; total: number }> {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    const token = customToken || (typeof localStorage !== "undefined" ? localStorage.getItem("sbh_user_token") : null);
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
     const res = await fetch(getApiEndpoint("/api/orders"), {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(payload)
     });
     const data = await res.json();
