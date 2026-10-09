@@ -14,12 +14,15 @@ import {
   Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { api, type Category, type SubCategory } from "@/lib/api";
+import { api, type Category, type SubCategory, fallbackCategoryList } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface SubCategoryManagerProps {
   initialCategoryId?: number | null;
+  categories?: Category[];
+  autoOpenCreate?: boolean;
+  onModalClosed?: () => void;
   onNavigateToCategories?: () => void;
 }
 
@@ -32,10 +35,25 @@ const PRESET_SUB_IMAGES = [
   { label: "Mindfulness", url: "https://images.unsplash.com/photo-1506784983877-45594efa4cbe?q=80&w=600&auto=format&fit=crop" }
 ];
 
-export function SubCategoryManager({ initialCategoryId, onNavigateToCategories }: SubCategoryManagerProps) {
+export function SubCategoryManager({
+  initialCategoryId,
+  categories: passedCategories,
+  autoOpenCreate,
+  onModalClosed,
+  onNavigateToCategories
+}: SubCategoryManagerProps) {
   const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<Category[]>(
+    passedCategories && passedCategories.length > 0 ? passedCategories : fallbackCategoryList
+  );
   const [loading, setLoading] = useState(true);
+
+  // Fallback resilient categories
+  const effectiveCategories = useMemo(() => {
+    if (categories && categories.length > 0) return categories;
+    if (passedCategories && passedCategories.length > 0) return passedCategories;
+    return fallbackCategoryList;
+  }, [categories, passedCategories]);
 
   // Filters
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>(
@@ -50,12 +68,30 @@ export function SubCategoryManager({ initialCategoryId, onNavigateToCategories }
   const [deletingSub, setDeletingSub] = useState<SubCategory | null>(null);
 
   // Form states
-  const [categoryId, setCategoryId] = useState<number>(0);
+  const [categoryId, setCategoryId] = useState<number>(() => {
+    if (initialCategoryId) return initialCategoryId;
+    if (passedCategories && passedCategories.length > 0) return passedCategories[0].id;
+    return fallbackCategoryList[0]?.id || 1;
+  });
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [image, setImage] = useState("");
   const [status, setStatus] = useState<"active" | "inactive">("active");
   const [saving, setSaving] = useState(false);
+
+  // Modal close handler
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    if (onModalClosed) onModalClosed();
+  };
+
+  // Sync passedCategories if updated by parent
+  useEffect(() => {
+    if (passedCategories && passedCategories.length > 0) {
+      setCategories(passedCategories);
+      setCategoryId((prev) => (prev > 0 ? prev : (initialCategoryId || passedCategories[0].id)));
+    }
+  }, [passedCategories, initialCategoryId]);
 
   // Load Categories & SubCategories
   const loadData = async () => {
@@ -65,13 +101,18 @@ export function SubCategoryManager({ initialCategoryId, onNavigateToCategories }
         api.getCategories(),
         api.getSubCategories()
       ]);
-      setCategories(cats);
-      setSubCategories(subs);
-      if (cats.length > 0 && !categoryId) {
-        setCategoryId(cats[0].id);
+      if (cats && cats.length > 0) {
+        setCategories(cats);
+        setCategoryId((prev) => (prev > 0 ? prev : (initialCategoryId || cats[0].id)));
+      } else if (passedCategories && passedCategories.length > 0) {
+        setCategories(passedCategories);
       }
+      setSubCategories(subs || []);
     } catch (err: any) {
       toast.error(err.message || "Failed to load sub-categories");
+      if (passedCategories && passedCategories.length > 0) {
+        setCategories(passedCategories);
+      }
     } finally {
       setLoading(false);
     }
@@ -80,13 +121,6 @@ export function SubCategoryManager({ initialCategoryId, onNavigateToCategories }
   useEffect(() => {
     loadData();
   }, []);
-
-  // Sync initialCategoryId if passed
-  useEffect(() => {
-    if (initialCategoryId) {
-      setSelectedCategoryFilter(String(initialCategoryId));
-    }
-  }, [initialCategoryId]);
 
   // Filtered sub-categories
   const filteredSubCategories = useMemo(() => {
@@ -106,7 +140,12 @@ export function SubCategoryManager({ initialCategoryId, onNavigateToCategories }
   // Open Create Modal
   const handleOpenCreate = (presetCategoryId?: number) => {
     setEditingSub(null);
-    const targetCatId = presetCategoryId || (categories.length > 0 ? categories[0].id : 0);
+    const filterCatId = selectedCategoryFilter !== "all" ? Number(selectedCategoryFilter) : 0;
+    const targetCatId =
+      presetCategoryId ||
+      filterCatId ||
+      initialCategoryId ||
+      (effectiveCategories.length > 0 ? effectiveCategories[0].id : 1);
     setCategoryId(targetCatId);
     setName("");
     setDescription("");
@@ -114,6 +153,17 @@ export function SubCategoryManager({ initialCategoryId, onNavigateToCategories }
     setStatus("active");
     setIsModalOpen(true);
   };
+
+  // Sync initialCategoryId if passed
+  useEffect(() => {
+    if (initialCategoryId) {
+      setSelectedCategoryFilter(String(initialCategoryId));
+      setCategoryId(initialCategoryId);
+      if (autoOpenCreate) {
+        handleOpenCreate(initialCategoryId);
+      }
+    }
+  }, [initialCategoryId, autoOpenCreate]);
 
   // Open Edit Modal
   const handleOpenEdit = (sub: SubCategory) => {
@@ -149,7 +199,8 @@ export function SubCategoryManager({ initialCategoryId, onNavigateToCategories }
   // Save SubCategory (Create or Edit)
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!categoryId) {
+    const finalCatId = categoryId || (effectiveCategories.length > 0 ? effectiveCategories[0].id : 1);
+    if (!finalCatId) {
       toast.error("Please select a parent category");
       return;
     }
@@ -162,7 +213,7 @@ export function SubCategoryManager({ initialCategoryId, onNavigateToCategories }
     try {
       if (editingSub) {
         const updated = await api.updateSubCategory(editingSub.id, {
-          category_id: categoryId,
+          category_id: finalCatId,
           name: name.trim(),
           description: description.trim(),
           image: image.trim(),
@@ -172,7 +223,7 @@ export function SubCategoryManager({ initialCategoryId, onNavigateToCategories }
         toast.success(`Sub-category "${updated.name}" updated successfully`);
       } else {
         const created = await api.createSubCategory({
-          category_id: categoryId,
+          category_id: finalCatId,
           name: name.trim(),
           description: description.trim(),
           image: image.trim(),
@@ -181,7 +232,7 @@ export function SubCategoryManager({ initialCategoryId, onNavigateToCategories }
         setSubCategories((prev) => [...prev, created]);
         toast.success(`Sub-category "${created.name}" created successfully`);
       }
-      setIsModalOpen(false);
+      handleCloseModal();
     } catch (err: any) {
       toast.error(err.message || "Failed to save sub-category");
     } finally {
@@ -258,7 +309,7 @@ export function SubCategoryManager({ initialCategoryId, onNavigateToCategories }
             </span>
           </div>
           <p className="font-display text-2xl font-bold text-foreground mt-2">
-            {categoriesCovered} / {categories.length}
+            {categoriesCovered} / {effectiveCategories.length}
           </p>
           <p className="text-[11px] text-muted-foreground mt-0.5">Parent categories enriched</p>
         </div>
@@ -284,10 +335,10 @@ export function SubCategoryManager({ initialCategoryId, onNavigateToCategories }
             <select
               value={selectedCategoryFilter}
               onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-              className="h-8.5 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold outline-none focus:border-primary w-full cursor-pointer"
+              className="h-8.5 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold outline-none focus:border-primary w-full cursor-pointer text-foreground"
             >
-              <option value="all">All Parent Categories ({categories.length})</option>
-              {categories.map((c) => (
+              <option value="all">All Parent Categories ({effectiveCategories.length})</option>
+              {effectiveCategories.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
                 </option>
@@ -466,7 +517,7 @@ export function SubCategoryManager({ initialCategoryId, onNavigateToCategories }
               </div>
               <button
                 type="button"
-                onClick={() => setIsModalOpen(false)}
+                onClick={handleCloseModal}
                 className="text-muted-foreground hover:text-foreground text-sm font-bold p-1"
               >
                 ✕
@@ -475,18 +526,29 @@ export function SubCategoryManager({ initialCategoryId, onNavigateToCategories }
 
             {/* Parent Category Selector */}
             <div>
-              <label className="font-bold text-foreground block mb-1">Parent Category *</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="font-bold text-foreground block text-xs">Parent Category *</label>
+                {effectiveCategories.length === 0 && (
+                  <span className="text-[10px] text-amber-600 font-semibold animate-pulse">
+                    Loading categories...
+                  </span>
+                )}
+              </div>
               <select
                 required
-                value={categoryId}
+                value={categoryId || (effectiveCategories[0]?.id ?? "")}
                 onChange={(e) => setCategoryId(Number(e.target.value))}
-                className="w-full h-9 rounded-md border border-border bg-background px-3 text-xs font-semibold outline-none focus:border-primary cursor-pointer"
+                className="w-full h-9 rounded-md border border-border bg-background px-3 text-xs font-semibold outline-none focus:border-primary cursor-pointer text-foreground"
               >
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} {c.status !== "active" ? "(Inactive)" : ""}
-                  </option>
-                ))}
+                {effectiveCategories.length === 0 ? (
+                  <option value="" disabled>Loading categories from database...</option>
+                ) : (
+                  effectiveCategories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} {c.status !== "active" ? "(Inactive)" : ""}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
 
@@ -618,7 +680,7 @@ export function SubCategoryManager({ initialCategoryId, onNavigateToCategories }
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setIsModalOpen(false)}
+                onClick={handleCloseModal}
                 disabled={saving}
               >
                 Cancel

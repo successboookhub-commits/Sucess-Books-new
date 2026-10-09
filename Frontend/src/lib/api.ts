@@ -269,13 +269,15 @@ export const api = {
       const url = getApiUrl("/api/categories");
       if (params?.status && params.status !== "all") url.searchParams.set("status", params.status);
       if (params?.search) url.searchParams.set("search", params.search);
-      const res = await fetch(url.toString(), { signal: AbortSignal.timeout(4000) });
+      const res = await fetch(url.toString(), { signal: AbortSignal.timeout(8000) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      return data.data || [];
+      const list = Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : []);
+      if (list.length > 0) return list;
+      return fallbackCategoryList;
     } catch (err) {
-      console.error("Error fetching categories:", err);
-      return [];
+      console.warn("Using fallback categories due to fetch error/timeout:", err);
+      return fallbackCategoryList;
     }
   },
 
@@ -315,10 +317,10 @@ export const api = {
       if (params?.category_id && params.category_id !== "all") url.searchParams.set("category_id", String(params.category_id));
       if (params?.status && params.status !== "all") url.searchParams.set("status", params.status);
       if (params?.search) url.searchParams.set("search", params.search);
-      const res = await fetch(url.toString(), { signal: AbortSignal.timeout(4000) });
+      const res = await fetch(url.toString(), { signal: AbortSignal.timeout(8000) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      return data.data || [];
+      return Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Error fetching subcategories:", err);
       return [];
@@ -910,4 +912,14 @@ export type Category = {
   books_count?: number;
   subCategories?: SubCategory[];
 };
+
+export const fallbackCategoryList: Category[] = [
+  { id: 1, name: "Classics", slug: "classics", description: "Timeless masterworks of literature.", image: "", status: "active" },
+  { id: 2, name: "Self Help", slug: "self-help", description: "Personal growth and productivity.", image: "", status: "active" },
+  { id: 3, name: "Science & Nature", slug: "science-nature", description: "Cosmology and natural sciences.", image: "", status: "active" },
+  { id: 4, name: "Poetry & Letters", slug: "poetry-letters", description: "Poetry collections and correspondence.", image: "", status: "active" },
+  { id: 5, name: "Children & YA", slug: "children-ya", description: "Stories for young readers.", image: "", status: "active" },
+  { id: 6, name: "Philosophy", slug: "philosophy", description: "Philosophical treaties and wisdom.", image: "", status: "active" },
+  { id: 7, name: "Fiction", slug: "fiction", description: "Novels and contemporary fiction.", image: "", status: "active" }
+];
 

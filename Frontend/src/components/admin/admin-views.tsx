@@ -91,6 +91,7 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
   const [dbCategories, setDbCategories] = useState<Category[]>([]);
   const [dbSubCategories, setDbSubCategories] = useState<SubCategory[]>([]);
   const [selectedSubCatParentId, setSelectedSubCatParentId] = useState<number | null>(null);
+  const [autoOpenSubCatModal, setAutoOpenSubCatModal] = useState<boolean>(false);
   const [loading, setLoading] = useState(false);
 
   // Coupons state
@@ -1973,10 +1974,12 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
         <CategoryManager
           onNavigateToSubCategories={(catId) => {
             setSelectedSubCatParentId(catId || null);
+            setAutoOpenSubCatModal(false);
             if (onNavigateSection) onNavigateSection("sub-categories");
           }}
           onOpenAddSubCategory={(cat) => {
             setSelectedSubCatParentId(cat.id);
+            setAutoOpenSubCatModal(true);
             if (onNavigateSection) onNavigateSection("sub-categories");
           }}
         />
@@ -1988,6 +1991,9 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
       return (
         <SubCategoryManager
           initialCategoryId={selectedSubCatParentId}
+          categories={dbCategories}
+          autoOpenCreate={autoOpenSubCatModal}
+          onModalClosed={() => setAutoOpenSubCatModal(false)}
           onNavigateToCategories={() => {
             if (onNavigateSection) onNavigateSection("categories");
           }}
