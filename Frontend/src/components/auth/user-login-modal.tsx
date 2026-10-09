@@ -29,7 +29,7 @@ export function UserLoginModal() {
     verifyOtp
   } = useUserAuth();
 
-  const [activeTab, setActiveTab] = useState<"login" | "register" | "otp">("login");
+  const [activeTab, setActiveTab] = useState<"otp" | "login" | "register">("otp");
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState("");
@@ -77,13 +77,13 @@ export function UserLoginModal() {
     setLoading(false);
   };
 
-  // Clear all input data and guarantee Sign In tab whenever modal opens/closes
+  // Clear all input data and guarantee OTP Login as first tab whenever modal opens/closes
   useEffect(() => {
     if (loginModalOpen) {
-      setActiveTab("login");
+      setActiveTab("otp");
     } else {
       resetForms();
-      setActiveTab("login");
+      setActiveTab("otp");
     }
   }, [loginModalOpen]);
 
@@ -100,7 +100,7 @@ export function UserLoginModal() {
     if (!open) {
       closeLoginModal();
       resetForms();
-      setActiveTab("login");
+      setActiveTab("otp");
     }
   };
 
@@ -207,6 +207,7 @@ export function UserLoginModal() {
   // 4. Handle OTP Verification
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     if (otpCode.length < 6) {
       toast.error("Please enter the complete 6-digit OTP passcode.");
       return;
@@ -224,12 +225,13 @@ export function UserLoginModal() {
   };
 
   const handleResendOtp = async () => {
-    if (countdown > 0) return;
+    if (countdown > 0 || loading) return;
     setLoading(true);
     try {
       const res = await sendOtp(otpEmail.trim().toLowerCase());
+      setOtpCode("");
       setCountdown(60);
-      toast.success("New OTP code sent! Check your inbox.");
+      toast.success(res.message || "A fresh OTP passcode has been sent! Check your inbox.");
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to resend OTP.");
     } finally {
@@ -263,18 +265,25 @@ export function UserLoginModal() {
             <BookOpen className="h-6 w-6 text-amber-300" />
           </div>
           <DialogTitle className="font-display text-2xl font-bold tracking-tight text-amber-100">
-            {activeTab === "login" && "Sign In to Your Account"}
-            {activeTab === "register" && "Create Customer Account"}
             {activeTab === "otp" && (otpStep === "email" ? "Sign In with Email OTP" : "Verify 6-Digit Passcode")}
+            {activeTab === "login" && "Sign In with Password"}
+            {activeTab === "register" && "Create Customer Account"}
           </DialogTitle>
           <DialogDescription className="text-white/80 text-xs mt-1 max-w-xs mx-auto">
+            {activeTab === "otp" && (otpStep === "email" ? "Enter your registered email to receive a 1-time secure passcode" : `Sent to ${otpEmail}`)}
             {activeTab === "login" && "Access your orders, saved addresses, and express checkout"}
             {activeTab === "register" && "Join Success Book Hub for fast delivery, discounts & invoice tracking"}
-            {activeTab === "otp" && (otpStep === "email" ? "Enter your email to receive a 1-time secure passcode" : `Sent to ${otpEmail}`)}
           </DialogDescription>
 
           {/* Navigation Tabs */}
           <div className="flex bg-black/25 backdrop-blur-sm p-1 rounded-xl mt-4 max-w-xs mx-auto border border-white/10 text-xs font-semibold">
+            <button
+              type="button"
+              onClick={() => setActiveTab("otp")}
+              className={`flex-1 py-1.5 rounded-lg transition ${activeTab === "otp" ? "bg-amber-400 text-slate-900 shadow-xs font-bold" : "text-white/80 hover:text-white"}`}
+            >
+              Login with OTP
+            </button>
             <button
               type="button"
               onClick={() => setActiveTab("login")}
@@ -288,13 +297,6 @@ export function UserLoginModal() {
               className={`flex-1 py-1.5 rounded-lg transition ${activeTab === "register" ? "bg-amber-400 text-slate-900 shadow-xs font-bold" : "text-white/80 hover:text-white"}`}
             >
               Sign Up
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("otp")}
-              className={`flex-1 py-1.5 rounded-lg transition ${activeTab === "otp" ? "bg-amber-400 text-slate-900 shadow-xs font-bold" : "text-white/80 hover:text-white"}`}
-            >
-              OTP Login
             </button>
           </div>
         </div>

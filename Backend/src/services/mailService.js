@@ -20,6 +20,13 @@ function getTransporter() {
         user: smtpUser,
         pass: smtpPass,
       },
+      family: 4, // Force IPv4 to prevent 60-70s IPv6 resolution timeout on cloud servers
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
+      tls: {
+        rejectUnauthorized: false
+      }
     });
   }
   return transporter;

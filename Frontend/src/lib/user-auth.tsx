@@ -118,6 +118,8 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(USER_DATA_KEY, JSON.stringify(res.user));
       closeLoginModal();
       toast.success(res.message || `Welcome back, ${res.user.name || "Book Lover"}!`);
+    } else {
+      throw new Error(res.message || "Invalid or expired verification code.");
     }
   };
 
