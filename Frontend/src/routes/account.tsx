@@ -25,7 +25,9 @@ import {
   Eye,
   EyeOff,
   BookOpen,
-  RotateCcw
+  RotateCcw,
+  Copy,
+  MessageCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -34,6 +36,8 @@ import { useWishlist } from "@/lib/wishlist";
 import { useCart } from "@/lib/cart";
 import { api, type OrderData, type UserAddress, type AddressInput } from "@/lib/api";
 import { TaxInvoiceModal } from "@/components/invoice/tax-invoice-modal";
+import { OrderTrackerModal } from "@/components/order-tracker-modal";
+import { books as fallbackBooks, WHATSAPP_NUMBER } from "@/lib/books";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -51,7 +55,7 @@ function AccountPage() {
   const navigate = useNavigate();
   const { user, token, isAuthenticated, isLoading, openLoginModal, updateProfile, changePassword, logout } = useUserAuth();
   const { wishlist, removeFromWishlist } = useWishlist();
-  const { addToCart } = useCart();
+  const { addToCart, setCartOpen, catalog } = useCart();
 
   const [activeTab, setActiveTab] = useState<"orders" | "addresses" | "wishlist" | "profile">(
     (search.tab as any) || "orders"
@@ -62,6 +66,8 @@ function AccountPage() {
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [selectedInvoiceOrderId, setSelectedInvoiceOrderId] = useState<string | null>(null);
   const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
+  const [selectedTrackingOrderId, setSelectedTrackingOrderId] = useState<string | null>(null);
+  const [trackerModalOpen, setTrackerModalOpen] = useState(false);
 
   // Addresses State
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
@@ -148,6 +154,66 @@ function AccountPage() {
   const handleOpenInvoice = (orderId: string) => {
     setSelectedInvoiceOrderId(orderId);
     setInvoiceModalOpen(true);
+  };
+
+  const handleTrackOrder = (orderId: string) => {
+    setSelectedTrackingOrderId(orderId);
+    setTrackerModalOpen(true);
+  };
+
+  const handleReorder = (order: OrderData) => {
+    if (!order.items || order.items.length === 0) {
+      toast.error("No items found in this order to reorder.");
+      return;
+    }
+
+    let addedCount = 0;
+    for (const item of order.items) {
+      const matchedBook =
+        catalog?.find((b) => b.id === item.id) ||
+        fallbackBooks.find((b) => b.id === item.id || b.title.toLowerCase() === item.title.toLowerCase()) || {
+          id: item.id || Date.now(),
+          title: item.title,
+          author: item.author || "Curated Author",
+          price: item.price,
+          cover: (item as any).cover || (item as any).image || getBookCover(item),
+          category: "General",
+          rating: 4.8
+        };
+
+      addToCart(matchedBook as any, item.quantity || 1);
+      addedCount += item.quantity || 1;
+    }
+
+    setCartOpen(true);
+    toast.success(`Added ${addedCount} items from Order #${order.id} to your Book Bag!`);
+  };
+
+  const handleBuyItemAgain = (item: { id?: number; title?: string; author?: string; price?: number; quantity?: number; cover?: string; image?: string }) => {
+    const matchedBook =
+      catalog?.find((b) => b.id === item.id) ||
+      fallbackBooks.find((b) => b.id === item.id || b.title?.toLowerCase() === item.title?.toLowerCase()) || {
+        id: item.id || Date.now(),
+        title: item.title || "Curated Book",
+        author: item.author || "Curated Author",
+        price: item.price || 299,
+        cover: getBookCover(item),
+        category: "General",
+        rating: 4.8
+      };
+
+    addToCart(matchedBook as any, 1);
+    setCartOpen(true);
+    toast.success(`Added "${item.title}" to your Book Bag!`);
+  };
+
+  const getBookCover = (item: { id?: number; title?: string; cover?: string; image?: string }) => {
+    if (item.cover) return item.cover;
+    if (item.image) return item.image;
+    const found = fallbackBooks.find(
+      (b) => (item.id && b.id === item.id) || (item.title && b.title.toLowerCase() === item.title.toLowerCase())
+    );
+    return found?.cover || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=600&auto=format&fit=crop";
   };
 
   const handleOpenAddAddress = () => {
@@ -338,29 +404,31 @@ function AccountPage() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/20 py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto space-y-4">
-        {/* User Greeting & Header Card */}
-        <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-amber-400/30 text-white p-4 sm:p-6 rounded-2xl shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div className="min-h-screen bg-muted/20 py-3 sm:py-5">
+      <div className="site-container space-y-4">
+        {/* Luxury User Greeting & Header Card */}
+        <div className="bg-gradient-to-r from-[#21050b] via-[#3d0b17] to-[#1a0409] border border-amber-500/30 text-white p-4 sm:p-5 rounded-2xl shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative overflow-hidden">
+          <div className="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-amber-400/60 to-transparent" />
           <div className="flex items-center gap-4">
-            <div className="h-16 w-16 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center font-display text-2xl font-black shadow-md border-2 border-amber-300">
+            <div className="h-13 w-13 sm:h-15 sm:w-15 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 flex items-center justify-center font-serif text-xl sm:text-2xl font-bold shadow-lg border-2 border-amber-300 shrink-0">
               {user.name ? user.name.charAt(0).toUpperCase() : "U"}
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="font-display text-2xl font-bold text-amber-300">
-                  Hello, {user.name || "Book Lover"}!
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="font-serif text-xl sm:text-2xl font-bold text-amber-100 tracking-tight">
+                  Welcome, {user.name || "Esteemed Reader"}
                 </h1>
-                <span className="bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                  Verified Member
+                <span className="bg-amber-400/15 text-amber-300 border border-amber-400/30 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider inline-flex items-center gap-1">
+                  <Sparkles className="h-2.5 w-2.5 text-amber-300" />
+                  Verified Reader
                 </span>
               </div>
-              <p className="text-slate-300 text-xs mt-1 flex items-center gap-2">
-                <Mail className="h-3.5 w-3.5 text-amber-400" /> {user.email}
+              <p className="text-amber-200/70 text-xs mt-1 flex items-center gap-2.5 flex-wrap">
+                <span className="inline-flex items-center gap-1"><Mail className="h-3.5 w-3.5 text-amber-400" /> {user.email}</span>
                 {user.phone && (
                   <>
                     <span className="opacity-40">•</span>
-                    <Phone className="h-3.5 w-3.5 text-amber-400" /> {user.phone}
+                    <span className="inline-flex items-center gap-1"><Phone className="h-3.5 w-3.5 text-amber-400" /> {user.phone}</span>
                   </>
                 )}
               </p>
@@ -371,14 +439,14 @@ function AccountPage() {
             variant="outline"
             size="sm"
             onClick={logout}
-            className="rounded-full bg-white/10 hover:bg-white/20 text-white border-white/30 text-xs gap-1.5 font-bold"
+            className="rounded-full bg-white/10 hover:bg-white/20 text-amber-100 border-amber-400/30 text-xs gap-1.5 font-bold h-8.5 px-3.5 cursor-pointer transition shadow-xs"
           >
-            <LogOut className="h-3.5 w-3.5" /> Sign Out
+            <LogOut className="h-3.5 w-3.5 text-amber-300" /> Sign Out
           </Button>
         </div>
 
         {/* Dashboard Navigation Tabs */}
-        <div className="flex items-center gap-2 border-b border-border pb-1 overflow-x-auto scrollbar-none">
+        <div className="flex items-center gap-1.5 border-b border-border/80 pb-1 overflow-x-auto scrollbar-none">
           {[
             { id: "orders", label: "My Orders & Invoices", icon: Package, count: orders.length },
             { id: "addresses", label: "Saved Addresses", icon: MapPin, count: addresses.length },
@@ -395,9 +463,9 @@ function AccountPage() {
                   navigate({ to: "/account", search: { tab: tab.id } });
                 }}
                 className={cn(
-                  "flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-xs sm:text-sm font-bold transition border-b-2 whitespace-nowrap",
+                  "flex items-center gap-1.5 px-3.5 py-2 rounded-t-xl text-xs sm:text-sm font-semibold transition border-b-2 whitespace-nowrap cursor-pointer",
                   isActive
-                    ? "border-primary text-slate-950 dark:text-amber-300 bg-amber-50/80 dark:bg-amber-950/30 shadow-2xs"
+                    ? "border-primary text-foreground bg-amber-500/10 shadow-2xs font-bold"
                     : "border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/40"
                 )}
               >
@@ -406,7 +474,7 @@ function AccountPage() {
                 {tab.count !== undefined && (
                   <span
                     className={cn(
-                      "px-2 py-0.5 rounded-full text-[10px] font-black",
+                      "px-1.5 py-0.2 rounded-full text-[10px] font-bold font-mono",
                       isActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                     )}
                   >
@@ -422,7 +490,7 @@ function AccountPage() {
         {/* TAB 1: MY ORDERS & INVOICES */}
         {/* ============================================================ */}
         {activeTab === "orders" && (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {loadingOrders ? (
               <div className="py-16 text-center text-muted-foreground">
                 <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent mb-2" />
@@ -477,15 +545,62 @@ function AccountPage() {
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs font-bold text-muted-foreground">
-                            #{order.id}
-                          </span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <div className="inline-flex items-center gap-1 bg-secondary/80 px-2.5 py-1 rounded-lg border border-border/80 shadow-2xs">
+                            <span className="font-mono text-xs font-bold text-primary">
+                              #{order.id}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(order.id);
+                                toast.success(`Order ID #${order.id} copied!`);
+                              }}
+                              className="p-1 hover:text-primary transition cursor-pointer text-muted-foreground hover:bg-background rounded"
+                              title="Copy Order ID"
+                            >
+                              <Copy className="h-3 w-3" />
+                            </button>
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => handleReorder(order)}
+                            className="rounded-lg text-xs gap-1.5 h-8 bg-amber-600 hover:bg-amber-700 text-white cursor-pointer font-bold shadow-xs btn-shimmer"
+                          >
+                            <RotateCcw className="h-3.5 w-3.5" />
+                            Reorder
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleTrackOrder(order.id)}
+                            className="rounded-lg text-xs gap-1.5 h-8 border-amber-500/40 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10 cursor-pointer font-semibold"
+                          >
+                            <Truck className="h-3.5 w-3.5" />
+                            Track Order
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            asChild
+                            className="rounded-lg text-xs gap-1.5 h-8 border-emerald-500/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10 cursor-pointer font-medium"
+                          >
+                            <a
+                              href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+                                `Hello Success Book Hub! I would like to enquire about my Order #${order.id} (Status: ${order.status}). Could you please share an update?`
+                              )}`}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              <MessageCircle className="h-3.5 w-3.5 text-emerald-600" />
+                              Enquire
+                            </a>
+                          </Button>
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => handleOpenInvoice(order.id)}
-                            className="rounded-lg text-xs gap-1.5 h-8 border-primary/30 text-primary hover:bg-primary/10"
+                            className="rounded-lg text-xs gap-1.5 h-8 border-primary/30 text-primary hover:bg-primary/10 cursor-pointer"
                           >
                             <FileText className="h-3.5 w-3.5" />
                             Tax Invoice
@@ -495,7 +610,7 @@ function AccountPage() {
                               size="sm"
                               variant="outline"
                               onClick={() => handleCancelOrder(order.id)}
-                              className="rounded-lg text-xs gap-1 h-8 border-rose-300 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                              className="rounded-lg text-xs gap-1 h-8 border-rose-300 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
                             >
                               <RotateCcw className="h-3.5 w-3.5" />
                               Cancel Order
@@ -534,37 +649,50 @@ function AccountPage() {
 
                         {/* Order Items List */}
                         <div className="space-y-3">
-                          {order.items.map((item, idx) => (
-                            <div key={idx} className="flex items-center justify-between text-xs py-1">
-                              <div className="flex items-center gap-3 min-w-0">
-                                <div className="h-10 w-8 bg-secondary rounded overflow-hidden flex-shrink-0 border border-border flex items-center justify-center">
-                                  {(item as any).image || (item as any).cover ? (
-                                    <img
-                                      src={(item as any).image || (item as any).cover}
-                                      alt={item.title}
-                                      onError={(e) => {
-                                        (e.currentTarget as HTMLImageElement).style.display = "none";
-                                      }}
-                                      className="h-full w-full object-cover"
-                                    />
-                                  ) : (
-                                    <BookOpen className="h-full w-full p-2 text-muted-foreground" />
-                                  )}
+                          {order.items.map((item, idx) => {
+                            const coverSrc = getBookCover(item);
+                            return (
+                              <div key={idx} className="flex items-center justify-between text-xs py-1">
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <div className="relative h-12 w-9 rounded-sm overflow-hidden book-edge-shadow shrink-0 border border-border/80 bg-secondary flex items-center justify-center">
+                                    {coverSrc ? (
+                                      <>
+                                        <img
+                                          src={coverSrc}
+                                          alt={item.title}
+                                          onError={(e) => {
+                                            (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=600&auto=format&fit=crop";
+                                          }}
+                                          className="h-full w-full object-cover"
+                                        />
+                                        <div className="book-spine-overlay absolute inset-0 pointer-events-none" />
+                                      </>
+                                    ) : (
+                                      <BookOpen className="h-full w-full p-2 text-muted-foreground" />
+                                    )}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <h4 className="font-serif font-bold text-foreground text-xs truncate">
+                                      {item.title}
+                                    </h4>
+                                    <p className="text-[11px] text-muted-foreground font-mono">
+                                      Qty: {item.quantity} × ₹{item.price}
+                                    </p>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleBuyItemAgain(item)}
+                                      className="text-[11px] text-amber-700 dark:text-amber-400 font-bold hover:underline cursor-pointer flex items-center gap-1 mt-1 transition"
+                                    >
+                                      <ShoppingBag className="h-3 w-3" /> Buy Again
+                                    </button>
+                                  </div>
                                 </div>
-                                <div className="min-w-0">
-                                  <h4 className="font-bold text-foreground text-xs truncate">
-                                    {item.title}
-                                  </h4>
-                                  <p className="text-[11px] text-muted-foreground">
-                                    Qty: {item.quantity} × ₹{item.price}
-                                  </p>
-                                </div>
+                                <span className="font-mono font-bold text-foreground">
+                                  ₹{item.price * item.quantity}
+                                </span>
                               </div>
-                              <span className="font-mono font-bold text-foreground">
-                                ₹{item.price * item.quantity}
-                              </span>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
 
                         {/* Delivery Address Snapshot */}
@@ -734,17 +862,18 @@ function AccountPage() {
                       key={book.id}
                       className="bg-card border border-border rounded-2xl p-4 shadow-sm hover:shadow-md transition flex gap-4"
                     >
-                      <div className="w-20 h-28 flex-shrink-0 overflow-hidden rounded-xl bg-secondary border border-border relative">
+                      <div className="relative w-20 h-28 shrink-0 rounded-md overflow-hidden book-edge-shadow bg-secondary border border-border/80">
                         <img
                           src={book.cover || book.image || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=600&auto=format&fit=crop"}
                           alt={book.title}
                           onError={(e) => {
                             (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=600&auto=format&fit=crop";
                           }}
-                          className="h-full w-full object-cover"
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                         />
+                        <div className="book-spine-overlay absolute inset-0 pointer-events-none" />
                         {discount > 0 && (
-                          <span className="absolute top-1 left-1 bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
+                          <span className="absolute top-1 left-1 bg-amber-500 text-slate-950 text-[9px] font-black px-1.5 py-0.5 rounded shadow-xs font-mono">
                             {discount}% OFF
                           </span>
                         )}
@@ -753,20 +882,20 @@ function AccountPage() {
                       <div className="flex-1 flex flex-col justify-between min-w-0">
                         <div>
                           {book.sub_category && (
-                            <span className="text-[10px] font-bold text-primary uppercase tracking-wider block truncate">
+                            <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider block truncate">
                               {book.sub_category}
                             </span>
                           )}
-                          <h4 className="font-display text-sm font-bold text-foreground truncate mt-0.5">
+                          <h4 className="font-serif text-sm font-bold text-foreground truncate mt-0.5">
                             {book.title}
                           </h4>
                           <p className="text-xs text-muted-foreground truncate">
                             by {book.author}
                           </p>
                           <div className="flex items-baseline gap-2 mt-1.5">
-                            <span className="font-bold text-sm text-primary">₹{price}</span>
+                            <span className="font-bold text-sm text-foreground font-mono">₹{price}</span>
                             {mrp > price && (
-                              <span className="text-xs text-muted-foreground line-through">₹{mrp}</span>
+                              <span className="text-xs text-muted-foreground line-through font-mono">₹{mrp}</span>
                             )}
                           </div>
                         </div>
@@ -966,6 +1095,15 @@ function AccountPage() {
           orderId={selectedInvoiceOrderId}
           open={invoiceModalOpen}
           onOpenChange={setInvoiceModalOpen}
+        />
+      )}
+
+      {/* Order Tracker Modal */}
+      {selectedTrackingOrderId && (
+        <OrderTrackerModal
+          open={trackerModalOpen}
+          onOpenChange={setTrackerModalOpen}
+          initialOrderId={selectedTrackingOrderId}
         />
       )}
 

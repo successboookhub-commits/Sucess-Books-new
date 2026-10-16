@@ -95,7 +95,7 @@ function AdminLayoutPage() {
         />
 
         {/* Dynamic Content Panels */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-3.5 sm:p-5 lg:p-6 overflow-y-auto max-w-[1640px] w-full mx-auto">
           <AdminViews
             activeSection={activeSection}
             searchQuery={searchQuery}

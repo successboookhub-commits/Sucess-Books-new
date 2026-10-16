@@ -258,43 +258,43 @@ export function UserLoginModal() {
 
   return (
     <Dialog open={loginModalOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[460px] p-0 overflow-hidden border-border bg-card shadow-2xl rounded-3xl max-h-[92vh] flex flex-col">
-        {/* Header Banner */}
-        <div className="bg-gradient-to-br from-primary via-[#5a1224] to-[#3a0814] p-6 text-white text-center relative shrink-0">
-          <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-white/10 backdrop-blur-md mb-2.5 border border-white/20 shadow-md">
+      <DialogContent className="sm:max-w-[460px] p-0 overflow-hidden border-border/80 bg-card shadow-2xl rounded-3xl max-h-[92vh] flex flex-col">
+        {/* Luxury Header Banner */}
+        <div className="bg-gradient-to-br from-[#4a0d1e] via-[#330914] to-[#1c040b] p-6 text-white text-center relative shrink-0 border-b border-amber-500/20">
+          <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-gradient-to-br from-amber-400/20 to-amber-600/10 backdrop-blur-md mb-2.5 border border-amber-400/30 shadow-lg">
             <BookOpen className="h-6 w-6 text-amber-300" />
           </div>
-          <DialogTitle className="font-display text-2xl font-bold tracking-tight text-amber-100">
+          <DialogTitle className="font-serif text-2xl font-bold tracking-tight text-amber-100">
             {activeTab === "otp" && (otpStep === "email" ? "Sign In with Email OTP" : "Verify 6-Digit Passcode")}
             {activeTab === "login" && "Sign In with Password"}
-            {activeTab === "register" && "Create Customer Account"}
+            {activeTab === "register" && "Create Reader Account"}
           </DialogTitle>
-          <DialogDescription className="text-white/80 text-xs mt-1 max-w-xs mx-auto">
-            {activeTab === "otp" && (otpStep === "email" ? "Enter your registered email to receive a 1-time secure passcode" : `Sent to ${otpEmail}`)}
-            {activeTab === "login" && "Access your orders, saved addresses, and express checkout"}
-            {activeTab === "register" && "Join Success Book Hub for fast delivery, discounts & invoice tracking"}
+          <DialogDescription className="text-amber-200/80 text-xs mt-1 max-w-xs mx-auto">
+            {activeTab === "otp" && (otpStep === "email" ? "Enter your registered email to receive a secure 1-time passcode" : `Passcode dispatched to ${otpEmail}`)}
+            {activeTab === "login" && "Access your curated orders, saved addresses, and express checkout"}
+            {activeTab === "register" && "Join Success Book Hub for member discounts, dispatch tracking & GST tax invoices"}
           </DialogDescription>
 
           {/* Navigation Tabs */}
-          <div className="flex bg-black/25 backdrop-blur-sm p-1 rounded-xl mt-4 max-w-xs mx-auto border border-white/10 text-xs font-semibold">
+          <div className="flex bg-black/40 backdrop-blur-md p-1 rounded-xl mt-4 max-w-xs mx-auto border border-amber-500/20 text-xs font-semibold">
             <button
               type="button"
               onClick={() => setActiveTab("otp")}
-              className={`flex-1 py-1.5 rounded-lg transition ${activeTab === "otp" ? "bg-amber-400 text-slate-900 shadow-xs font-bold" : "text-white/80 hover:text-white"}`}
+              className={`flex-1 py-1.5 rounded-lg transition cursor-pointer ${activeTab === "otp" ? "bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow-md font-bold" : "text-amber-100/70 hover:text-amber-100"}`}
             >
               Login with OTP
             </button>
             <button
               type="button"
               onClick={() => setActiveTab("login")}
-              className={`flex-1 py-1.5 rounded-lg transition ${activeTab === "login" ? "bg-amber-400 text-slate-900 shadow-xs font-bold" : "text-white/80 hover:text-white"}`}
+              className={`flex-1 py-1.5 rounded-lg transition cursor-pointer ${activeTab === "login" ? "bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow-md font-bold" : "text-amber-100/70 hover:text-amber-100"}`}
             >
               Sign In
             </button>
             <button
               type="button"
               onClick={() => setActiveTab("register")}
-              className={`flex-1 py-1.5 rounded-lg transition ${activeTab === "register" ? "bg-amber-400 text-slate-900 shadow-xs font-bold" : "text-white/80 hover:text-white"}`}
+              className={`flex-1 py-1.5 rounded-lg transition cursor-pointer ${activeTab === "register" ? "bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow-md font-bold" : "text-amber-100/70 hover:text-amber-100"}`}
             >
               Sign Up
             </button>

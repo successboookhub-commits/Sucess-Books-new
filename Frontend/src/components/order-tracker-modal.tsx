@@ -1,10 +1,11 @@
-import { useState } from "react";
-import { Search, Package, CheckCircle2, Clock, Truck, MapPin, AlertCircle, MessageCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, Package, CheckCircle2, Clock, Truck, MapPin, AlertCircle, MessageCircle, Copy, Check } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { api, type OrderData } from "@/lib/api";
 import { WHATSAPP_NUMBER } from "@/lib/books";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface OrderTrackerModalProps {
   open?: boolean;
@@ -18,6 +19,14 @@ export function OrderTrackerModal({ open, onOpenChange, initialOrderId = "", tri
   const [order, setOrder] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (initialOrderId && open) {
+      setOrderIdInput(initialOrderId);
+      handleTrack(initialOrderId);
+    }
+  }, [initialOrderId, open]);
 
   const handleTrack = async (idToSearch?: string) => {
     const id = (idToSearch || orderIdInput).trim();
@@ -34,6 +43,13 @@ export function OrderTrackerModal({ open, onOpenChange, initialOrderId = "", tri
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCopyId = (id: string) => {
+    navigator.clipboard.writeText(id);
+    setCopied(true);
+    toast.success(`Order ID #${id} copied to clipboard!`);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const steps = [
@@ -57,9 +73,9 @@ export function OrderTrackerModal({ open, onOpenChange, initialOrderId = "", tri
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl p-0">
-        <DialogHeader className="p-6 pb-4 border-b border-border">
-          <DialogTitle className="font-display text-2xl text-primary flex items-center gap-2">
-            <Package className="h-6 w-6 text-primary" /> Track Your Book Order
+        <DialogHeader className="p-5 pb-4 border-b border-border/80 bg-gradient-to-b from-secondary/40 to-background/60">
+          <DialogTitle className="font-serif text-xl font-bold text-foreground flex items-center gap-2">
+            <Package className="h-5 w-5 text-amber-600 dark:text-amber-400" /> Track Your Book Order
           </DialogTitle>
         </DialogHeader>
 
@@ -76,13 +92,13 @@ export function OrderTrackerModal({ open, onOpenChange, initialOrderId = "", tri
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Enter Order ID (e.g. SBH-9734)"
+                placeholder="Enter Order ID (e.g. SBH-261016-8492)"
                 value={orderIdInput}
                 onChange={(e) => setOrderIdInput(e.target.value.toUpperCase())}
                 className="w-full h-11 pl-10 pr-3 rounded-full border border-border bg-card text-sm font-semibold outline-none focus:border-primary uppercase tracking-wider"
               />
             </div>
-            <Button type="submit" disabled={loading} className="rounded-full px-6 h-11">
+            <Button type="submit" disabled={loading} className="rounded-full px-6 h-11 cursor-pointer">
               {loading ? "Searching..." : "Track"}
             </Button>
           </form>
@@ -98,9 +114,19 @@ export function OrderTrackerModal({ open, onOpenChange, initialOrderId = "", tri
             <div className="space-y-6 animate-in fade-in-50">
               {/* Status Header */}
               <div className="rounded-xl bg-secondary/50 border border-border p-4 flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Tracking Code</span>
-                  <p className="font-display text-2xl font-bold text-primary">{order.id}</p>
+                <div className="flex items-center gap-2.5">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Tracking / Order ID</span>
+                    <p className="font-mono text-xl font-bold text-primary">{order.id}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyId(order.id)}
+                    className="mt-2.5 p-1.5 rounded-lg border border-border hover:bg-background transition text-muted-foreground hover:text-primary cursor-pointer shadow-2xs"
+                    title="Copy Order ID"
+                  >
+                    {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+                  </button>
                 </div>
                 <div className="text-right">
                   <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Current Status</span>

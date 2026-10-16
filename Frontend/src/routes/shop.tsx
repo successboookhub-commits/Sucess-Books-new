@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { BookCard } from "@/components/book-card";
 import { BookDetailModal } from "@/components/book-detail-modal";
+import { BookRequestModal } from "@/components/book-request-modal";
 import { categories as defaultCategories, type Book } from "@/lib/books";
 import { api, type Category } from "@/lib/api";
 import { useCart } from "@/lib/cart";
@@ -55,6 +56,7 @@ function Shop() {
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [previewBook, setPreviewBook] = useState<Book | null>(null);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [requestModalOpen, setRequestModalOpen] = useState(false);
 
   const categoriesScrollRef = useRef<HTMLDivElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
@@ -174,22 +176,22 @@ function Shop() {
     <main className="min-h-screen bg-background">
       {/* 1. Top Clean Header Banner: Just All Books */}
       <section className="paper-texture border-b border-border bg-gradient-to-b from-amber-50/20 via-card to-card">
-        <div className="mx-auto max-w-7xl px-4 py-5 sm:py-7 sm:px-6 lg:px-8">
+        <div className="site-container py-2.5 sm:py-3.5">
           <p className="text-xs font-bold uppercase tracking-wider text-amber-600 flex items-center gap-1.5">
             <Sparkles className="h-3.5 w-3.5 fill-amber-500 text-amber-500" /> Curated Bookstore Catalogue
           </p>
           <h1 className="mt-1 font-display text-2xl sm:text-3xl lg:text-4xl text-foreground font-bold">
             All Books
           </h1>
-          <p className="mt-1.5 max-w-xl text-xs sm:text-sm text-muted-foreground leading-relaxed">
+          <p className="mt-1 max-w-xl text-xs sm:text-sm text-muted-foreground leading-relaxed">
             Browse through our complete collection of literary masterworks, academic editions, poetry, and bestsellers.
           </p>
         </div>
       </section>
 
       {/* 2. Same Category Section as Home (Search on Left + Round Categories on Right) */}
-      <section className="mx-auto max-w-7xl px-4 py-4 sm:py-7 sm:px-6 lg:px-8 border-b border-border/60 bg-gradient-to-b from-card/30 via-background to-background overflow-hidden">
-        <div className="mb-3 flex flex-row items-center justify-between gap-2">
+      <section className="site-container py-2 sm:py-3 border-b border-border/60 bg-gradient-to-b from-card/30 via-background to-background overflow-hidden">
+        <div className="mb-1.5 flex flex-row items-center justify-between gap-2">
           <div>
             <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-amber-600 flex items-center gap-1.5">
               <Sparkles className="h-3 w-3 fill-amber-500 text-amber-500" /> Explore by Genre
@@ -232,7 +234,7 @@ function Shop() {
                   setSuggestionsOpen(true);
                 }}
                 placeholder="Search category or books…"
-                className="w-full h-11 sm:h-12 pl-10 pr-16 rounded-full border border-border/80 bg-card/90 backdrop-blur-xs text-xs sm:text-sm font-semibold text-foreground placeholder:text-muted-foreground shadow-xs focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all"
+                className="w-full h-11 sm:h-12 pl-10 pr-20 rounded-full border border-border/80 bg-card/90 backdrop-blur-xs text-xs sm:text-sm font-semibold text-foreground placeholder:text-muted-foreground shadow-xs focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all"
               />
 
               {/* Clear button */}
@@ -492,24 +494,26 @@ function Shop() {
         </div>
       </section>
 
-      {/* 3. Bottom All Products Grid (Same layout as Home: 6 books per line on desktop) */}
-      <section className="mx-auto max-w-7xl px-4 py-6 sm:py-8 sm:px-6 lg:px-8">
-        <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+      {/* 3. Bottom All Products Grid (Responsive: 2 cols on mobile, 5 cols on 13" laptop, 6 cols on desktop) */}
+      <section className="site-container py-3 sm:py-4">
+        <div className="mb-2.5 sm:mb-3.5 flex flex-col sm:flex-row sm:items-end justify-between gap-2.5 border-b border-border/60 pb-2.5">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-amber-600">
-              {category !== "All" ? `Shelf: ${category}` : "Curated Bookstore Collection"}
-            </p>
-            <h2 className="mt-0.5 font-display text-xl sm:text-2xl lg:text-3xl text-foreground font-bold">
-              All Products
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-300/40">
+                {category !== "All" ? `Shelf: ${category}` : "Curated Bookstore Collection"}
+              </span>
+            </div>
+            <h2 className="mt-1 font-display text-xl sm:text-2xl lg:text-3xl text-foreground font-bold">
+              {category !== "All" ? `${category} Collection` : "All Curated Volumes"}
             </h2>
           </div>
 
           {/* Sort Dropdown & Books count */}
           <div className="flex items-center gap-3 self-start sm:self-auto flex-wrap">
-            <span className="text-xs font-semibold text-muted-foreground">
+            <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap">
               Showing <strong>{filtered.length}</strong> of {catalog.length} books
             </span>
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground whitespace-nowrap">
               <span>Sort:</span>
               <select
                 value={sort}
@@ -526,33 +530,87 @@ function Shop() {
           </div>
         </div>
 
-        {/* 6 Books Per Row on Laptop/Desktop (lg:grid-cols-6 xl:grid-cols-6), Mobile stays 2 cols */}
+        {/* Responsive Book Grid: 2 cols on mobile, 5 cols on 13" laptop, 6 cols on desktop */}
         {filtered.length > 0 ? (
-          <div className="grid grid-cols-2 gap-x-3 gap-y-4 sm:gap-x-4 sm:gap-y-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-6 lg:gap-x-3 lg:gap-y-4">
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-6 lg:gap-3.5">
             {filtered.map((book) => (
               <BookCard key={book.id} book={book} compact={true} />
             ))}
           </div>
         ) : (
-          <div className="py-16 text-center bg-card rounded-3xl border border-border/80 p-8 max-w-lg mx-auto shadow-xs">
-            <BookOpen className="h-12 w-12 mx-auto text-amber-500 mb-3 opacity-60" />
-            <h3 className="font-display text-lg font-bold text-foreground">No Books Found</h3>
-            <p className="mt-1 text-xs text-muted-foreground">
-              We couldn't find any books matching &quot;{query || category}&quot;.
+          <div className="py-10 text-center bg-gradient-to-b from-card via-amber-50/20 to-card dark:via-amber-950/10 rounded-3xl border-2 border-dashed border-amber-300/80 p-6 sm:p-10 max-w-xl mx-auto shadow-sm">
+            <div className="h-14 w-14 sm:h-16 sm:w-16 mx-auto rounded-2xl bg-gradient-to-tr from-amber-400 to-yellow-300 flex items-center justify-center text-slate-950 shadow-md mb-3 ring-4 ring-amber-400/20">
+              <Sparkles className="h-7 w-7 sm:h-8 sm:w-8" />
+            </div>
+            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/60 px-3 py-1 rounded-full border border-amber-300">
+              Concierge Book Hunter
+            </span>
+            <h3 className="mt-3 font-display text-lg sm:text-2xl font-bold text-foreground">
+              మీరు వెతుకుతున్న పుస్తకం దొరకలేదా?
+            </h3>
+            <p className="mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              We couldn&apos;t find titles matching &quot;<strong>{query || category}</strong>&quot; right now. But don&apos;t worry! మా టీమ్ మీకు కావలసిన ఏ పుస్తకాన్నైనా 24-48 గంటల్లో ప్రొక్యూర్ చేసి బెస్ట్ ప్రైస్‌తో అందిస్తుంది.
             </p>
-            <button
-              type="button"
-              onClick={() => {
-                setCategory("All");
-                setQuery("");
-              }}
-              className="mt-4 inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-primary text-slate-950 font-bold text-xs shadow-xs hover:bg-primary/90 transition cursor-pointer"
-            >
-              <X className="h-3.5 w-3.5" /> View All Books
-            </button>
+
+            <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-3">
+              <button
+                type="button"
+                onClick={() => setRequestModalOpen(true)}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 sm:py-3 rounded-full bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-400 text-slate-950 font-bold text-xs sm:text-sm shadow-md hover:shadow-lg transition-transform hover:scale-105 active:scale-95 cursor-pointer"
+              >
+                <Sparkles className="h-4 w-4" /> Request This Book Now
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCategory("All");
+                  setQuery("");
+                }}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 sm:py-3 rounded-full bg-secondary hover:bg-secondary/80 text-foreground font-semibold text-xs sm:text-sm transition cursor-pointer"
+              >
+                <X className="h-4 w-4" /> Clear Search
+              </button>
+            </div>
           </div>
         )}
       </section>
+
+      {/* Luxury Book Hunter / Special Order Concierge Strip */}
+      <section className="site-container my-8 sm:my-10">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-amber-950 via-slate-900 to-slate-950 text-white p-6 sm:p-8 lg:p-10 border border-amber-500/30 shadow-xl">
+          <div className="absolute -right-12 -top-12 h-56 w-56 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
+          <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+            <div className="max-w-2xl space-y-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/20 border border-amber-400/40 text-amber-300 text-xs font-bold uppercase tracking-wider">
+                <Sparkles className="h-3.5 w-3.5 fill-amber-300 text-amber-300" /> Concierge Book Procurement
+              </div>
+              <h3 className="font-display text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">
+                కావలసిన పుస్తకం దొరకలేదా? మేము తెప్పించి ఇస్తాం!
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                Looking for a rare publication, competitive exam syllabus, regional Telugu classics, or international editions? Share the title and our book-hunter team will procure it at publisher discount rates.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0 w-full lg:w-auto">
+              <button
+                type="button"
+                onClick={() => setRequestModalOpen(true)}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-bold text-xs sm:text-sm shadow-lg transition active:scale-95 cursor-pointer"
+              >
+                <Sparkles className="h-4 w-4" /> Request Any Book
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Book Request Concierge Modal */}
+      <BookRequestModal
+        open={requestModalOpen}
+        onOpenChange={setRequestModalOpen}
+        initialBookTitle={query}
+      />
 
       {/* Book Detail Preview Modal from dropdown search suggestion click */}
       {previewBook && (

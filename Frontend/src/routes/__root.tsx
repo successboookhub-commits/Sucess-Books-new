@@ -32,11 +32,11 @@ function NotFoundComponent() {
         </div>
         <div>
           <span className="text-xs font-bold uppercase tracking-widest text-amber-600">Error 404</span>
-          <h1 className="mt-1 text-3xl sm:text-4xl font-bold text-foreground font-display">
+          <h1 className="mt-1 text-3xl sm:text-4xl font-bold text-foreground font-serif tracking-tight">
             Page Not Found
           </h1>
           <p className="mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed">
-            The page or shelf you are looking for has been moved, removed, or is temporarily unavailable.
+            The literary volume or shelf you are looking for has been moved, removed, or is temporarily unavailable.
           </p>
         </div>
 
@@ -72,12 +72,12 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground font-display">
+      <div className="max-w-md text-center space-y-3 bg-card p-8 rounded-3xl border border-border shadow-xl">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground font-serif">
           This page didn't load
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+        <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+          Something unexpected occurred. You can refresh the shelf or return to the main bookstore.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
@@ -160,6 +160,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" },
     ],
     scripts: [
+      {
+        src: "https://checkout.razorpay.com/v1/checkout.js",
+        async: true,
+      },
       {
         type: "application/ld+json",
         children: bookstoreSchema,

@@ -48,41 +48,41 @@ function About() {
     <main className="min-h-screen bg-background">
       {/* 1. Hero / Legacy Mission (Left-Aligned, Tight Gaps) */}
       <section className="paper-texture border-b border-border bg-gradient-to-b from-amber-50/20 via-background to-background">
-        <div className="mx-auto max-w-7xl px-4 py-5 sm:py-7 sm:px-6 lg:px-8">
+        <div className="site-container py-3 sm:py-4.5">
           <p className="text-xs font-bold uppercase tracking-wider text-amber-600 flex items-center gap-1.5">
             <Sparkles className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
             Our Legacy & Story
           </p>
-          <h1 className="mt-1.5 font-display text-2xl sm:text-3xl lg:text-4xl leading-tight text-foreground font-bold tracking-tight">
+          <h1 className="mt-1 font-serif text-2xl sm:text-3xl lg:text-4xl leading-tight text-foreground font-bold tracking-tight">
             A sanctuary for readers, learners, and dreamers.
           </h1>
-          <p className="mt-2 max-w-4xl text-xs sm:text-sm leading-relaxed text-muted-foreground">
+          <p className="mt-1.5 max-w-4xl text-xs sm:text-sm leading-relaxed text-muted-foreground">
             Rooted in Kolkata's historic College Street, {STORE.name} curates timeless literature and delivers genuine publisher editions directly to readers across India.
           </p>
 
           {/* Quick Credibility Badges */}
-          <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100/80 dark:bg-amber-950/50 text-amber-900 dark:text-amber-200 border border-amber-300/60 font-semibold shadow-2xs">
-              <MapPin className="h-3.5 w-3.5 text-amber-600" /> College Street Heritage
+          <div className="mt-2.5 flex flex-wrap items-center gap-2 text-xs">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100/80 dark:bg-amber-950/50 text-amber-900 dark:text-amber-200 border border-amber-300/60 font-semibold shadow-2xs whitespace-nowrap">
+              <MapPin className="h-3.5 w-3.5 text-amber-600 shrink-0" /> College Street Heritage
             </span>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-semibold shadow-2xs">
-              <Truck className="h-3.5 w-3.5 text-emerald-600" /> Pan-India Express Delivery
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-semibold shadow-2xs whitespace-nowrap">
+              <Truck className="h-3.5 w-3.5 text-emerald-600 shrink-0" /> Pan-India Express Delivery
             </span>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary text-foreground border border-border font-semibold shadow-2xs">
-              <ShieldCheck className="h-3.5 w-3.5 text-amber-600" /> 100% Genuine Publisher Copies
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary text-foreground border border-border font-semibold shadow-2xs whitespace-nowrap">
+              <ShieldCheck className="h-3.5 w-3.5 text-amber-600 shrink-0" /> 100% Genuine Publisher Copies
             </span>
           </div>
         </div>
       </section>
 
       {/* 2. Core Pillars (Left Heading, Compact 4-Card Grid) */}
-      <section className="mx-auto max-w-7xl px-4 py-5 sm:py-7 sm:px-6 lg:px-8 space-y-4">
+      <section className="site-container py-3 sm:py-4.5 space-y-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-wider text-amber-600 flex items-center gap-1.5">
             <Compass className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
             Why Readers Trust Us
           </p>
-          <h2 className="mt-1 font-display text-xl sm:text-2xl font-bold text-foreground">
+          <h2 className="mt-0.5 font-serif text-lg sm:text-xl font-bold text-foreground">
             Our Guiding Commitments
           </h2>
         </div>
@@ -118,21 +118,21 @@ function About() {
             return (
               <div
                 key={title as string}
-                className="group relative rounded-2xl border border-border/80 bg-card p-4 sm:p-5 shadow-xs hover:border-amber-300 hover:shadow-md transition-all flex flex-col justify-between"
+                className="group relative rounded-2xl border border-border/80 bg-card p-3.5 sm:p-4 shadow-xs hover:border-amber-300 hover:shadow-md transition-all flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center justify-between gap-2">
-                    <span className="grid h-9 w-9 place-items-center rounded-xl bg-amber-400/15 text-amber-700 dark:text-amber-400 font-bold border border-amber-300/40 group-hover:scale-105 transition">
-                      <IconComponent className="h-4.5 w-4.5" />
+                    <span className="grid h-8 w-8 place-items-center rounded-xl bg-amber-400/15 text-amber-700 dark:text-amber-400 font-bold border border-amber-300/40 group-hover:scale-105 transition">
+                      <IconComponent className="h-4 w-4" />
                     </span>
                     <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-secondary text-muted-foreground border border-border">
                       {badge as string}
                     </span>
                   </div>
-                  <h3 className="mt-3 font-display text-base font-bold text-foreground">
+                  <h3 className="mt-2.5 font-display text-sm sm:text-base font-bold text-foreground">
                     {title as string}
                   </h3>
-                  <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground font-normal">
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground font-normal">
                     {text as string}
                   </p>
                 </div>
@@ -143,8 +143,8 @@ function About() {
       </section>
 
       {/* 3. Luxury Contained Stats Card (NO FULL-WIDTH SOLID YELLOW BAR!) */}
-      <section className="mx-auto max-w-7xl px-4 py-3 sm:py-5 sm:px-6 lg:px-8">
-        <div className="rounded-2xl sm:rounded-3xl border border-amber-300/70 dark:border-amber-700/50 bg-gradient-to-br from-amber-500/10 via-amber-400/5 to-card p-5 sm:p-7 shadow-xs">
+      <section className="site-container py-2 sm:py-3.5">
+        <div className="rounded-2xl sm:rounded-3xl border border-amber-300/70 dark:border-amber-700/50 bg-gradient-to-br from-amber-500/10 via-amber-400/5 to-card p-4 sm:p-5 shadow-xs">
           <div className="grid gap-5 sm:gap-4 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-amber-300/40 dark:divide-amber-800/40">
             {/* Stat 1 */}
             <div className="pt-3 sm:pt-0 sm:px-4 text-left sm:text-center space-y-1">
@@ -201,8 +201,8 @@ function About() {
       </section>
 
       {/* 4. Explore Our Shelves (Left-Aligned, Clean Callout Card, No Bloated Gaps) */}
-      <section className="mx-auto max-w-7xl px-4 py-5 sm:py-7 sm:px-6 lg:px-8">
-        <div className="rounded-2xl border border-border/80 bg-secondary/30 p-5 sm:p-7 flex flex-col md:flex-row md:items-center justify-between gap-5 shadow-xs">
+      <section className="site-container py-3 sm:py-4.5">
+        <div className="rounded-2xl border border-border/80 bg-secondary/30 p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs">
           <div className="max-w-2xl text-left space-y-1.5">
             <p className="text-xs font-bold uppercase tracking-wider text-amber-600 flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />

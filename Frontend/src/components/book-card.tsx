@@ -53,13 +53,16 @@ export function BookCard({ book, compact = false }: { book: Book; compact?: bool
         {/* Book Cover / Image Frame */}
         <div
           className={cn(
-            "relative w-full overflow-hidden rounded-xl border border-border/80 bg-secondary/30 shadow-xs transition duration-300 group-hover:-translate-y-1 group-hover:shadow-lg group-hover:border-amber-300/80 select-none",
+            "relative w-full overflow-hidden rounded-xl border border-border/80 bg-secondary/30 book-edge-shadow transition-all duration-300 group-hover:-translate-y-1.5 group-hover:shadow-[0_16px_32px_-6px_rgba(217,119,6,0.22)] group-hover:border-amber-400/90 select-none",
             compact ? "aspect-[3/4] lg:aspect-[4/5]" : "aspect-[3/4]"
           )}
         >
+          {/* Photorealistic Book Spine Overlay */}
+          <div className="book-spine-overlay" />
+
           {/* Discount Badge */}
           {discountPercent > 0 && (
-            <span className="absolute left-2 top-2 z-10 rounded-md bg-gradient-to-r from-amber-400 to-yellow-400 px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wide text-slate-950 shadow-xs border border-amber-300/60">
+            <span className="absolute left-2.5 top-2 z-10 rounded-md bg-gradient-to-r from-amber-400 to-yellow-400 px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wide text-slate-950 shadow-xs border border-amber-300/80">
               {discountPercent}% OFF
             </span>
           )}
@@ -69,10 +72,10 @@ export function BookCard({ book, compact = false }: { book: Book; compact?: bool
             type="button"
             onClick={handleWishlistToggle}
             className={cn(
-              "absolute right-2 top-2 z-20 rounded-full p-1 sm:p-1.5 backdrop-blur-md transition shadow-xs",
+              "absolute right-2 top-2 z-20 rounded-full p-1 sm:p-1.5 backdrop-blur-md transition shadow-xs cursor-pointer",
               wishlisted
-                ? "bg-red-500 text-white hover:bg-red-600"
-                : "bg-background/90 text-muted-foreground hover:text-red-500 hover:bg-background border border-border/60"
+                ? "bg-red-500 text-white hover:bg-red-600 shadow-red-500/30"
+                : "bg-background/85 text-muted-foreground hover:text-red-500 hover:bg-background border border-border/60 hover:scale-110"
             )}
             title={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
             aria-label="Wishlist toggle"
@@ -80,9 +83,9 @@ export function BookCard({ book, compact = false }: { book: Book; compact?: bool
             <Heart className={cn("h-3 sm:h-3.5 w-3 sm:w-3.5 transition-transform active:scale-125", wishlisted && "fill-current")} />
           </button>
 
-          {/* Custom Label (e.g. Bestseller / New) */}
+          {/* Custom Label (e.g. Bestseller / New / Classic) */}
           {book.label && !book.label.includes("%") && (
-            <span className="absolute right-2 bottom-2 z-10 rounded-md bg-background/95 backdrop-blur-xs px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-bold uppercase tracking-wide text-amber-700 dark:text-amber-300 shadow-2xs border border-border">
+            <span className="absolute right-2 bottom-2 z-10 rounded-md bg-background/95 backdrop-blur-xs px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300 shadow-2xs border border-amber-300/50">
               {book.label}
             </span>
           )}
@@ -104,7 +107,7 @@ export function BookCard({ book, compact = false }: { book: Book; compact?: bool
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=800";
                 }}
-                className="h-full w-full object-cover transition-all duration-500 group-hover:scale-105"
+                className="h-full w-full object-cover transition-all duration-500 group-hover:scale-108"
               />
             </div>
           ) : (
@@ -122,14 +125,14 @@ export function BookCard({ book, compact = false }: { book: Book; compact?: bool
 
           {/* Quick Preview Hover Overlay */}
           <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-            <span className="bg-background text-foreground text-[10px] sm:text-xs font-bold px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full flex items-center gap-1 sm:gap-1.5 shadow-xl transform translate-y-2 group-hover:translate-y-0 transition-transform">
+            <span className="bg-background text-foreground text-[10px] sm:text-xs font-bold px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full flex items-center gap-1 sm:gap-1.5 shadow-xl transform translate-y-2 group-hover:translate-y-0 transition-transform border border-amber-300/40">
               <Eye className="h-3 sm:h-3.5 w-3 sm:w-3.5 text-amber-600" /> Quick View
             </span>
           </div>
         </div>
 
         {/* Book Details */}
-        <div className={cn("flex flex-col flex-1 justify-between", compact ? "pt-2 sm:pt-3 lg:pt-1.5" : "pt-3")}>
+        <div className={cn("flex flex-col flex-1 justify-between", compact ? "pt-2 sm:pt-2.5 lg:pt-1.5" : "pt-2.5")}>
           <div>
             {/* Category & SubCategory */}
             <div className="flex items-center gap-1.5 flex-wrap">
@@ -147,7 +150,7 @@ export function BookCard({ book, compact = false }: { book: Book; compact?: bool
             </div>
 
             {/* Title & Author */}
-            <h3 className={cn("font-bold text-foreground line-clamp-1 group-hover:text-amber-600 transition-colors", compact ? "mt-0.5 sm:mt-1 text-xs sm:text-sm" : "mt-1 text-sm sm:text-base")}>
+            <h3 className={cn("font-display font-bold text-foreground line-clamp-1 group-hover:text-amber-600 transition-colors", compact ? "mt-0.5 sm:mt-1 text-xs sm:text-sm" : "mt-1 text-sm sm:text-base")}>
               {book.title}
             </h3>
             <p className={cn("text-muted-foreground truncate font-medium", compact ? "text-[11px] sm:text-xs" : "text-xs")}>{book.author}</p>
@@ -162,13 +165,13 @@ export function BookCard({ book, compact = false }: { book: Book; compact?: bool
 
           {/* Price & Add to Bag */}
           <div className="border-t border-border/60 flex items-center justify-between gap-1.5 mt-2 pt-2">
-            <div className="min-w-0">
-              <div className="flex items-baseline gap-1.5 font-sans">
-                <span className={cn("font-sans font-extrabold text-amber-600 dark:text-amber-400 tracking-tight", compact ? "text-sm sm:text-base" : "text-base sm:text-lg")}>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-baseline gap-1.5 font-sans flex-wrap">
+                <span className={cn("font-sans font-extrabold text-amber-600 dark:text-amber-400 tracking-tight whitespace-nowrap", compact ? "text-sm sm:text-base" : "text-base sm:text-lg")}>
                   ₹{sellingPrice}
                 </span>
                 {mrp && mrp > sellingPrice && (
-                  <span className={cn("font-sans font-medium text-slate-400 dark:text-slate-500 line-through", compact ? "text-[11px] sm:text-xs" : "text-xs")}>
+                  <span className={cn("font-sans font-medium text-slate-400 dark:text-slate-500 line-through whitespace-nowrap", compact ? "text-[11px] sm:text-xs" : "text-xs")}>
                     ₹{mrp}
                   </span>
                 )}

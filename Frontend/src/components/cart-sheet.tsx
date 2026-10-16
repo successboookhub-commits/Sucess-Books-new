@@ -18,7 +18,9 @@ import {
   FileText,
   User,
   Sparkles,
-  Phone
+  Phone,
+  Copy,
+  Check
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -26,8 +28,30 @@ import { useCart } from "@/lib/cart";
 import { useUserAuth } from "@/lib/user-auth";
 import { api, type UserAddress, type AddressInput } from "@/lib/api";
 import { TaxInvoiceModal } from "@/components/invoice/tax-invoice-modal";
+import { OrderTrackerModal } from "@/components/order-tracker-modal";
+import { PincodeDeliveryChecker } from "@/components/pincode-delivery-checker";
+import { WHATSAPP_NUMBER } from "@/lib/books";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+// Helper to dynamically ensure Razorpay checkout script is loaded
+function loadRazorpaySdk(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (typeof window === "undefined") {
+      resolve(false);
+      return;
+    }
+    if ((window as unknown as { Razorpay?: unknown }).Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
 
 export function CartSheet() {
   const {
@@ -71,7 +95,7 @@ export function CartSheet() {
   const [saveAsDefault, setSaveAsDefault] = useState(true);
 
   // Payment method
-  const [paymentMethod, setPaymentMethod] = useState("UPI / QR Code");
+  const [paymentMethod, setPaymentMethod] = useState("Razorpay");
   const [orderNotes, setOrderNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -79,6 +103,16 @@ export function CartSheet() {
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
   const [placedWhatsappUrl, setPlacedWhatsappUrl] = useState<string | null>(null);
   const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
+  const [trackerModalOpen, setTrackerModalOpen] = useState(false);
+  const [copiedOrderId, setCopiedOrderId] = useState(false);
+
+  const handleCopyOrderId = () => {
+    if (!placedOrderId) return;
+    navigator.clipboard.writeText(placedOrderId);
+    setCopiedOrderId(true);
+    toast.success(`Order ID #${placedOrderId} copied to clipboard!`);
+    setTimeout(() => setCopiedOrderId(false), 2500);
+  };
 
   // Load user details and addresses when authenticated
   useEffect(() => {
@@ -151,6 +185,18 @@ export function CartSheet() {
       return;
     }
 
+    const cleanPhone = phone.replace(/\D/g, "");
+    if (cleanPhone.length < 10) {
+      toast.error("Please enter a valid 10-digit mobile number for delivery.");
+      return;
+    }
+
+    const cleanPincode = pincode.replace(/\D/g, "");
+    if (cleanPincode.length !== 6) {
+      toast.error("Please enter a valid 6-digit postal pincode.");
+      return;
+    }
+
     // Save address to user profile if logged in
     if (isAuthenticated && token && showNewAddressForm) {
       try {
@@ -182,19 +228,145 @@ export function CartSheet() {
       toast.info("Please sign in to place your order.");
       return;
     }
+    if (cartBooks.length === 0) {
+      toast.error("Your cart is empty.");
+      return;
+    }
+
     setSubmitting(true);
+
+    const itemsPayload = cartBooks.map((b) => ({
+      id: b.id,
+      title: b.title,
+      author: b.author,
+      price: b.price,
+      mrp: b.mrp || b.old_price || b.oldPrice || b.price,
+      quantity: b.quantity,
+      cover: b.cover || b.image || "",
+      image: b.cover || b.image || "",
+    }));
+
+    const fullAddressText = `${flatHouse}, ${areaStreet}${landmark ? `, Near ${landmark}` : ""}, ${city}, ${state} - ${pincode}`;
+
+    // If Razorpay online payment selected
+    if (paymentMethod === "Razorpay") {
+      try {
+        const sdkLoaded = await loadRazorpaySdk();
+        if (!sdkLoaded) {
+          throw new Error("Unable to load Razorpay checkout SDK. Please verify your internet connection.");
+        }
+
+        // 1. Create Razorpay order on backend
+        const rzpData = await api.createRazorpayOrder(total);
+
+        // 2. Configure Razorpay modal options
+        const razorpayKey = rzpData.keyId || (import.meta.env.VITE_RAZORPAY_KEY_ID as string) || "rzp_test_SwedUUn1KgRMs0";
+
+        type RazorpayOptions = {
+          key: string;
+          amount: number;
+          currency: string;
+          name: string;
+          description: string;
+          image: string;
+          order_id: string;
+          prefill: {
+            name: string;
+            email: string;
+            contact: string;
+          };
+          theme: {
+            color: string;
+          };
+          modal: {
+            backdropclose: boolean;
+            ondismiss: () => void;
+          };
+          handler: (response: {
+            razorpay_payment_id: string;
+            razorpay_order_id: string;
+            razorpay_signature: string;
+          }) => Promise<void>;
+        };
+
+        const options: RazorpayOptions = {
+          key: razorpayKey,
+          amount: rzpData.amount,
+          currency: rzpData.currency || "INR",
+          name: "Success Book Hub",
+          description: `Book Order (${cartCount} ${cartCount === 1 ? "item" : "items"})`,
+          image: "https://successbookhub.com/favicon.svg",
+          order_id: rzpData.orderId,
+          prefill: {
+            name: name.trim(),
+            email: email.trim() || user?.email || "",
+            contact: phone.trim(),
+          },
+          theme: {
+            color: "#b45309",
+          },
+          modal: {
+            backdropclose: false,
+            ondismiss: () => {
+              setSubmitting(false);
+              toast.info("Payment window closed. Your cart is preserved, click below to try again.");
+            },
+          },
+          handler: async (response) => {
+            try {
+              toast.loading("Verifying your payment...", { id: "rzp-verifying" });
+
+              // Persist order with verified Razorpay payment signature
+              const orderRes = await api.createOrder({
+                customerName: name.trim(),
+                customerPhone: phone.trim(),
+                customerEmail: email.trim() || user?.email || "",
+                deliveryAddress: fullAddressText,
+                city: city.trim(),
+                pincode: pincode.trim(),
+                items: itemsPayload,
+                subtotal,
+                deliveryFee,
+                paymentMethod: "Razorpay (Paid Online)",
+                orderNotes: orderNotes.trim(),
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature,
+              });
+
+              toast.dismiss("rzp-verifying");
+              setPlacedOrderId(orderRes.orderId);
+              setPlacedWhatsappUrl(orderRes.whatsappUrl);
+              setStep("success");
+              clearCart();
+              toast.success(`Payment verified! Order #${orderRes.orderId} placed successfully!`);
+            } catch (postErr) {
+              toast.dismiss("rzp-verifying");
+              console.error("[Razorpay Post Error]:", postErr);
+              toast.error(postErr instanceof Error ? postErr.message : "Error verifying payment with server.");
+            } finally {
+              setSubmitting(false);
+            }
+          },
+        };
+
+        const RazorpayConstructor = (window as unknown as { Razorpay: new (opts: RazorpayOptions) => { open: () => void; on: (evt: string, cb: (data: unknown) => void) => void } }).Razorpay;
+        const razorpayInstance = new RazorpayConstructor(options);
+        razorpayInstance.on("payment.failed", (errData: unknown) => {
+          setSubmitting(false);
+          const desc = (errData as { error?: { description?: string } })?.error?.description;
+          toast.error(`Payment failed: ${desc || "Transaction declined"}`);
+        });
+        razorpayInstance.open();
+      } catch (rzpErr) {
+        setSubmitting(false);
+        toast.error(rzpErr instanceof Error ? rzpErr.message : "Could not initialize Razorpay payment.");
+      }
+      return;
+    }
+
+    // Cash on Delivery (COD) Flow
     try {
-      const itemsPayload = cartBooks.map(b => ({
-        id: b.id,
-        title: b.title,
-        author: b.author,
-        price: b.price,
-        mrp: b.mrp || b.old_price || b.oldPrice || b.price,
-        quantity: b.quantity
-      }));
-
-      const fullAddressText = `${flatHouse}, ${areaStreet}${landmark ? `, Near ${landmark}` : ""}, ${city}, ${state} - ${pincode}`;
-
       const res = await api.createOrder({
         customerName: name.trim(),
         customerPhone: phone.trim(),
@@ -205,15 +377,15 @@ export function CartSheet() {
         items: itemsPayload,
         subtotal,
         deliveryFee,
-        paymentMethod,
-        orderNotes: orderNotes.trim()
+        paymentMethod: "Cash on Delivery",
+        orderNotes: orderNotes.trim(),
       });
 
       setPlacedOrderId(res.orderId);
       setPlacedWhatsappUrl(res.whatsappUrl);
       setStep("success");
       clearCart();
-      toast.success(`Order #${res.orderId} booked successfully!`);
+      toast.success(`Order #${res.orderId} booked successfully with Cash on Delivery!`);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to place order. Please try again.");
     } finally {
@@ -241,12 +413,12 @@ export function CartSheet() {
     <>
       <SheetContent className="flex w-[96vw] max-w-lg flex-col p-0 bg-background border-border shadow-2xl">
         {/* Sheet Header */}
-        <SheetHeader className="border-b border-border p-5 pr-12 text-left bg-secondary/30">
-          <SheetTitle className="font-display text-xl font-bold flex items-center gap-2">
+        <SheetHeader className="border-b border-border/80 p-5 pr-12 text-left bg-gradient-to-b from-secondary/40 to-background/60 backdrop-blur-sm">
+          <SheetTitle className="font-serif text-xl font-bold flex items-center gap-2 text-foreground tracking-tight">
             {step !== "cart" && step !== "success" && (
               <button
                 onClick={() => setStep(step === "payment" ? "address" : "cart")}
-                className="p-1 rounded-full hover:bg-secondary transition mr-1"
+                className="p-1 rounded-full hover:bg-secondary transition mr-1 cursor-pointer"
                 aria-label="Back"
               >
                 <ArrowLeft className="h-4 w-4" />
@@ -254,33 +426,34 @@ export function CartSheet() {
             )}
             {getStepTitle()}
           </SheetTitle>
-          <SheetDescription className="text-xs text-muted-foreground">
+          <SheetDescription className="text-xs text-muted-foreground flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
             {step === "success"
-              ? "Your order has been recorded and is being prepared"
+              ? "Your literary order has been recorded with care and is being prepared"
               : step === "payment"
-              ? "Choose how you'd like to pay for your books"
+              ? "Choose your preferred secure payment method"
               : step === "address"
-              ? "Enter or choose where you want your books delivered"
-              : "Review your items, calculate total cost, and proceed"}
+              ? "Enter or choose where your curated books should be delivered"
+              : "Review your curated items, verify total cost, and proceed to dispatch"}
           </SheetDescription>
         </SheetHeader>
 
         {/* Free Delivery Bar (Visible in Cart Step) */}
         {step === "cart" && cartBooks.length > 0 && (
-          <div className="bg-gradient-to-r from-amber-100 via-yellow-100 to-amber-100 border-b border-amber-300/80 px-4 py-2.5 flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2 text-slate-950 font-bold">
-              <Truck className="h-4 w-4 text-amber-700" />
+          <div className="bg-gradient-to-r from-amber-50 via-amber-100/90 to-yellow-50 dark:from-amber-950/40 dark:via-amber-900/30 dark:to-yellow-950/30 border-b border-amber-300/60 dark:border-amber-700/40 px-4 py-2.5 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2 text-slate-900 dark:text-amber-100 font-semibold">
+              <Truck className="h-4 w-4 text-amber-700 dark:text-amber-400 shrink-0" />
               {awayFromFreeDelivery === 0 ? (
-                <span className="font-black text-emerald-700">
-                  🎉 Congratulations! You unlocked FREE Pan-India Delivery!
+                <span className="font-bold text-emerald-700 dark:text-emerald-400">
+                  🎉 Unlocked: FREE Pan-India Courier Delivery!
                 </span>
               ) : (
                 <span>
-                  Add <strong className="font-black text-amber-800">₹{awayFromFreeDelivery}</strong> more for <strong className="font-black text-slate-950 underline decoration-amber-500">FREE Delivery</strong>
+                  Add <strong className="font-bold text-amber-800 dark:text-amber-300">₹{awayFromFreeDelivery}</strong> more for <strong className="underline decoration-amber-500 font-bold">FREE Delivery</strong>
                 </span>
               )}
             </div>
-            <span className="text-[10px] font-black text-amber-900 bg-amber-200/80 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-mono font-bold text-amber-900 dark:text-amber-200 bg-amber-200/80 dark:bg-amber-800/60 px-2 py-0.5 rounded-full shadow-2xs">
               {freeDeliveryProgress}%
             </span>
           </div>
@@ -293,24 +466,24 @@ export function CartSheet() {
           <>
             {cartBooks.length === 0 ? (
               <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
-                <div className="rounded-full bg-secondary/60 p-6 text-muted-foreground mb-4">
-                  <ShoppingBag className="h-10 w-10 stroke-[1.5]" />
+                <div className="rounded-2xl bg-secondary/50 p-6 text-muted-foreground mb-4 border border-border/60 shadow-inner">
+                  <ShoppingBag className="h-10 w-10 stroke-[1.5] text-amber-600/70" />
                 </div>
-                <h3 className="font-display text-xl font-medium">Your Bag is Empty</h3>
+                <h3 className="font-serif text-2xl font-bold text-foreground">Your Book Bag is Empty</h3>
                 <p className="mt-2 text-xs text-muted-foreground max-w-xs leading-relaxed">
-                  Explore our curated collection of books and add timeless reads to your bag!
+                  Discover rare gems, timeless classics, and contemporary bestsellers in our catalogue.
                 </p>
                 <Button
                   onClick={handleClose}
-                  className="mt-6 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2 text-xs font-semibold"
+                  className="mt-6 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground px-7 py-2.5 text-xs font-semibold shadow-md btn-shimmer cursor-pointer"
                 >
-                  Start Browsing
+                  Explore Catalogue
                 </Button>
               </div>
             ) : (
               <>
                 {/* Items List */}
-                <div className="flex-1 overflow-y-auto p-5 space-y-3.5">
+                <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 divide-y divide-border/30">
                   {cartBooks.map((book) => {
                     const itemMrp = Number(book.mrp || book.old_price || book.oldPrice || book.price);
                     const itemSavings = Math.max(0, itemMrp - book.price);
@@ -318,40 +491,41 @@ export function CartSheet() {
                     return (
                       <div
                         key={book.id}
-                        className="flex gap-3.5 p-3 rounded-xl border border-border bg-card/60 hover:bg-card transition shadow-sm"
+                        className="flex gap-3.5 pt-3.5 first:pt-0 group transition"
                       >
-                        <div className="w-16 h-22 flex-shrink-0 overflow-hidden rounded-lg bg-secondary/30 border border-border">
+                        <div className="relative w-16 h-23 shrink-0 rounded-md overflow-hidden book-edge-shadow bg-secondary/40 border border-border/80">
                           <img
                             src={book.cover || book.image || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=600&auto=format&fit=crop"}
                             alt={book.title}
                             onError={(e) => {
                               (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=600&auto=format&fit=crop";
                             }}
-                            className="h-full w-full object-cover"
+                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                           />
+                          <div className="book-spine-overlay absolute inset-0 pointer-events-none" />
                         </div>
 
                         <div className="flex-1 flex flex-col justify-between min-w-0">
                           <div>
                             {book.sub_category && (
-                              <span className="text-[10px] font-bold text-primary uppercase tracking-wider block truncate">
+                              <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-widest block truncate">
                                 {book.sub_category}
                               </span>
                             )}
-                            <h4 className="font-display text-sm font-bold text-foreground truncate">
+                            <h4 className="font-serif text-sm font-bold text-foreground leading-snug line-clamp-2">
                               {book.title}
                             </h4>
-                            <p className="text-[11px] text-muted-foreground truncate">
+                            <p className="text-[11px] text-muted-foreground truncate mt-0.5">
                               by {book.author}
                             </p>
 
                             <div className="flex items-baseline gap-2 mt-1">
-                              <span className="font-bold text-sm text-primary">₹{book.price}</span>
+                              <span className="font-bold text-sm text-foreground font-mono">₹{book.price}</span>
                               {itemMrp > book.price && (
-                                <span className="text-[11px] text-muted-foreground line-through">₹{itemMrp}</span>
+                                <span className="text-[11px] text-muted-foreground line-through font-mono">₹{itemMrp}</span>
                               )}
                               {itemSavings > 0 && (
-                                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded">
+                                <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
                                   Save ₹{itemSavings * book.quantity}
                                 </span>
                               )}
@@ -360,10 +534,10 @@ export function CartSheet() {
 
                           {/* Quantity Controls */}
                           <div className="flex items-center justify-between pt-2 border-t border-border/40 mt-2">
-                            <div className="flex items-center gap-1.5 bg-secondary/80 rounded-lg p-0.5 border border-border">
+                            <div className="flex items-center gap-1.5 bg-secondary/60 rounded-lg p-0.5 border border-border/80">
                               <button
                                 onClick={() => changeQuantity(book.id, -1, book)}
-                                className="p-1 rounded hover:bg-background transition text-muted-foreground hover:text-foreground"
+                                className="p-1 rounded hover:bg-background transition text-muted-foreground hover:text-foreground cursor-pointer"
                                 aria-label="Decrease quantity"
                               >
                                 <Minus className="h-3 w-3" />
@@ -373,7 +547,7 @@ export function CartSheet() {
                               </span>
                               <button
                                 onClick={() => changeQuantity(book.id, 1, book)}
-                                className="p-1 rounded hover:bg-background transition text-muted-foreground hover:text-foreground"
+                                className="p-1 rounded hover:bg-background transition text-muted-foreground hover:text-foreground cursor-pointer"
                                 aria-label="Increase quantity"
                               >
                                 <Plus className="h-3 w-3" />
@@ -391,36 +565,39 @@ export function CartSheet() {
                 </div>
 
                 {/* Price Breakdown Footer */}
-                <div className="border-t border-border bg-card/90 p-5 space-y-3">
+                <div className="border-t border-border bg-gradient-to-b from-card to-secondary/30 p-4 sm:p-5 space-y-3 shadow-lg">
                   {savingsTotal > 0 && (
-                    <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-2.5 flex items-center justify-between text-xs text-emerald-800 dark:text-emerald-300">
+                    <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-2.5 flex items-center justify-between text-xs text-emerald-800 dark:text-emerald-300">
                       <span className="flex items-center gap-1.5 font-semibold">
-                        <Sparkles className="h-4 w-4 text-emerald-600" />
+                        <Sparkles className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                         Total Savings on this Order:
                       </span>
-                      <span className="font-bold">
+                      <span className="font-bold font-mono">
                         ₹{savingsTotal} ({savingsPercent}% OFF)
                       </span>
                     </div>
                   )}
 
+                  {/* Live Pincode Estimator in Cart */}
+                  <PincodeDeliveryChecker compact={true} />
+
                   <div className="space-y-1.5 text-xs text-muted-foreground">
                     <div className="flex justify-between">
                       <span>Total MRP:</span>
-                      <span className="line-through">₹{mrpTotal}</span>
+                      <span className="line-through font-mono">₹{mrpTotal}</span>
                     </div>
                     <div className="flex justify-between text-foreground">
                       <span>Bag Subtotal:</span>
-                      <span className="font-semibold">₹{subtotal}</span>
+                      <span className="font-semibold font-mono">₹{subtotal}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span>Estimated Delivery:</span>
-                      <span className={deliveryFee === 0 ? "text-emerald-600 font-bold" : "font-semibold"}>
+                      <span className={deliveryFee === 0 ? "text-emerald-600 dark:text-emerald-400 font-bold" : "font-semibold font-mono"}>
                         {deliveryFee === 0 ? "FREE" : `₹${deliveryFee}`}
                       </span>
                     </div>
-                    <div className="border-t border-border pt-2 flex justify-between font-bold text-base text-foreground">
-                      <span>Final Payable Total:</span>
+                    <div className="border-t border-border/80 pt-2 flex justify-between items-baseline font-bold text-base text-foreground">
+                      <span className="font-serif">Payable Total:</span>
                       <span className="text-amber-700 dark:text-amber-400 font-mono text-xl font-black">₹{total}</span>
                     </div>
                   </div>
@@ -448,19 +625,19 @@ export function CartSheet() {
 
                       <Button
                         onClick={handleProceedToAddress}
-                        className="w-full rounded-xl py-6 text-sm font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-md transition flex items-center justify-center gap-2 btn-shimmer active:scale-[0.99] cursor-pointer"
+                        className="w-full rounded-xl py-5 sm:py-6 text-xs sm:text-sm font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-md transition flex items-center justify-center gap-2 btn-shimmer active:scale-[0.99] cursor-pointer whitespace-nowrap"
                       >
-                        Sign In & Proceed to Buy ({cartCount} {cartCount === 1 ? "Book" : "Books"})
-                        <ChevronRight className="h-4 w-4" />
+                        <span className="truncate">Sign In & Proceed to Buy ({cartCount} {cartCount === 1 ? "Book" : "Books"})</span>
+                        <ChevronRight className="h-4 w-4 shrink-0" />
                       </Button>
                     </div>
                   ) : (
                     <Button
                       onClick={handleProceedToAddress}
-                      className="w-full rounded-xl py-6 text-sm font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-md transition flex items-center justify-center gap-2 btn-shimmer active:scale-[0.99] cursor-pointer"
+                      className="w-full rounded-xl py-5 sm:py-6 text-xs sm:text-sm font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-md transition flex items-center justify-center gap-2 btn-shimmer active:scale-[0.99] cursor-pointer whitespace-nowrap"
                     >
-                      Proceed to Buy ({cartCount} {cartCount === 1 ? "Book" : "Books"})
-                      <ChevronRight className="h-4 w-4" />
+                      <span className="truncate">Proceed to Buy ({cartCount} {cartCount === 1 ? "Book" : "Books"})</span>
+                      <ChevronRight className="h-4 w-4 shrink-0" />
                     </Button>
                   )}
                 </div>
@@ -735,32 +912,32 @@ export function CartSheet() {
         {/* ============================================================ */}
         {step === "payment" && (
           <div className="flex-1 overflow-y-auto p-5 space-y-4">
-            <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Choose Payment Method
+            <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
+              <span>Choose Payment Method</span>
+              <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+                <ShieldCheck className="h-3.5 w-3.5" /> 256-Bit SSL Encrypted
+              </span>
             </div>
 
-            <div className="space-y-2.5">
+            <div className="space-y-3">
               {[
                 {
-                  id: "UPI / QR Code",
-                  title: "UPI / QR Code (Instant & Fast)",
-                  desc: "Scan QR code via PhonePe, Google Pay, Paytm, or BHIM",
-                  icon: QrCode,
-                  recommended: true
+                  id: "Razorpay",
+                  title: "Online Payment via Razorpay",
+                  subtitle: "UPI, Cards, NetBanking, Wallets",
+                  desc: "Instant payment with Google Pay, PhonePe, Paytm, BHIM UPI, Visa, Mastercard, RuPay & NetBanking",
+                  icon: Sparkles,
+                  recommended: true,
+                  badge: "Instant & Zero Fees"
                 },
                 {
                   id: "Cash on Delivery",
                   title: "Cash on Delivery (COD)",
-                  desc: "Pay in cash or UPI to the courier upon doorstep delivery",
+                  subtitle: "Pay at Doorstep",
+                  desc: "Pay in cash or UPI directly to courier delivery executive when your books arrive",
                   icon: Banknote,
-                  recommended: false
-                },
-                {
-                  id: "Net Banking / Cards",
-                  title: "Credit / Debit Card / Net Banking",
-                  desc: "All major banks, Visa, MasterCard, RuPay supported",
-                  icon: CreditCard,
-                  recommended: false
+                  recommended: false,
+                  badge: "Doorstep Delivery"
                 }
               ].map((opt) => {
                 const Icon = opt.icon;
@@ -770,9 +947,9 @@ export function CartSheet() {
                   <label
                     key={opt.id}
                     className={cn(
-                      "block p-3.5 rounded-xl border transition cursor-pointer relative",
+                      "block p-4 rounded-xl border transition cursor-pointer relative",
                       isSelected
-                        ? "border-primary bg-primary/5 shadow-sm"
+                        ? "border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20"
                         : "border-border bg-card hover:bg-secondary/40"
                     )}
                   >
@@ -785,14 +962,22 @@ export function CartSheet() {
                         className="mt-1 text-primary focus:ring-primary h-4 w-4"
                       />
                       <div className="flex-1 text-xs">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <Icon className="h-4 w-4 text-primary" />
                           <span className="font-bold text-foreground text-sm">{opt.title}</span>
                           {opt.recommended && (
-                            <span className="bg-amber-100 text-amber-900 text-[9px] font-bold px-1.5 py-0.5 rounded">
-                              Recommended
+                            <span className="bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-300 dark:border-amber-700">
+                              ★ Recommended
                             </span>
                           )}
+                          {opt.badge && !opt.recommended && (
+                            <span className="bg-secondary text-muted-foreground text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                              {opt.badge}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[11px] font-semibold text-primary/80 mt-0.5">
+                          {opt.subtitle}
                         </div>
                         <p className="text-muted-foreground mt-1 leading-relaxed text-[11px]">
                           {opt.desc}
@@ -804,7 +989,7 @@ export function CartSheet() {
               })}
             </div>
 
-            {/* Order Note */}
+            {/* Special Instructions */}
             <div className="pt-2">
               <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
                 Special Delivery Instructions (Optional)
@@ -831,7 +1016,7 @@ export function CartSheet() {
                 </span>
               </div>
               <div className="border-t border-border pt-2 flex justify-between font-bold text-sm text-foreground">
-                <span>Order Total:</span>
+                <span>Total Payable:</span>
                 <span className="text-primary font-mono text-base">₹{total}</span>
               </div>
             </div>
@@ -839,14 +1024,19 @@ export function CartSheet() {
             <Button
               onClick={handlePlaceOrder}
               disabled={submitting}
-              className="w-full rounded-xl py-6 text-sm font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg transition flex items-center justify-center gap-2 btn-shimmer"
+              className="w-full rounded-xl py-5 sm:py-6 text-sm font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg transition flex items-center justify-center gap-2 btn-shimmer whitespace-nowrap cursor-pointer"
             >
               {submitting ? (
-                "Confirming Your Order..."
+                "Processing Your Order..."
+              ) : paymentMethod === "Razorpay" ? (
+                <>
+                  <CreditCard className="h-4 w-4 shrink-0 text-amber-200" />
+                  <span>Pay with Razorpay • ₹{total}</span>
+                </>
               ) : (
                 <>
-                  <ShieldCheck className="h-4 w-4" />
-                  Place Order • ₹{total}
+                  <ShieldCheck className="h-4 w-4 shrink-0" />
+                  <span>Place Order (COD) • ₹{total}</span>
                 </>
               )}
             </Button>
@@ -863,45 +1053,68 @@ export function CartSheet() {
             </div>
 
             <div>
-              <span className="bg-primary/10 text-primary font-mono font-bold text-xs px-3 py-1 rounded-full border border-primary/20">
-                Order #{placedOrderId}
-              </span>
-              <h3 className="font-display text-2xl font-bold text-foreground mt-2">
+              <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 px-3.5 py-1.5 rounded-full shadow-2xs">
+                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Order ID:</span>
+                <span className="font-mono font-black text-xs text-primary">{placedOrderId}</span>
+                <button
+                  type="button"
+                  onClick={handleCopyOrderId}
+                  className="text-primary hover:text-primary/70 transition p-1 rounded cursor-pointer"
+                  title="Copy Order ID"
+                >
+                  {copiedOrderId ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                </button>
+              </div>
+
+              <h3 className="font-display text-2xl font-bold text-foreground mt-3">
                 Order Booked Successfully!
               </h3>
               <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto leading-relaxed">
-                Thank you for ordering from Success Book Hub. We are dispatching your books with premium packaging.
+                Thank you for ordering from Success Book Hub. Use your unique Order ID <strong>#{placedOrderId}</strong> for any inquiries, tracking, and customer support.
               </p>
             </div>
 
             {/* Quick Actions */}
-            <div className="w-full space-y-2.5 pt-3">
+            <div className="w-full space-y-2.5 pt-2">
+              {placedOrderId && (
+                <Button
+                  onClick={() => setTrackerModalOpen(true)}
+                  className="w-full rounded-xl py-5 text-xs font-bold gap-2 bg-amber-600 hover:bg-amber-700 text-white shadow btn-shimmer cursor-pointer"
+                >
+                  <Truck className="h-4 w-4" />
+                  Track Order Live (#{placedOrderId})
+                </Button>
+              )}
+
+              {placedOrderId && (
+                <a
+                  href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+                    `Hello Success Book Hub! I would like to enquire about my Order #${placedOrderId}.`
+                  )}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl py-3 px-4 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow transition"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  Enquire on WhatsApp (#{placedOrderId})
+                </a>
+              )}
+
               {placedOrderId && (
                 <Button
                   onClick={() => setInvoiceModalOpen(true)}
                   variant="outline"
-                  className="w-full rounded-xl py-5 text-xs font-semibold gap-2 border-primary/30 text-primary hover:bg-primary/10"
+                  className="w-full rounded-xl py-5 text-xs font-semibold gap-2 border-primary/30 text-primary hover:bg-primary/10 cursor-pointer"
                 >
                   <FileText className="h-4 w-4" />
                   Download GST Tax Invoice
                 </Button>
               )}
 
-              {placedWhatsappUrl && (
-                <a
-                  href={placedWhatsappUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl py-3 px-4 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow transition"
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  Confirm & Track on WhatsApp
-                </a>
-              )}
-
               <Button
                 onClick={handleClose}
-                className="w-full rounded-xl py-5 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow transition"
+                variant="ghost"
+                className="w-full rounded-xl py-4 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 Continue Shopping
               </Button>
@@ -916,6 +1129,15 @@ export function CartSheet() {
           orderId={placedOrderId}
           open={invoiceModalOpen}
           onOpenChange={setInvoiceModalOpen}
+        />
+      )}
+
+      {/* Live Order Tracker Modal */}
+      {placedOrderId && (
+        <OrderTrackerModal
+          initialOrderId={placedOrderId}
+          open={trackerModalOpen}
+          onOpenChange={setTrackerModalOpen}
         />
       )}
     </>

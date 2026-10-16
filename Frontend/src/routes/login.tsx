@@ -151,17 +151,17 @@ function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-[85vh] flex items-center justify-center py-6 sm:py-8 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-secondary/40 via-background to-background">
-      <div className="w-full max-w-md space-y-5 sm:space-y-6">
+    <div className="min-h-[80vh] flex items-center justify-center py-6 sm:py-10 px-4 bg-gradient-to-b from-secondary/40 via-background to-background">
+      <div className="w-full max-w-md space-y-4">
         {/* Top Branding Card */}
-        <div className="text-center space-y-2.5">
-          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20 ring-4 ring-primary/10 mb-1">
-            <ShieldCheck className="h-7 w-7" />
+        <div className="text-center space-y-2">
+          <div className="inline-flex h-13 w-13 items-center justify-center rounded-2xl bg-gradient-to-br from-primary via-[#5a1224] to-[#3a0814] text-amber-200 shadow-xl shadow-primary/20 ring-4 ring-amber-500/15">
+            <ShieldCheck className="h-6 w-6" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold font-display tracking-tight text-foreground">
+          <h1 className="text-2xl sm:text-3xl font-serif font-bold tracking-tight text-foreground">
             Admin Authentication
           </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground max-w-xs mx-auto">
+          <p className="text-xs text-muted-foreground max-w-xs mx-auto leading-relaxed">
             {step === "email"
               ? "Enter your authorized admin email to receive a secure login OTP."
               : `Enter the 6-digit passcode sent to ${email}`}
@@ -169,10 +169,11 @@ function AdminLoginPage() {
         </div>
 
         {/* Card Container */}
-        <div className="bg-card border border-border/80 rounded-2xl p-6 sm:p-8 shadow-xl shadow-foreground/5 backdrop-blur">
+        <div className="bg-card border border-border/80 rounded-2xl p-6 sm:p-7 shadow-xl shadow-black/5 backdrop-blur-sm relative overflow-hidden">
+          <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-amber-500/30 via-primary to-amber-500/30" />
           {step === "email" ? (
             /* STEP 1: Enter Email Form */
-            <form onSubmit={handleSendOtp} className="space-y-5">
+            <form onSubmit={handleSendOtp} className="space-y-4">
               <div className="space-y-1.5">
                 <label className="block text-xs font-bold text-foreground uppercase tracking-wider">
                   Admin Email Address
@@ -185,19 +186,19 @@ function AdminLoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="successboookhub@gmail.com"
-                    className="w-full h-11 pl-10 pr-4 rounded-xl border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground/60 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition"
+                    className="w-full h-11 pl-10 pr-4 rounded-xl border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground/60 outline-none focus:border-amber-500/80 focus:ring-2 focus:ring-amber-500/20 transition"
                   />
                 </div>
                 <p className="text-[11px] text-muted-foreground pt-1 flex items-center gap-1.5">
-                  <Lock className="h-3 w-3 text-primary/70 shrink-0" />
-                  Real-time OTP will be dispatched via Gmail SMTP.
+                  <Lock className="h-3 w-3 text-amber-600 dark:text-amber-400 shrink-0" />
+                  Real-time OTP will be dispatched securely via Gmail SMTP.
                 </p>
               </div>
 
               <Button
                 type="submit"
                 disabled={isSubmitting || !email}
-                className="w-full h-11 rounded-xl bg-primary text-primary-foreground font-semibold text-sm shadow-md hover:bg-primary/90 transition flex items-center justify-center gap-2"
+                className="w-full h-11 rounded-xl bg-primary text-primary-foreground font-semibold text-sm shadow-md hover:bg-primary/90 transition flex items-center justify-center gap-2 btn-shimmer active:scale-[0.99] cursor-pointer"
               >
                 {isSubmitting ? (
                   <>
@@ -223,7 +224,7 @@ function AdminLoginPage() {
                   <button
                     type="button"
                     onClick={() => setStep("email")}
-                    className="text-xs text-primary hover:underline flex items-center gap-1 font-semibold"
+                    className="text-xs text-primary hover:underline flex items-center gap-1 font-semibold cursor-pointer"
                   >
                     <ArrowLeft className="h-3 w-3" /> Change
                   </button>
@@ -243,7 +244,7 @@ function AdminLoginPage() {
                       value={digit}
                       onChange={(e) => handleOtpChange(idx, e.target.value)}
                       onKeyDown={(e) => handleKeyDown(idx, e)}
-                      className="w-12 h-14 sm:w-13 sm:h-14 text-center text-xl sm:text-2xl font-mono font-bold rounded-xl border-2 border-border bg-background text-primary focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition"
+                      className="w-12 h-14 sm:w-13 sm:h-14 text-center text-xl sm:text-2xl font-mono font-bold rounded-xl border-2 border-border bg-background text-amber-700 dark:text-amber-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition"
                     />
                   ))}
                 </div>
@@ -263,7 +264,7 @@ function AdminLoginPage() {
                       type="button"
                       disabled={isSubmitting}
                       onClick={() => handleSendOtp()}
-                      className="text-primary hover:underline font-bold transition flex items-center gap-1"
+                      className="text-primary hover:underline font-bold transition flex items-center gap-1 cursor-pointer"
                     >
                       <RefreshCw className="h-3 w-3" /> Resend Code
                     </button>
@@ -274,7 +275,7 @@ function AdminLoginPage() {
               <Button
                 type="submit"
                 disabled={isSubmitting || otpDigits.join("").length < 6}
-                className="w-full h-11 rounded-xl bg-primary text-primary-foreground font-semibold text-sm shadow-md hover:bg-primary/90 transition flex items-center justify-center gap-2"
+                className="w-full h-11 rounded-xl bg-primary text-primary-foreground font-semibold text-sm shadow-md hover:bg-primary/90 transition flex items-center justify-center gap-2 btn-shimmer active:scale-[0.99] cursor-pointer"
               >
                 {isSubmitting ? (
                   <>

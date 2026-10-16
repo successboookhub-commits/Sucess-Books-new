@@ -20,6 +20,10 @@ export type OrderItem = {
   title: string;
   price: number;
   quantity: number;
+  author?: string;
+  mrp?: number;
+  cover?: string;
+  image?: string;
 };
 
 export type CreateOrderPayload = {
@@ -34,6 +38,25 @@ export type CreateOrderPayload = {
   deliveryFee?: number;
   paymentMethod?: string;
   orderNotes?: string;
+  couponCode?: string;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  razorpaySignature?: string;
+};
+
+export type RazorpayOrderResponse = {
+  success: boolean;
+  orderId: string;
+  amount: number;
+  currency: string;
+  keyId: string;
+};
+
+export type VerifyRazorpayPayload = {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+  orderId?: string;
 };
 
 export type OrderData = {
@@ -161,6 +184,30 @@ export const api = {
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Failed to create order");
     return data.data;
+  },
+
+  // Initialize Razorpay Order on Backend
+  async createRazorpayOrder(amount: number, receipt?: string): Promise<RazorpayOrderResponse> {
+    const res = await fetch(getApiEndpoint("/api/orders/razorpay-order"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ amount, receipt })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.message || "Failed to initialize Razorpay checkout");
+    return data;
+  },
+
+  // Verify Razorpay HMAC signature on Backend
+  async verifyRazorpayPayment(payload: VerifyRazorpayPayload): Promise<{ success: boolean; message: string; paymentId?: string; orderId?: string }> {
+    const res = await fetch(getApiEndpoint("/api/orders/verify-razorpay"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.message || "Failed to verify Razorpay payment");
+    return data;
   },
 
   // Track order by tracking ID

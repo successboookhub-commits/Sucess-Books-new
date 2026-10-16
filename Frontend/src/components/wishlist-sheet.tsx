@@ -17,18 +17,19 @@ export function WishlistSheet() {
   };
 
   return (
-    <SheetContent className="flex w-[94vw] flex-col p-0 sm:max-w-md bg-background border-border">
-      <SheetHeader className="border-b border-border p-6 pr-12 text-left bg-secondary/30">
-        <SheetTitle className="font-display text-2xl flex items-center gap-2">
-          <Heart className="h-6 w-6 text-red-500 fill-red-500" />
+    <SheetContent className="flex w-[94vw] flex-col p-0 sm:max-w-md bg-background border-border shadow-2xl">
+      <SheetHeader className="border-b border-border/80 p-5 pr-12 text-left bg-gradient-to-b from-secondary/40 to-background/60 backdrop-blur-sm">
+        <SheetTitle className="font-serif text-xl font-bold flex items-center gap-2 text-foreground">
+          <Heart className="h-5 w-5 text-red-500 fill-red-500" />
           My Wishlist
           {isAuthenticated && (
-            <span className="text-xs font-normal text-muted-foreground ml-1">
-              ({wishlistCount} {wishlistCount === 1 ? "item" : "items"})
+            <span className="text-xs font-mono text-muted-foreground ml-1">
+              ({wishlistCount} {wishlistCount === 1 ? "book" : "books"})
             </span>
           )}
         </SheetTitle>
-        <SheetDescription className="text-xs text-muted-foreground">
+        <SheetDescription className="text-xs text-muted-foreground flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
           {isAuthenticated
             ? "Books you've saved for later. Move them to your bag anytime."
             : "Sign in to save books and sync your wishlist across all your devices."}
@@ -37,10 +38,10 @@ export function WishlistSheet() {
 
       {!isAuthenticated ? (
         <div className="flex flex-1 flex-col items-center justify-center p-8 text-center space-y-4">
-          <div className="rounded-full bg-amber-500/10 p-6 text-amber-600 mb-1 border border-amber-300/40">
+          <div className="rounded-2xl bg-amber-500/10 p-5 text-amber-600 mb-1 border border-amber-300/40 shadow-inner">
             <Heart className="h-10 w-10 text-amber-600 stroke-[1.5]" />
           </div>
-          <h3 className="font-display text-xl font-bold">Sign In to Save Your Wishlist</h3>
+          <h3 className="font-serif text-xl font-bold text-foreground">Sign In to Save Your Wishlist</h3>
           <p className="text-xs text-muted-foreground max-w-xs leading-relaxed">
             Your wishlist is saved to your account. Sign in with email & OTP to keep track of books you want to read.
           </p>
@@ -59,7 +60,7 @@ export function WishlistSheet() {
               variant="outline"
               onClick={() => setWishlistOpen(false)}
               asChild
-              className="w-full rounded-full border-border text-xs font-semibold"
+              className="w-full rounded-full border-border text-xs font-semibold cursor-pointer"
             >
               <Link to="/shop">Browse Catalog</Link>
             </Button>
@@ -67,17 +68,17 @@ export function WishlistSheet() {
         </div>
       ) : wishlistCount === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
-          <div className="rounded-full bg-secondary/60 p-6 text-muted-foreground mb-4">
-            <Heart className="h-10 w-10 text-muted-foreground stroke-[1.5]" />
+          <div className="rounded-2xl bg-secondary/60 p-6 text-muted-foreground mb-4 border border-border/60 shadow-inner">
+            <Heart className="h-10 w-10 text-amber-600/60 stroke-[1.5]" />
           </div>
-          <h3 className="font-display text-xl font-medium">Your Wishlist is Empty</h3>
+          <h3 className="font-serif text-2xl font-bold text-foreground">Your Wishlist is Empty</h3>
           <p className="mt-2 text-xs text-muted-foreground max-w-xs leading-relaxed">
             Explore our curated catalog and tap the heart icon on any book to save it here!
           </p>
           <Button
             onClick={() => setWishlistOpen(false)}
             asChild
-            className="mt-6 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2.5 text-xs font-semibold"
+            className="mt-6 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground px-7 py-2.5 text-xs font-semibold shadow-md btn-shimmer cursor-pointer"
           >
             <Link to="/shop">
               Browse Books
@@ -86,7 +87,7 @@ export function WishlistSheet() {
           </Button>
         </div>
       ) : (
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 divide-y divide-border/30">
           {wishlist.map((book) => {
             const price = Number(book.price) || 0;
             const mrp = Number(book.mrp || book.old_price || book.oldPrice || price);
@@ -95,9 +96,9 @@ export function WishlistSheet() {
             return (
               <div
                 key={book.id}
-                className="flex gap-4 p-3.5 rounded-xl border border-border bg-card/60 hover:bg-card transition shadow-sm group"
+                className="flex gap-3.5 pt-3.5 first:pt-0 group transition"
               >
-                <div className="relative w-20 h-28 flex-shrink-0 overflow-hidden rounded-lg bg-secondary/40 border border-border">
+                <div className="relative w-18 h-25 shrink-0 rounded-md overflow-hidden book-edge-shadow bg-secondary/40 border border-border/80">
                   <img
                     src={book.cover || book.image || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=600&auto=format&fit=crop"}
                     alt={book.title}
@@ -106,8 +107,9 @@ export function WishlistSheet() {
                     }}
                     className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
+                  <div className="book-spine-overlay absolute inset-0 pointer-events-none" />
                   {discount > 0 && (
-                    <span className="absolute top-1 left-1 bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm">
+                    <span className="absolute top-1 left-1 bg-amber-500 text-slate-950 text-[9px] font-black px-1.5 py-0.5 rounded shadow-xs font-mono">
                       {discount}% OFF
                     </span>
                   )}
@@ -116,21 +118,21 @@ export function WishlistSheet() {
                 <div className="flex-1 flex flex-col justify-between min-w-0">
                   <div>
                     {book.sub_category && (
-                      <span className="text-[10px] font-semibold text-primary uppercase tracking-wider block truncate">
+                      <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-widest block truncate">
                         {book.sub_category}
                       </span>
                     )}
-                    <h4 className="font-display text-sm font-bold text-foreground truncate mt-0.5">
+                    <h4 className="font-serif text-sm font-bold text-foreground leading-snug line-clamp-2 mt-0.5">
                       {book.title}
                     </h4>
-                    <p className="text-xs text-muted-foreground truncate">
+                    <p className="text-[11px] text-muted-foreground truncate mt-0.5">
                       by {book.author}
                     </p>
 
-                    <div className="flex items-baseline gap-2 mt-1.5">
-                      <span className="font-bold text-sm text-primary">₹{price}</span>
+                    <div className="flex items-baseline gap-2 mt-1">
+                      <span className="font-bold text-sm text-foreground font-mono">₹{price}</span>
                       {mrp > price && (
-                        <span className="text-xs text-muted-foreground line-through">₹{mrp}</span>
+                        <span className="text-[11px] text-muted-foreground line-through font-mono">₹{mrp}</span>
                       )}
                     </div>
                   </div>

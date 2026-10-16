@@ -113,9 +113,9 @@ export function SiteFooter() {
     <footer className="bg-slate-950 text-slate-300">
       {/* Newsletter Strip */}
       <div className="border-b border-amber-300/40 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950">
-        <div className="mx-auto max-w-7xl px-4 py-5 sm:py-6 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="site-container py-3 sm:py-3.5 flex flex-col md:flex-row items-center justify-between gap-3">
           <div>
-            <h3 className="font-display text-lg sm:text-xl font-bold tracking-tight text-slate-950">
+            <h3 className="font-display text-base sm:text-lg font-bold tracking-tight text-slate-950">
               Join the Readers' Circle
             </h3>
             <p className="text-xs text-slate-900 font-semibold mt-0.5">
@@ -127,8 +127,8 @@ export function SiteFooter() {
             className="w-full md:w-auto flex flex-col sm:flex-row max-w-md gap-2"
           >
             {subscribed ? (
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-950 bg-white/60 px-4 py-2 rounded-full border border-slate-950/20">
-                <CheckCircle2 className="h-4 w-4 text-emerald-700" /> You're on our reading list!
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-950 bg-white/60 px-4 py-2 rounded-full border border-slate-950/20 whitespace-nowrap">
+                <CheckCircle2 className="h-4 w-4 text-emerald-700 shrink-0" /> You're on our reading list!
               </div>
             ) : (
               <>
@@ -143,7 +143,7 @@ export function SiteFooter() {
                 <Button
                   type="submit"
                   disabled={subscribing}
-                  className="h-10 rounded-full px-5 text-xs font-bold gap-1.5 shrink-0 bg-slate-950 text-amber-300 hover:bg-slate-900 shadow-md"
+                  className="h-10 rounded-full px-5 text-xs font-bold gap-1.5 shrink-0 bg-slate-950 text-amber-300 hover:bg-slate-900 shadow-md whitespace-nowrap cursor-pointer"
                 >
                   <Send className="h-3.5 w-3.5" />
                   {subscribing ? "Joining..." : "Subscribe"}
@@ -155,24 +155,24 @@ export function SiteFooter() {
       </div>
 
       {/* Main Footer Content Grid */}
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 lg:px-8">
+      <div className="site-container grid gap-5 sm:gap-6 py-5 sm:py-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
         {/* Col 1: Store Info & Social Media with Real Brand Colors */}
         <div className="flex flex-col justify-between">
           <div>
-            <p className="flex items-center gap-2.5 font-display text-2xl font-bold text-white">
-              <span className="grid h-9 w-9 place-items-center rounded-full bg-amber-400 text-slate-950 shadow font-bold">
+            <p className="flex items-center gap-2 font-display text-xl font-bold text-white">
+              <span className="grid h-8 w-8 place-items-center rounded-full bg-amber-400 text-slate-950 shadow font-bold">
                 <BookOpen className="h-4 w-4" />
               </span>
               {STORE.name}
             </p>
-            <p className="mt-3 text-xs sm:text-sm leading-6 text-slate-400">
+            <p className="mt-2 text-xs leading-5 text-slate-400">
               Stories that stay with you. Thoughtfully curated literature, academic essentials, and bestselling collections delivered right to your doorstep across India.
             </p>
           </div>
 
           {/* Social Media Icons with Real Brand Colors */}
-          <div className="mt-6">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-amber-400/90 mb-3">
+          <div className="mt-4">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-amber-400/90 mb-2">
               Follow & Connect
             </p>
             <div className="flex items-center gap-2.5 flex-wrap">
@@ -201,7 +201,7 @@ export function SiteFooter() {
           <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400">
             Quick Links
           </h3>
-          <ul className="mt-4 space-y-2.5 text-sm">
+          <ul className="mt-2 space-y-1.5 text-xs sm:text-sm">
             <li>
               <Link to="/" className="text-slate-300 transition hover:text-amber-400">
                 Home
@@ -250,7 +250,7 @@ export function SiteFooter() {
           <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400">
             Categories
           </h3>
-          <ul className="mt-4 space-y-2.5 text-sm">
+          <ul className="mt-2 space-y-1.5 text-xs sm:text-sm">
             {visibleCategories.map((c) => (
               <li key={c}>
                 <Link
@@ -291,7 +291,7 @@ export function SiteFooter() {
           <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400">
             Popular Books
           </h3>
-          <ul className="mt-4 space-y-2.5 text-sm">
+          <ul className="mt-2 space-y-1.5 text-xs sm:text-sm">
             {visibleProducts.map((book) => (
               <li key={book.id}>
                 <Link
@@ -336,7 +336,7 @@ export function SiteFooter() {
           <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400">
             Visit or Call Us
           </h3>
-          <ul className="mt-4 space-y-3 text-sm">
+          <ul className="mt-2 space-y-2 text-xs sm:text-sm">
             <li className="flex gap-2.5">
               <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
               <span className="text-slate-300 leading-snug">{STORE.address}</span>
@@ -369,7 +369,7 @@ export function SiteFooter() {
             href={`https://wa.me/${WHATSAPP_NUMBER}`}
             target="_blank"
             rel="noreferrer"
-            className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#25D366] hover:bg-[#20ba59] px-4 py-2.5 text-xs font-bold text-white transition-all shadow-[0_4px_12px_rgba(37,211,102,0.35)] hover:scale-105 active:scale-95"
+            className="mt-3 inline-flex items-center gap-2 rounded-full bg-[#25D366] hover:bg-[#20ba59] px-4 py-2 text-xs font-bold text-white transition-all shadow-[0_4px_12px_rgba(37,211,102,0.35)] hover:scale-105 active:scale-95"
           >
             <MessageCircle className="h-4 w-4 fill-current" /> WhatsApp Us Anytime
           </a>
@@ -377,8 +377,8 @@ export function SiteFooter() {
       </div>
 
       {/* Bottom Legal / Copyright Bar */}
-      <div className="border-t border-slate-900 px-4 py-3.5 text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+      <div className="border-t border-slate-900 py-2.5 text-xs text-slate-500">
+        <div className="site-container flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
           <p>© 2026 {STORE.name} · Curated Books Delivered Pan-India · All rights reserved.</p>
           <div className="flex items-center gap-4 text-xs text-slate-400">
             <Link to="/privacy" className="hover:text-amber-400 transition">

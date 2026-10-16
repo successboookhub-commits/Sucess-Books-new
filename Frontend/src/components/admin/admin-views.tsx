@@ -43,6 +43,8 @@ import {
   Truck,
   MessageSquare,
   ShieldCheck,
+  Copy,
+  MessageCircle,
   UserCheck,
   Send,
   Lock,
@@ -396,7 +398,7 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
 
   // Filter orders according to search
   const filteredOrders = orders.filter((o) =>
-    `${o.id} ${o.customerName} ${o.customerPhone} ${o.customerEmail || ""} ${o.status} ${o.deliveryAddress}`
+    `${o.id} ${o.invoiceNo || ""} ${o.customerName} ${o.customerPhone} ${o.customerEmail || ""} ${o.status} ${o.deliveryAddress}`
       .toLowerCase()
       .includes(searchQuery.toLowerCase())
   );
@@ -666,58 +668,62 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
     if (activeSection === "dashboard") {
       return (
         <div className="space-y-6">
-          {/* KPI Cards */}
+          {/* Luxury KPI Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="rounded-2xl border border-border bg-card p-5 shadow-xs transition hover:shadow-md">
+            <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm transition hover:shadow-md relative overflow-hidden group">
+              <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-emerald-500/40 via-emerald-500 to-emerald-500/40" />
               <div className="flex items-center justify-between text-muted-foreground text-xs font-semibold">
-                <span>Gross Revenue</span>
-                <span className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600">
+                <span className="uppercase tracking-wider text-[11px]">Gross Revenue</span>
+                <span className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                   <DollarSign className="h-4 w-4" />
                 </span>
               </div>
-              <p className="font-display text-2xl sm:text-3xl font-bold text-foreground mt-2">
+              <p className="font-serif text-2xl sm:text-3xl font-bold text-foreground mt-2 font-mono">
                 ₹{totalRevenue.toLocaleString()}
               </p>
-              <p className="text-[11px] text-emerald-600 font-semibold mt-1 flex items-center gap-1">
+              <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1 flex items-center gap-1">
                 <TrendingUp className="h-3 w-3" /> Real-time order valuation
               </p>
             </div>
 
-            <div className="rounded-2xl border border-border bg-card p-5 shadow-xs transition hover:shadow-md">
+            <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm transition hover:shadow-md relative overflow-hidden group">
+              <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-primary/40 via-primary to-primary/40" />
               <div className="flex items-center justify-between text-muted-foreground text-xs font-semibold">
-                <span>Customer Orders</span>
+                <span className="uppercase tracking-wider text-[11px]">Customer Orders</span>
                 <span className="p-2 rounded-xl bg-primary/10 text-primary">
                   <Package className="h-4 w-4" />
                 </span>
               </div>
-              <p className="font-display text-2xl sm:text-3xl font-bold text-foreground mt-2">{totalOrdersCount}</p>
+              <p className="font-serif text-2xl sm:text-3xl font-bold text-foreground mt-2 font-mono">{totalOrdersCount}</p>
               <p className="text-[11px] text-muted-foreground mt-1">
                 {orders.filter((o) => o.status === "pending").length} pending dispatch
               </p>
             </div>
 
-            <div className="rounded-2xl border border-border bg-card p-5 shadow-xs transition hover:shadow-md">
+            <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm transition hover:shadow-md relative overflow-hidden group">
+              <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-amber-500/40 via-amber-500 to-amber-500/40" />
               <div className="flex items-center justify-between text-muted-foreground text-xs font-semibold">
-                <span>Books Catalog</span>
-                <span className="p-2 rounded-xl bg-amber-500/10 text-amber-600">
+                <span className="uppercase tracking-wider text-[11px]">Books Catalog</span>
+                <span className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
                   <BookOpen className="h-4 w-4" />
                 </span>
               </div>
-              <p className="font-display text-2xl sm:text-3xl font-bold text-foreground mt-2">{books.length} Titles</p>
+              <p className="font-serif text-2xl sm:text-3xl font-bold text-foreground mt-2">{books.length} Titles</p>
               <p className="text-[11px] text-muted-foreground mt-1">{dbCategories.length} Categories active</p>
             </div>
 
-            <div className="rounded-2xl border border-border bg-card p-5 shadow-xs transition hover:shadow-md">
+            <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm transition hover:shadow-md relative overflow-hidden group">
+              <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-blue-500/40 via-blue-500 to-blue-500/40" />
               <div className="flex items-center justify-between text-muted-foreground text-xs font-semibold">
-                <span>Registered Readers</span>
-                <span className="p-2 rounded-xl bg-blue-500/10 text-blue-600">
+                <span className="uppercase tracking-wider text-[11px]">Registered Readers</span>
+                <span className="p-2 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
                   <Users className="h-4 w-4" />
                 </span>
               </div>
-              <p className="font-display text-2xl sm:text-3xl font-bold text-foreground mt-2">
+              <p className="font-serif text-2xl sm:text-3xl font-bold text-foreground mt-2">
                 {customers.length > 0 ? customers.length : "2,500+"}
               </p>
-              <p className="text-[11px] text-blue-600 font-semibold mt-1">
+              <p className="text-[11px] text-blue-600 dark:text-blue-400 font-semibold mt-1">
                 {addresses.length} Saved delivery addresses
               </p>
             </div>
@@ -1789,7 +1795,20 @@ export function AdminViews({ activeSection, searchQuery, onNavigateSection }: Ad
                     filteredOrders.map((o) => (
                       <tr key={o.id} className="hover:bg-secondary/20 transition">
                         <td className="p-3.5">
-                          <span className="font-display font-bold text-primary text-sm">{o.id}</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono font-bold text-primary text-sm">{o.id}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(o.id);
+                                toast.success(`Order ID #${o.id} copied!`);
+                              }}
+                              className="p-1 hover:text-primary transition text-muted-foreground hover:bg-secondary rounded cursor-pointer"
+                              title="Copy Order ID"
+                            >
+                              <Copy className="h-3 w-3" />
+                            </button>
+                          </div>
                           <p className="text-[10px] text-muted-foreground">{o.createdAt || "Recent"}</p>
                         </td>
                         <td className="p-3.5 max-w-[240px]">

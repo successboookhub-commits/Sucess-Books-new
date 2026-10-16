@@ -2,7 +2,7 @@ import { r as __toESM } from "../_runtime.mjs";
 import { u as require_react } from "../_libs/@floating-ui/react-dom+[...].mjs";
 import { o as require_jsx_runtime } from "../_libs/@radix-ui/react-collection+[...].mjs";
 import { n as cn } from "./button-CKfowhiz.mjs";
-import { n as X } from "../_libs/lucide-react.mjs";
+import { r as X } from "../_libs/lucide-react.mjs";
 import { a as DialogOverlay$1, c as DialogTrigger$1, i as DialogDescription$1, n as DialogClose, o as DialogPortal$1, r as DialogContent$1, s as DialogTitle$1, t as Dialog$1 } from "../_libs/@radix-ui/react-dialog+[...].mjs";
 //#region node_modules/.nitro/vite/services/ssr/assets/dialog-C-FEQyPT.js
 var import_react = /* @__PURE__ */ __toESM(require_react());

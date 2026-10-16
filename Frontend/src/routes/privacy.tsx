@@ -14,28 +14,28 @@ export const Route = createFileRoute("/privacy")({
 
 function PrivacyPolicyPage() {
   return (
-    <main className="min-h-screen bg-background py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto space-y-5">
+    <main className="min-h-screen bg-background py-3 sm:py-4.5">
+      <div className="site-container max-w-4xl space-y-3">
         <div>
           <Link
             to="/"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-700 dark:text-amber-400 hover:underline mb-3"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-700 dark:text-amber-400 hover:underline mb-2"
           >
             <ArrowLeft className="h-3.5 w-3.5" /> Back to Store
           </Link>
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold shadow-xs">
-              <ShieldCheck className="h-5 w-5" />
+          <div className="flex items-center gap-2.5">
+            <div className="h-9 w-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold shadow-xs">
+              <ShieldCheck className="h-4.5 w-4.5" />
             </div>
             <div>
-              <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground">Privacy Policy</h1>
-              <p className="text-xs text-muted-foreground mt-0.5">Last updated: October 2026</p>
+              <h1 className="font-serif text-xl sm:text-2xl font-bold text-foreground tracking-tight">Privacy Policy</h1>
+              <p className="text-[11px] text-muted-foreground">Last updated: October 2026</p>
             </div>
           </div>
         </div>
 
-        <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground space-y-3.5 leading-relaxed text-xs sm:text-sm">
-          <section className="space-y-2 bg-card p-4 sm:p-5 rounded-2xl border border-border">
+        <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground space-y-2.5 leading-relaxed text-xs sm:text-sm">
+          <section className="space-y-1.5 bg-card p-3.5 sm:p-4 rounded-xl border border-border">
             <h2 className="text-base font-bold text-foreground">1. Introduction</h2>
             <p>
               At <strong>{STORE.name}</strong>, we respect your privacy and are committed to protecting the personal information you share with us. This Privacy Policy describes how we collect, use, and protect your information when you browse our website, place orders, or contact us via WhatsApp.

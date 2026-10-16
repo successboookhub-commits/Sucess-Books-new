@@ -207,6 +207,51 @@
   50% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
 }
 
+/* Unified responsive container across all screen sizes (compact gaps, minimal side white space) */
+.site-container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 1720px;
+  padding-left: 0.625rem;
+  padding-right: 0.625rem;
+}
+
+@media (min-width: 640px) {
+  .site-container {
+    padding-left: 0.875rem;
+    padding-right: 0.875rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .site-container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .site-container {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .site-container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1536px) {
+  .site-container {
+    padding-left: 1.75rem;
+    padding-right: 1.75rem;
+  }
+}
+
 .btn-shimmer {
   position: relative;
   overflow: hidden;
@@ -251,6 +296,58 @@
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+/* Luxury Bookstore Design Elements */
+.book-spine-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 14px;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.28) 0%,
+    rgba(0, 0, 0, 0.12) 30%,
+    rgba(255, 255, 255, 0.22) 55%,
+    rgba(0, 0, 0, 0.08) 85%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 2;
+  border-top-left-radius: inherit;
+  border-bottom-left-radius: inherit;
+}
+
+.book-edge-shadow {
+  box-shadow: 
+    -1px 0 0 rgba(0, 0, 0, 0.15) inset,
+    0 10px 25px -5px rgba(0, 0, 0, 0.18),
+    0 4px 10px -2px rgba(0, 0, 0, 0.08);
+}
+
+.luxury-card {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+  transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.luxury-card:hover {
+  box-shadow: 0 16px 32px -6px rgba(245, 158, 11, 0.18), 0 4px 12px -2px rgba(0, 0, 0, 0.05);
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.gold-foil-text {
+  background: linear-gradient(135deg, #B45309 0%, #D97706 40%, #F59E0B 70%, #92400E 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.dark .gold-foil-text {
+  background: linear-gradient(135deg, #FDE68A 0%, #F59E0B 40%, #FBBF24 70%, #FDE047 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 button:active, .btn:active {

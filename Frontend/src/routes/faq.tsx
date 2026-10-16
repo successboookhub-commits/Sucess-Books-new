@@ -54,7 +54,7 @@ const faqs: FAQItem[] = [
   {
     category: "Shipping & Delivery",
     q: "How can I track my shipment?",
-    a: "Use our 'Track Order' modal in the navigation bar using your Order ID (e.g. SBH-1042). You will also receive dispatch and tracking details directly via SMS and WhatsApp.",
+    a: "Use our 'Track Order' feature in the navigation bar or footer using your unique Order ID (e.g. SBH-261016-8492). You can also click 'Enquire' on your Order card or WhatsApp to receive instantaneous live updates.",
   },
   {
     category: "Authenticity & Quality",
@@ -112,19 +112,19 @@ function FAQPage() {
     <main className="min-h-screen bg-background">
       {/* Left-Aligned Clean & Compact Header */}
       <section className="paper-texture border-b border-border bg-gradient-to-b from-amber-50/20 via-card to-card">
-        <div className="mx-auto max-w-7xl px-4 py-5 sm:py-6 sm:px-6 lg:px-8">
+        <div className="site-container py-3 sm:py-4.5">
           <p className="text-xs font-bold uppercase tracking-wider text-amber-600 flex items-center gap-1.5">
             <HelpCircle className="h-3.5 w-3.5 text-amber-500" /> Reader Assistance & Help Center
           </p>
-          <h1 className="mt-1 font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">
+          <h1 className="mt-1 font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground tracking-tight">
             Frequently Asked Questions
           </h1>
-          <p className="mt-1.5 max-w-2xl text-xs sm:text-sm text-muted-foreground leading-relaxed">
+          <p className="mt-1 max-w-2xl text-xs sm:text-sm text-muted-foreground leading-relaxed">
             Everything you need to know about our book selection, Pan-India shipping, payments, and WhatsApp ordering assistance.
           </p>
 
           {/* Left-Aligned Category Filter Chips with Compact Gap */}
-          <div className="mt-4 flex items-center gap-1.5 sm:gap-2 flex-wrap">
+          <div className="mt-2.5 flex items-center gap-1.5 sm:gap-2 flex-wrap">
             {CATEGORIES.map((cat) => {
               const isActive = activeCategory === cat;
               return (
@@ -132,7 +132,7 @@ function FAQPage() {
                   key={cat}
                   type="button"
                   onClick={() => setActiveCategory(cat)}
-                  className={`px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer select-none ${
+                  className={`px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer select-none whitespace-nowrap ${
                     isActive
                       ? "bg-primary text-slate-950 font-bold shadow-xs border border-primary ring-2 ring-primary/20 scale-102"
                       : "bg-card text-muted-foreground hover:text-foreground border border-border/80 hover:border-amber-400/60"
@@ -147,8 +147,8 @@ function FAQPage() {
       </section>
 
       {/* 2-Columns FAQ Grid Section (2 Questions Per Line, Left-Aligned with exact same container & tight gaps) */}
-      <section className="mx-auto max-w-7xl px-4 py-5 sm:py-7 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4 items-start">
+      <section className="site-container py-3 sm:py-4.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3 items-start">
           {filteredFaqs.map((faq, i) => {
             const isOpen = openIndices.has(i);
             return (
@@ -164,7 +164,7 @@ function FAQPage() {
                   type="button"
                   onClick={() => toggle(i)}
                   aria-expanded={isOpen}
-                  className="w-full text-left p-3.5 sm:p-4.5 flex items-start justify-between gap-3 text-foreground hover:text-amber-600 transition cursor-pointer select-none"
+                  className="w-full text-left p-3 sm:p-3.5 flex items-start justify-between gap-3 text-foreground hover:text-amber-600 transition cursor-pointer select-none"
                 >
                   <div className="flex items-start gap-2.5 sm:gap-3 min-w-0">
                     <span
@@ -203,7 +203,7 @@ function FAQPage() {
         </div>
 
         {/* Still Have Questions Box - Compact, Clean & Properly Proportioned */}
-        <div className="mt-7 sm:mt-8 rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-amber-400/40 p-5 sm:p-6 text-white flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl text-left">
+        <div className="mt-4 sm:mt-5 rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-amber-400/40 p-4 sm:p-5 text-white flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl text-left">
           <div className="space-y-1 text-center md:text-left">
             <p className="text-[10px] font-bold uppercase tracking-widest text-amber-400 flex items-center gap-1.5 justify-center md:justify-start">
               <Sparkles className="h-3.5 w-3.5 fill-amber-400 text-amber-400" /> Dedicated Reader Support

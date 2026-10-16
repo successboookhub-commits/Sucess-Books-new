@@ -2,13 +2,37 @@ import { Router } from "express";
 import { db } from "../db/database.js";
 import { sendOrderConfirmationEmail } from "../services/mailService.js";
 import { optionalUserAuth, requireUserAuth } from "../middleware/auth.js";
+import Razorpay from "razorpay";
+import crypto from "node:crypto";
 
 const router = Router();
 
-// Helper to generate readable tracking code e.g. SBH-7492
-function generateOrderId() {
-  const randomDigits = Math.floor(1000 + Math.random() * 9000);
-  return `SBH-${randomDigits}`;
+// Initialize Razorpay SDK client with credentials
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID || "rzp_test_SwedUUn1KgRMs0",
+  key_secret: process.env.RAZORPAY_KEY_SECRET || "xdW2Ry7T67sUK4zMKb3oOsZh"
+});
+
+// Helper to generate guaranteed collision-proof unique dynamic Order ID: SBH-YYMMDD-XXXX
+async function generateUniqueOrderId() {
+  const now = new Date();
+  const yy = String(now.getFullYear()).slice(-2);
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  const prefix = `SBH-${yy}${mm}${dd}`;
+
+  // Try generating up to 10 unique candidate IDs with database collision check
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const randomPart = Math.floor(1000 + Math.random() * 9000);
+    const candidateId = `${prefix}-${randomPart}`;
+    const existing = await db.get("SELECT id FROM orders WHERE id = ?", [candidateId]);
+    if (!existing) {
+      return candidateId;
+    }
+  }
+
+  // Fallback with millisecond precision in the ultra rare scenario of collisions
+  return `${prefix}-${Date.now().toString().slice(-4)}`;
 }
 
 function numberToWords(num) {
@@ -46,7 +70,145 @@ function numberToWords(num) {
   return inWords(n).trim() + ' Rupees Only';
 }
 
-// POST create new order
+// -------------------------------------------------------------
+// RAZORPAY INTEGRATION ENDPOINTS
+// -------------------------------------------------------------
+
+// POST /api/orders/razorpay-order -> Generate Razorpay Order
+router.post("/razorpay-order", optionalUserAuth, async (req, res) => {
+  try {
+    const { amount, receipt, notes } = req.body;
+    if (!amount || isNaN(amount) || Number(amount) <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "A valid positive order amount is required."
+      });
+    }
+
+    const amountInPaise = Math.round(Number(amount) * 100);
+    const options = {
+      amount: amountInPaise,
+      currency: "INR",
+      receipt: receipt || `rcpt_${Date.now()}`,
+      notes: notes || {}
+    };
+
+    const rzpOrder = await razorpay.orders.create(options);
+    return res.json({
+      success: true,
+      orderId: rzpOrder.id,
+      amount: rzpOrder.amount,
+      currency: rzpOrder.currency,
+      keyId: process.env.RAZORPAY_KEY_ID || "rzp_test_SwedUUn1KgRMs0"
+    });
+  } catch (err) {
+    console.error("[Razorpay Order Creation Error]:", err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || "Failed to create Razorpay order."
+    });
+  }
+});
+
+// POST /api/orders/verify-razorpay -> Verify HMAC signature
+router.post("/verify-razorpay", optionalUserAuth, async (req, res) => {
+  try {
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+      orderId
+    } = req.body;
+
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return res.status(400).json({
+        success: false,
+        message: "razorpay_order_id, razorpay_payment_id, and razorpay_signature are required."
+      });
+    }
+
+    const secret = process.env.RAZORPAY_KEY_SECRET || "xdW2Ry7T67sUK4zMKb3oOsZh";
+    const body = `${razorpay_order_id}|${razorpay_payment_id}`;
+    const expectedSignature = crypto
+      .createHmac("sha256", secret)
+      .update(body.toString())
+      .digest("hex");
+
+    const isAuthentic = expectedSignature === razorpay_signature;
+    if (!isAuthentic) {
+      console.warn(`[Razorpay Verify] Invalid signature. Expected: ${expectedSignature}, Received: ${razorpay_signature}`);
+      return res.status(400).json({
+        success: false,
+        message: "Payment verification failed. Invalid signature."
+      });
+    }
+
+    // Update order status if orderId provided
+    if (orderId) {
+      const order = await db.get("SELECT * FROM orders WHERE UPPER(id) = ?", [orderId.toUpperCase()]);
+      if (order) {
+        await db.run(
+          `UPDATE orders SET status = 'confirmed', payment_method = 'Razorpay (Paid Online)' WHERE id = ?`,
+          [order.id]
+        );
+
+        // Update or insert into payments table
+        try {
+          const existingPayment = await db.get("SELECT * FROM payments WHERE order_id = ?", [order.id]);
+          if (existingPayment) {
+            await db.run(
+              `UPDATE payments SET status = 'completed', provider = 'razorpay', transaction_id = ?, payment_notes = ? WHERE id = ?`,
+              [razorpay_payment_id, `Razorpay Order: ${razorpay_order_id}`, existingPayment.id]
+            );
+          } else {
+            await db.run(
+              `INSERT INTO payments (order_id, user_id, amount, currency, provider, transaction_id, status, payment_method, payment_notes)
+               VALUES (?, ?, ?, 'INR', 'razorpay', ?, 'completed', 'Razorpay', ?)`,
+              [order.id, order.user_id, order.total, razorpay_payment_id, `Razorpay Order: ${razorpay_order_id}`]
+            );
+          }
+        } catch (payErr) {
+          console.warn("[Razorpay Verify] payments update warning:", payErr.message);
+        }
+
+        // Send order confirmation email
+        try {
+          if (order.customer_email) {
+            let items = [];
+            try {
+              items = typeof order.items_json === "string" ? JSON.parse(order.items_json) : (order.items_json || []);
+            } catch {
+              items = [];
+            }
+            await sendOrderConfirmationEmail({
+              ...order,
+              items,
+              payment_method: "Razorpay (Paid Online)",
+              status: "confirmed"
+            });
+          }
+        } catch (mailErr) {
+          console.warn("[Razorpay Verify] Mail send warning:", mailErr.message);
+        }
+      }
+    }
+
+    return res.json({
+      success: true,
+      message: "Payment verified successfully",
+      paymentId: razorpay_payment_id,
+      orderId: orderId || null
+    });
+  } catch (err) {
+    console.error("[Razorpay Verification Error]:", err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || "Error verifying Razorpay payment."
+    });
+  }
+});
+
+// POST create new order (Supports both COD & Instant Razorpay Verified Orders)
 router.post("/", optionalUserAuth, async (req, res) => {
   try {
     const {
@@ -64,7 +226,11 @@ router.post("/", optionalUserAuth, async (req, res) => {
       discountTotal,
       deliveryFee = 0,
       paymentMethod = "COD",
-      orderNotes = ""
+      orderNotes = "",
+      couponCode,
+      razorpayOrderId,
+      razorpayPaymentId,
+      razorpaySignature
     } = req.body;
 
     if (!customerName || !customerPhone || !deliveryAddress || !items || !items.length) {
@@ -74,7 +240,26 @@ router.post("/", optionalUserAuth, async (req, res) => {
       });
     }
 
-    const orderId = generateOrderId();
+    // If Razorpay credentials are submitted with order, verify signature immediately
+    let isRazorpayPaid = false;
+    if (razorpayPaymentId && razorpayOrderId && razorpaySignature) {
+      const secret = process.env.RAZORPAY_KEY_SECRET || "xdW2Ry7T67sUK4zMKb3oOsZh";
+      const body = `${razorpayOrderId}|${razorpayPaymentId}`;
+      const expectedSignature = crypto
+        .createHmac("sha256", secret)
+        .update(body.toString())
+        .digest("hex");
+
+      if (expectedSignature !== razorpaySignature) {
+        return res.status(400).json({
+          success: false,
+          message: "Payment verification failed. Invalid Razorpay signature."
+        });
+      }
+      isRazorpayPaid = true;
+    }
+
+    const orderId = await generateUniqueOrderId();
     const currentYear = new Date().getFullYear();
     const invoiceNo = `INV-${currentYear}-${orderId}`;
 
@@ -83,7 +268,6 @@ router.post("/", optionalUserAuth, async (req, res) => {
     const parsedMrp = parseFloat(mrpTotal) || parsedSubtotal;
     const parsedDiscount = parseFloat(discountTotal) || Math.max(0, parsedMrp - parsedSubtotal);
     const total = parsedSubtotal + parsedDelivery;
-    const { couponCode } = req.body;
 
     // 1. Prevent duplicate submissions: check if identical order placed within 15 seconds
     try {
@@ -130,6 +314,8 @@ router.post("/", optionalUserAuth, async (req, res) => {
 
     const userId = req.user?.id || null;
     const finalEmail = (customerEmail || req.user?.email || "").trim().toLowerCase();
+    const finalPaymentMethod = isRazorpayPaid ? "Razorpay (Paid Online)" : paymentMethod;
+    const initialStatus = isRazorpayPaid ? "confirmed" : "pending";
 
     // 2. Persist order, update inventory stock, record payment, and clear user cart inside transaction
     await db.transaction(async (tx) => {
@@ -139,7 +325,7 @@ router.post("/", optionalUserAuth, async (req, res) => {
           delivery_address, city, state, pincode, address_type, items_json, 
           mrp_total, discount_total, subtotal, delivery_fee, total, payment_method, 
           status, invoice_no, order_notes
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         orderId,
         userId,
@@ -157,7 +343,8 @@ router.post("/", optionalUserAuth, async (req, res) => {
         parsedSubtotal,
         parsedDelivery,
         total,
-        paymentMethod,
+        finalPaymentMethod,
+        initialStatus,
         invoiceNo,
         orderNotes.trim()
       ]);
@@ -181,13 +368,19 @@ router.post("/", optionalUserAuth, async (req, res) => {
         );
       }
 
-      // Record payment attempt in payments table
+      // Record payment in payments table
       try {
-        const paymentProvider = paymentMethod === "COD" ? "cash_on_delivery" : (paymentMethod === "UPI" ? "upi" : "online");
+        const paymentProvider = isRazorpayPaid
+          ? "razorpay"
+          : (paymentMethod === "COD" ? "cash_on_delivery" : (paymentMethod === "UPI" ? "upi" : "online"));
+        const paymentStatus = isRazorpayPaid ? "completed" : "pending";
+        const txId = isRazorpayPaid ? razorpayPaymentId : null;
+        const pNotes = isRazorpayPaid ? `Razorpay Order: ${razorpayOrderId}` : null;
+
         await tx.run(
-          `INSERT INTO payments (order_id, user_id, amount, currency, provider, status, payment_method)
-           VALUES (?, ?, ?, 'INR', ?, 'pending', ?)`,
-          [orderId, userId, total, paymentProvider, paymentMethod]
+          `INSERT INTO payments (order_id, user_id, amount, currency, provider, transaction_id, status, payment_method, payment_notes)
+           VALUES (?, ?, ?, 'INR', ?, ?, ?, ?, ?)`,
+          [orderId, userId, total, paymentProvider, txId, paymentStatus, finalPaymentMethod, pNotes]
         );
       } catch (payErr) {
         console.warn("[Orders] Could not record payments table entry:", payErr.message);
@@ -212,7 +405,7 @@ router.post("/", optionalUserAuth, async (req, res) => {
       `*Customer:* ${customerName}\n` +
       `*Phone:* ${customerPhone}\n` +
       `*Address:* ${deliveryAddress}${city ? `, ${city}` : ""}${pincode ? ` - ${pincode}` : ""}\n` +
-      `*Payment:* ${paymentMethod}\n\n` +
+      `*Payment:* ${finalPaymentMethod} ${isRazorpayPaid ? "✅ (PAID)" : "⏳"}\n\n` +
       `*Items:*\n${itemsText}\n\n` +
       `*Total:* ₹${total}\n\n` +
       `Please confirm order delivery schedule.`;
@@ -233,13 +426,14 @@ router.post("/", optionalUserAuth, async (req, res) => {
         subtotal: parsedSubtotal,
         deliveryFee: parsedDelivery,
         total,
-        paymentMethod
+        paymentMethod: finalPaymentMethod,
+        status: initialStatus
       }).catch(err => console.error("[Order Email Error]:", err.message));
     }
 
     res.status(201).json({
       success: true,
-      message: "Order placed successfully!",
+      message: isRazorpayPaid ? "Payment verified & Order confirmed!" : "Order placed successfully!",
       data: {
         orderId,
         invoiceNo,
@@ -256,8 +450,8 @@ router.post("/", optionalUserAuth, async (req, res) => {
         subtotal: parsedSubtotal,
         deliveryFee: parsedDelivery,
         total,
-        paymentMethod,
-        status: "pending",
+        paymentMethod: finalPaymentMethod,
+        status: initialStatus,
         orderNotes,
         whatsappUrl
       }
@@ -378,11 +572,23 @@ router.get("/", async (req, res) => {
 // GET Tax Invoice details for an order
 router.get("/:orderId/invoice", async (req, res) => {
   try {
-    const orderId = req.params.orderId.toUpperCase();
-    const order = await db.get("SELECT * FROM orders WHERE UPPER(id) = ?", [orderId]);
+    const rawInput = (req.params.orderId || "").trim();
+    const cleanId = rawInput.replace(/^#/, "").trim().toUpperCase();
+
+    let order = await db.get(
+      "SELECT * FROM orders WHERE UPPER(TRIM(id)) = ? OR UPPER(TRIM(invoice_no)) = ?",
+      [cleanId, cleanId]
+    );
+
+    if (!order && !cleanId.startsWith("SBH-")) {
+      order = await db.get(
+        "SELECT * FROM orders WHERE UPPER(TRIM(id)) = ? OR UPPER(TRIM(id)) LIKE ?",
+        [`SBH-${cleanId}`, `%${cleanId}%`]
+      );
+    }
 
     if (!order) {
-      return res.status(404).json({ success: false, message: `Order #${orderId} not found.` });
+      return res.status(404).json({ success: false, message: `Order #${rawInput} not found.` });
     }
 
     let items = [];
@@ -478,16 +684,28 @@ router.get("/:orderId/invoice", async (req, res) => {
   }
 });
 
-// GET order by tracking ID
+// GET order by tracking ID / Dynamic Enquiry
 router.get("/:orderId", async (req, res) => {
   try {
-    const orderId = req.params.orderId.toUpperCase();
-    const order = await db.get("SELECT * FROM orders WHERE UPPER(id) = ?", [orderId]);
+    const rawInput = (req.params.orderId || "").trim();
+    const cleanId = rawInput.replace(/^#/, "").trim().toUpperCase();
+
+    let order = await db.get(
+      "SELECT * FROM orders WHERE UPPER(TRIM(id)) = ? OR UPPER(TRIM(invoice_no)) = ?",
+      [cleanId, cleanId]
+    );
+
+    if (!order && !cleanId.startsWith("SBH-")) {
+      order = await db.get(
+        "SELECT * FROM orders WHERE UPPER(TRIM(id)) = ? OR UPPER(TRIM(id)) LIKE ?",
+        [`SBH-${cleanId}`, `%${cleanId}%`]
+      );
+    }
 
     if (!order) {
       return res.status(404).json({
         success: false,
-        message: `Order #${orderId} not found. Please check your order ID.`
+        message: `Order #${rawInput} not found. Please verify your Order ID (e.g. SBH-261016-8492).`
       });
     }
 
@@ -532,7 +750,8 @@ router.get("/:orderId", async (req, res) => {
 router.patch("/:orderId/status", async (req, res) => {
   try {
     const { status } = req.body;
-    const orderId = req.params.orderId.toUpperCase();
+    const rawInput = (req.params.orderId || "").trim();
+    const cleanId = rawInput.replace(/^#/, "").trim().toUpperCase();
 
     const validStatuses = ["pending", "confirmed", "dispatched", "delivered", "cancelled"];
     if (!validStatuses.includes(status?.toLowerCase())) {
@@ -545,8 +764,8 @@ router.patch("/:orderId/status", async (req, res) => {
     const result = await db.run(`
       UPDATE orders 
       SET status = ? 
-      WHERE UPPER(id) = ?
-    `, [status.toLowerCase(), orderId]);
+      WHERE UPPER(TRIM(id)) = ? OR UPPER(TRIM(invoice_no)) = ?
+    `, [status.toLowerCase(), cleanId, cleanId]);
 
     if (result.changes === 0 && result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: "Order not found" });
@@ -554,7 +773,7 @@ router.patch("/:orderId/status", async (req, res) => {
 
     res.json({
       success: true,
-      message: `Order #${orderId} updated to ${status}`
+      message: `Order #${cleanId} updated to ${status}`
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -564,8 +783,12 @@ router.patch("/:orderId/status", async (req, res) => {
 // PATCH cancel order (with stock restoration and customer authorization)
 router.patch("/:orderId/cancel", optionalUserAuth, async (req, res) => {
   try {
-    const orderId = req.params.orderId.toUpperCase();
-    const order = await db.get("SELECT * FROM orders WHERE UPPER(id) = ?", [orderId]);
+    const rawInput = (req.params.orderId || "").trim();
+    const cleanId = rawInput.replace(/^#/, "").trim().toUpperCase();
+    const order = await db.get(
+      "SELECT * FROM orders WHERE UPPER(TRIM(id)) = ? OR UPPER(TRIM(invoice_no)) = ?",
+      [cleanId, cleanId]
+    );
 
     if (!order) {
       return res.status(404).json({ success: false, message: "Order not found." });

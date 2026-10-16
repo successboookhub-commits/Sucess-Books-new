@@ -18,6 +18,7 @@ import { useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
 import { api, type BookDetail } from "@/lib/api";
 import { type Book, WHATSAPP_NUMBER } from "@/lib/books";
+import { PincodeDeliveryChecker } from "@/components/pincode-delivery-checker";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -158,7 +159,10 @@ export function BookDetailModal({ book, open, onOpenChange, onSelectBook }: Book
           <div className="grid sm:grid-cols-[220px_minmax(0,1fr)] lg:grid-cols-[240px_minmax(0,1fr)] gap-5 sm:gap-6 items-start">
             {/* Left: Luxury Book Cover Showcase */}
             <div className="space-y-3">
-              <div className="relative aspect-[3/4] w-full max-w-[190px] sm:max-w-none mx-auto rounded-2xl overflow-hidden border border-border/80 shadow-[0_12px_28px_rgba(0,0,0,0.15)] bg-secondary/40">
+              <div className="relative aspect-[3/4] w-full max-w-[190px] sm:max-w-none mx-auto rounded-2xl overflow-hidden border border-border/80 shadow-[0_16px_36px_rgba(0,0,0,0.18)] bg-secondary/40 book-edge-shadow">
+                {/* Photorealistic Book Spine Overlay */}
+                <div className="book-spine-overlay" />
+
                 {/* Discount Tag */}
                 {discountPercent > 0 && (
                   <span className="absolute top-2.5 left-2.5 z-20 rounded-md bg-emerald-600 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-md">
@@ -366,27 +370,27 @@ export function BookDetailModal({ book, open, onOpenChange, onSelectBook }: Book
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                   {/* 1. Add to Bag (Gold Button) */}
                   <Button
-                    className="col-span-1 h-11 rounded-full gap-2 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-500 hover:to-yellow-500 text-slate-950 font-bold shadow-md hover:shadow-lg transition-all active:scale-95 text-xs cursor-pointer"
+                    className="col-span-1 h-11 rounded-full gap-1.5 sm:gap-2 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-500 hover:to-yellow-500 text-slate-950 font-bold shadow-md hover:shadow-lg transition-all active:scale-95 text-xs whitespace-nowrap cursor-pointer"
                     onClick={() => {
                       addToCart(book, selectedQty);
                       toast.success(`Added ${selectedQty} × "${book.title}" to your bag!`);
                     }}
                   >
-                    <ShoppingBag className="h-4 w-4 fill-slate-950" />
-                    {inCartQty > 0 ? `In Bag (${inCartQty}) +` : "Add to Bag"}
+                    <ShoppingBag className="h-4 w-4 fill-slate-950 shrink-0" />
+                    <span className="truncate">{inCartQty > 0 ? `In Bag (${inCartQty}) +` : "Add to Bag"}</span>
                   </Button>
 
                   {/* 2. Buy Now (Express Checkout) */}
                   <Button
-                    className="col-span-1 h-11 rounded-full gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md hover:shadow-lg transition-all active:scale-95 text-xs cursor-pointer"
+                    className="col-span-1 h-11 rounded-full gap-1.5 sm:gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md hover:shadow-lg transition-all active:scale-95 text-xs whitespace-nowrap cursor-pointer"
                     onClick={() => {
                       addToCart(book, selectedQty);
                       onOpenChange(false);
                       setCartOpen(true);
                     }}
                   >
-                    <Sparkles className="h-4 w-4" />
-                    Buy Now
+                    <Sparkles className="h-4 w-4 shrink-0" />
+                    <span>Buy Now</span>
                   </Button>
 
                   {/* 3. Wishlist / WhatsApp Buttons */}
@@ -395,14 +399,14 @@ export function BookDetailModal({ book, open, onOpenChange, onSelectBook }: Book
                       variant="outline"
                       onClick={() => toggleWishlist(book)}
                       className={cn(
-                        "flex-1 h-11 rounded-full border border-border/80 transition-all font-semibold shrink-0 gap-1.5 hover:border-red-300 cursor-pointer justify-center text-xs",
+                        "flex-1 h-11 rounded-full border border-border/80 transition-all font-semibold shrink-0 gap-1.5 hover:border-red-300 cursor-pointer justify-center text-xs whitespace-nowrap",
                         wishlisted
                           ? "bg-red-50 text-red-600 border-red-200 dark:bg-red-950/40"
                           : "text-muted-foreground hover:text-red-500"
                       )}
                       title={wishlisted ? "Remove from wishlist" : "Save to wishlist"}
                     >
-                      <Heart className={cn("h-4 w-4", wishlisted && "fill-current text-red-500")} />
+                      <Heart className={cn("h-4 w-4 shrink-0", wishlisted && "fill-current text-red-500")} />
                       <span>{wishlisted ? "Saved" : "Save"}</span>
                     </Button>
 
@@ -418,6 +422,9 @@ export function BookDetailModal({ book, open, onOpenChange, onSelectBook }: Book
                   </div>
                 </div>
               </div>
+
+              {/* Live Pincode & Delivery Date Checker */}
+              <PincodeDeliveryChecker />
 
               {/* Guarantees Strip */}
               <div className="flex items-center justify-between text-[11px] text-muted-foreground border-t border-border/50 pt-2.5 flex-wrap gap-2">

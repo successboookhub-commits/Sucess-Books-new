@@ -34,6 +34,7 @@ import { CartSheet } from "@/components/cart-sheet";
 import { WishlistSheet } from "@/components/wishlist-sheet";
 import { OrderTrackerModal } from "@/components/order-tracker-modal";
 import { StoreManagerModal } from "@/components/store-manager-modal";
+import { BookRequestModal } from "@/components/book-request-modal";
 import { toast } from "sonner";
 
 const navLinks = [
@@ -60,6 +61,7 @@ export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [trackerOpen, setTrackerOpen] = useState(false);
   const [managerOpen, setManagerOpen] = useState(false);
+  const [requestModalOpen, setRequestModalOpen] = useState(false);
 
   const handleAdminLogout = () => {
     adminLogout();
@@ -75,8 +77,8 @@ export function SiteHeader() {
       {/* Main Navigation Header (Permanently Sticky at top on scroll) */}
       <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur-md shadow-sm transition-all">
         {/* Top Announcement Banner */}
-        <div className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-400 px-3 py-1.5 sm:py-2 text-center text-xs font-bold text-slate-950 sm:text-sm shadow-xs border-b border-amber-300 overflow-hidden">
-          <div className="mx-auto flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 max-w-7xl text-[11px] sm:text-xs">
+        <div className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-400 py-1.5 sm:py-2 text-center text-xs font-bold text-slate-950 sm:text-sm shadow-xs border-b border-amber-300 overflow-hidden">
+          <div className="site-container flex flex-wrap items-center justify-center gap-x-3 gap-y-0.5 text-[11px] sm:text-xs">
             <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
               <Sparkles className="h-3.5 w-3.5 fill-slate-950 text-slate-950 shrink-0" />
               Free delivery over ₹499
@@ -90,9 +92,9 @@ export function SiteHeader() {
           </div>
         </div>
 
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-1.5 sm:gap-4 px-2.5 sm:px-6 lg:px-8 py-2 sm:py-3">
+        <div className="site-container flex items-center justify-between gap-2 sm:gap-4 py-2 sm:py-3">
           {/* Logo & Branding */}
-          <Link to="/" className="flex min-w-0 items-center gap-2 sm:gap-3 flex-shrink" aria-label="Success Book Hub home">
+          <Link to="/" className="flex min-w-0 items-center gap-2 sm:gap-3 shrink-0" aria-label="Success Book Hub home">
             <span className="grid h-8 w-8 sm:h-10 sm:w-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow-xs font-bold ring-2 ring-primary/20">
               <BookOpen className="h-4 w-4 sm:h-5 sm:w-5" />
             </span>
@@ -107,7 +109,7 @@ export function SiteHeader() {
           </Link>
 
           {/* Navigation Links with Hardcover Book Tab Aesthetic */}
-          <nav className="hidden items-center gap-1.5 lg:flex" aria-label="Main navigation">
+          <nav className="hidden items-center gap-1 xl:gap-2 lg:flex shrink-0" aria-label="Main navigation">
             {navLinks.map((link) => {
               const active = isLinkActive(link.to);
               return (
@@ -115,7 +117,7 @@ export function SiteHeader() {
                   key={link.to}
                   to={link.to}
                   activeOptions={{ exact: link.to === "/" }}
-                  className={`group relative inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm transition-all duration-200 select-none ${
+                  className={`group relative inline-flex items-center gap-1.5 px-2.5 xl:px-3.5 py-1 xl:py-1.5 text-xs xl:text-sm transition-all duration-200 select-none whitespace-nowrap ${
                     active
                       ? "rounded-r-md rounded-l-xs bg-gradient-to-r from-amber-100 via-amber-50 to-amber-100 dark:from-amber-950/80 dark:via-amber-900/50 dark:to-amber-950/80 text-amber-950 dark:text-amber-100 font-bold border border-amber-300/90 dark:border-amber-700/60 border-l-[3.5px] border-l-amber-600 dark:border-l-amber-400 shadow-xs ring-1 ring-amber-400/20"
                       : "rounded-md font-semibold text-muted-foreground hover:text-foreground hover:bg-amber-100/50 dark:hover:bg-amber-950/30"
@@ -164,6 +166,30 @@ export function SiteHeader() {
               </SheetTrigger>
               <WishlistSheet />
             </Sheet>
+
+            {/* Quick Order Tracking / Enquiry Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setTrackerOpen(true)}
+              className="relative rounded-full h-8.5 sm:h-9 px-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-secondary/60 cursor-pointer hidden md:inline-flex items-center gap-1.5"
+              title="Track & Enquire Order"
+            >
+              <Package className="h-3.5 w-3.5 text-amber-600" />
+              <span>Track Order</span>
+            </Button>
+
+            {/* Concierge Book Procurement Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setRequestModalOpen(true)}
+              className="relative rounded-full h-8.5 sm:h-9 px-2.5 text-xs font-semibold text-amber-800 dark:text-amber-300 hover:text-amber-950 hover:bg-amber-100/60 dark:hover:bg-amber-950/40 cursor-pointer hidden xl:inline-flex items-center gap-1.5"
+              title="Request any book not in catalogue"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-amber-600" />
+              <span>Request a Book</span>
+            </Button>
 
             {/* Customer User Authentication Menu */}
             {isUserLoggedIn && user ? (
@@ -227,6 +253,13 @@ export function SiteHeader() {
                       <Heart className="h-3.5 w-3.5 text-red-500" />
                       <span>My Wishlist ({wishlistCount})</span>
                     </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setRequestModalOpen(true)}
+                      className="flex items-center gap-2 cursor-pointer text-xs py-2 text-amber-800 dark:text-amber-300 font-semibold"
+                    >
+                      <Sparkles className="h-3.5 w-3.5 text-amber-600" />
+                      <span>Request Any Book (Concierge)</span>
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={handleUserLogout}
@@ -243,7 +276,7 @@ export function SiteHeader() {
                 variant="outline"
                 size="sm"
                 onClick={openLoginModal}
-                className="rounded-full h-8.5 w-8.5 sm:h-9 sm:w-auto p-0 sm:px-3 gap-1.5 text-xs font-bold border-amber-300 bg-amber-50/50 text-amber-900 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-200 justify-center"
+                className="rounded-full h-8.5 w-8.5 sm:h-9 sm:w-auto p-0 sm:px-3 gap-1.5 text-xs font-bold border-amber-300 bg-amber-50/50 text-amber-900 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-200 justify-center whitespace-nowrap shrink-0"
                 title="Sign In / My Dashboard"
                 aria-label="User Account"
               >
@@ -254,11 +287,11 @@ export function SiteHeader() {
 
             {/* Authenticated Admin Actions ONLY */}
             {isAdminLoggedIn && (
-              <div className="hidden md:flex items-center gap-1">
+              <div className="hidden md:flex items-center gap-1 shrink-0">
                 <Button
                   variant="default"
                   size="sm"
-                  className="rounded-full gap-1 text-xs bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-9 px-3"
+                  className="rounded-full gap-1 text-xs bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-9 px-3 whitespace-nowrap shrink-0"
                   asChild
                 >
                   <Link to="/admin">
@@ -269,7 +302,7 @@ export function SiteHeader() {
                   variant="ghost"
                   size="sm"
                   onClick={handleAdminLogout}
-                  className="rounded-full p-2 text-xs text-destructive hover:bg-destructive/10 h-9 w-9"
+                  className="rounded-full p-2 text-xs text-destructive hover:bg-destructive/10 h-9 w-9 shrink-0"
                   title="Logout Admin"
                 >
                   <LogOut className="h-3.5 w-3.5" />
@@ -282,7 +315,7 @@ export function SiteHeader() {
               <SheetTrigger asChild>
                 <Button
                   variant="default"
-                  className="relative h-8.5 sm:h-9 rounded-full px-2.5 sm:px-4 font-bold text-xs gap-1.5 bg-primary text-primary-foreground shadow-xs hover:bg-primary/90"
+                  className="relative h-8.5 sm:h-9 rounded-full px-2.5 sm:px-3.5 font-bold text-xs gap-1.5 bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 whitespace-nowrap shrink-0"
                   aria-label="Shopping Bag"
                 >
                   <ShoppingBag className="h-4 w-4" />
@@ -382,6 +415,16 @@ export function SiteHeader() {
                 <Package className="h-4 w-4" /> Track Book Order
               </button>
 
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  setRequestModalOpen(true);
+                }}
+                className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-amber-800 dark:text-amber-300 hover:text-amber-950 rounded-md text-left"
+              >
+                <Sparkles className="h-4 w-4 text-amber-600" /> Request Any Book (Special Order)
+              </button>
+
               {/* Show in Mobile Menu ONLY when Logged In as Admin */}
               {isAdminLoggedIn && (
                 <>
@@ -411,6 +454,7 @@ export function SiteHeader() {
       {/* Global Modals */}
       <OrderTrackerModal open={trackerOpen} onOpenChange={setTrackerOpen} />
       <StoreManagerModal open={managerOpen} onOpenChange={setManagerOpen} />
+      <BookRequestModal open={requestModalOpen} onOpenChange={setRequestModalOpen} />
     </>
   );
 }

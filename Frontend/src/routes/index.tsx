@@ -13,7 +13,8 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
-  Tag
+  Tag,
+  MessageSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BookCard } from "@/components/book-card";
@@ -142,63 +143,69 @@ function Index() {
     <main className="min-h-screen overflow-x-hidden bg-background">
       {/* Hero Section */}
       <section className="paper-texture border-b border-border bg-gradient-to-b from-amber-50/30 via-background to-background">
-        <div className="mx-auto grid max-w-7xl items-center gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[1.15fr_.85fr] lg:px-8 lg:py-10">
+        <div className="site-container grid items-center gap-4 py-3.5 sm:py-4.5 lg:grid-cols-[1.15fr_.85fr] lg:py-6">
           <div className="max-w-2xl">
-            <p className="mb-2.5 inline-flex items-center gap-2 rounded-full bg-amber-100/80 px-3 py-0.5 text-xs font-bold uppercase tracking-wider text-amber-900 border border-amber-300/40 shadow-2xs">
-              <Sparkles className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
-              Curated with Passion & Purpose
-            </p>
-            <h1 className="font-display text-3xl leading-[1.15] text-foreground sm:text-5xl lg:text-5xl font-bold tracking-tight">
+            <div className="mb-2 flex items-center gap-2 flex-wrap">
+              <p className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300 border border-amber-300/60 shadow-2xs">
+                <Sparkles className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+                Curated with Passion & Purpose
+              </p>
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider hidden sm:inline">
+                Est. College Street, Kolkata
+              </span>
+            </div>
+            <h1 className="font-display text-2xl leading-[1.12] text-foreground sm:text-4xl lg:text-5xl font-bold tracking-tight">
               Books that inspire.<br />
-              <span className="text-amber-500 font-serif italic">Stories that shape success.</span>
+              <span className="gold-foil-text font-serif italic block mt-0.5">Stories that shape success.</span>
             </h1>
-            <p className="mt-3 max-w-xl text-xs leading-6 text-muted-foreground sm:text-sm">
-              From literary masterworks to mindset guides, explore our handpicked collection at <strong className="text-foreground">{STORE.name}</strong> — available with direct online checkout and instant WhatsApp order confirmation.
+            <p className="mt-2 max-w-xl text-xs leading-5 text-muted-foreground sm:text-sm">
+              From literary masterworks to mindset guides, explore our handpicked collection at <strong className="text-foreground font-semibold">{STORE.name}</strong> — available with direct online checkout and instant WhatsApp order confirmation.
             </p>
-            <div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-              <Button size="lg" className="h-11 rounded-full px-7 shadow-xs gap-2 font-bold bg-primary text-primary-foreground hover:bg-primary/90 justify-center btn-shimmer" asChild>
+            <div className="mt-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <Button size="lg" className="h-10 sm:h-10.5 rounded-full px-5 sm:px-6 shadow-md gap-2 font-bold bg-primary text-slate-950 hover:bg-primary/90 justify-center btn-shimmer whitespace-nowrap shrink-0 cursor-pointer text-xs sm:text-sm" asChild>
                 <Link to="/shop">
                   <ShoppingBag className="h-4 w-4" /> Explore Catalogue
                 </Link>
               </Button>
-              <Button variant="outline" size="lg" className="h-11 rounded-full px-6 border-border hover:border-amber-400 bg-card text-foreground hover:bg-secondary transition font-bold justify-center" asChild>
-                <a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noreferrer">
+              <Button variant="outline" size="lg" className="h-10 sm:h-10.5 rounded-full px-4 sm:px-5 border-[#25D366]/40 hover:bg-[#25D366]/10 text-emerald-700 dark:text-emerald-400 bg-card hover:border-[#25D366] transition font-bold justify-center whitespace-nowrap shrink-0 cursor-pointer text-xs sm:text-sm" asChild>
+                <a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noreferrer" className="flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4 text-[#25D366] fill-[#25D366]" />
                   Chat on WhatsApp
                 </a>
               </Button>
             </div>
-            <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-border pt-3.5 text-xs font-semibold text-muted-foreground">
-              <span className="flex items-center gap-1.5">
-                <Truck className="h-3.5 w-3.5 text-amber-600" /> Free delivery above ₹499
+            <div className="mt-3.5 flex flex-wrap items-center gap-x-3.5 sm:gap-x-4 gap-y-1.5 border-t border-border pt-2.5 text-[11px] sm:text-xs font-semibold text-muted-foreground">
+              <span className="flex items-center gap-1.5 whitespace-nowrap">
+                <Truck className="h-3.5 w-3.5 text-amber-600 shrink-0" /> Free delivery above ₹499
               </span>
-              <span className="flex items-center gap-1.5">
-                <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" /> Rated 4.8 by 2,500+ readers
+              <span className="flex items-center gap-1.5 whitespace-nowrap">
+                <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400 shrink-0" /> Rated 4.8 by 2,500+ readers
               </span>
-              <span className="flex items-center gap-1.5">
-                <ShieldCheck className="h-3.5 w-3.5 text-amber-600" /> 100% Original Editions
+              <span className="flex items-center gap-1.5 whitespace-nowrap">
+                <ShieldCheck className="h-3.5 w-3.5 text-amber-600 shrink-0" /> 100% Genuine Publisher Editions
               </span>
             </div>
           </div>
 
           {/* 3D Realistic Open Book with Page Flip Motion (Desktop / Laptop ONLY) */}
-          <div className="relative mx-auto hidden lg:flex w-full max-w-lg justify-center mt-6 lg:mt-0">
+          <div className="relative mx-auto hidden lg:flex w-full max-w-lg justify-center mt-2 lg:mt-0">
             <HeroFlipBook onPreviewBook={handleHeroBookPreview} />
           </div>
         </div>
       </section>
 
       {/* Categories Row */}
-      <section className="mx-auto max-w-7xl px-4 py-4 sm:py-7 sm:px-6 lg:px-8 border-b border-border/60 bg-gradient-to-b from-card/30 via-background to-background overflow-hidden">
-        <div className="mb-3 flex flex-row items-center justify-between gap-2">
+      <section className="site-container py-3 sm:py-4 border-b border-border/60 bg-gradient-to-b from-card/30 via-background to-background overflow-hidden">
+        <div className="mb-2 flex flex-row items-center justify-between gap-2">
           <div>
             <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-amber-600 flex items-center gap-1.5">
               <Sparkles className="h-3 w-3 fill-amber-500 text-amber-500" /> Explore by Genre
             </p>
-            <h2 className="mt-0.5 font-display text-lg sm:text-2xl lg:text-3xl text-foreground font-bold">
+            <h2 className="mt-0.5 font-display text-base sm:text-xl lg:text-2xl text-foreground font-bold">
               Shop by Category
             </h2>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             {searchQuery && (
               <button
                 type="button"
@@ -218,7 +225,7 @@ function Index() {
         </div>
 
         {/* Search Option on Left Side + Round Categories in One Line with Left & Right Movement Arrows */}
-        <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 sm:gap-5">
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-2.5 sm:gap-3.5">
           {/* Left Side: Sleek Capsule Search Bar with Live Suggestions Dropdown */}
           <div ref={searchContainerRef} className="relative w-full lg:w-72 xl:w-80 shrink-0">
             <form onSubmit={handleSearchSubmit} className="relative group">
@@ -234,7 +241,7 @@ function Index() {
                   setSuggestionsOpen(true);
                 }}
                 placeholder="Search category or books…"
-                className="w-full h-11 sm:h-12 pl-10 pr-16 rounded-full border border-border/80 bg-card/90 backdrop-blur-xs text-xs sm:text-sm font-semibold text-foreground placeholder:text-muted-foreground shadow-xs focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all"
+                className="w-full h-11 sm:h-12 pl-10 pr-20 rounded-full border border-border/80 bg-card/90 backdrop-blur-xs text-xs sm:text-sm font-semibold text-foreground placeholder:text-muted-foreground shadow-xs focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all"
               />
 
               {/* Clear button */}
@@ -474,66 +481,98 @@ function Index() {
       </section>
 
       {/* Featured Books Grid */}
-      <section className="mx-auto max-w-7xl px-4 py-6 sm:py-8 sm:px-6 lg:px-8">
-        <div className="mb-4 sm:mb-6 flex items-end justify-between gap-4">
+      <section className="site-container py-3 sm:py-4">
+        <div className="mb-2 sm:mb-3 flex items-end justify-between gap-3">
           <div>
             <p className="text-xs font-bold uppercase tracking-wider text-amber-600">Curated Highlights</p>
-            <h2 className="mt-0.5 font-display text-xl sm:text-2xl lg:text-3xl text-foreground font-bold">Featured This Week</h2>
+            <h2 className="mt-0.5 font-display text-lg sm:text-2xl lg:text-3xl text-foreground font-bold">Featured This Week</h2>
           </div>
-          <Link to="/shop" className="inline-flex items-center gap-1 text-xs sm:text-sm font-bold text-amber-600 hover:text-amber-700 hover:underline">
+          <Link to="/shop" className="inline-flex items-center gap-1 text-xs sm:text-sm font-bold text-amber-600 hover:text-amber-700 hover:underline whitespace-nowrap">
             Shop all {catalog.length} books <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
-        {/* 6 Books Per Row on Laptop/Desktop (lg:grid-cols-6 xl:grid-cols-6), Mobile stays 2 cols */}
-        <div className="grid grid-cols-2 gap-x-3 gap-y-4 sm:gap-x-4 sm:gap-y-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-6 lg:gap-x-3 lg:gap-y-4">
+        {/* Responsive Book Grid: 2 cols on mobile, 5 cols on 13" laptop, 6 cols on desktop/ultrawide */}
+        <div className="grid grid-cols-2 gap-2 sm:gap-3.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-6">
           {displayBooks.map((book) => (
             <BookCard key={book.id} book={book} compact={true} />
           ))}
         </div>
 
         {/* View More Option Button (Opens all books in /shop page) */}
-        <div className="mt-7 sm:mt-9 flex flex-col items-center justify-center gap-2">
+        <div className="mt-3 sm:mt-3.5 flex flex-col items-center justify-center gap-1">
           <Button
             size="default"
-            className="rounded-full px-8 h-10 sm:h-11 font-bold bg-primary text-slate-950 hover:bg-primary/90 shadow-xs gap-2 group transition-all"
+            className="rounded-full px-7 h-9 sm:h-10 font-bold bg-primary text-slate-950 hover:bg-primary/90 shadow-xs gap-2 group transition-all whitespace-nowrap cursor-pointer text-xs"
             asChild
           >
             <Link to="/shop">
               <span>View More Books</span>
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
             </Link>
           </Button>
-          <p className="text-[11px] text-muted-foreground font-semibold text-center">
+          <p className="text-[10px] sm:text-[11px] text-muted-foreground font-semibold text-center">
             Showing {displayBooks.length} of {catalog.length} curated highlights • Explore our full catalogue of fiction, classics & bestsellers
           </p>
         </div>
       </section>
 
+      {/* Curators' Editorial Banner */}
+      <section className="site-container py-2 sm:py-3">
+        <div className="rounded-2xl border border-amber-300/60 dark:border-amber-700/50 bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-card p-4 sm:p-5 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-amber-400 text-slate-950 font-bold shadow-md">
+              <BookOpen className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                The Success Book Hub Promise
+              </p>
+              <h3 className="font-display text-base sm:text-lg font-bold text-foreground">
+                Authentic editions. Handpicked literature. Personalized reading advice.
+              </h3>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 shrink-0 flex-wrap">
+            <span className="text-xs text-muted-foreground font-medium hidden lg:inline">
+              Need custom recommendations?
+            </span>
+            <Button
+              size="sm"
+              className="rounded-full h-8.5 px-4 text-xs font-bold bg-[#25D366] hover:bg-[#20ba59] text-white shadow-xs gap-1.5 cursor-pointer"
+              asChild
+            >
+              <a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noreferrer">
+                <MessageSquare className="h-3.5 w-3.5 fill-current" /> Ask Our Bookseller
+              </a>
+            </Button>
+          </div>
+        </div>
+      </section>
 
       {/* Testimonials */}
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:py-10 sm:px-6 lg:px-8">
-        <div className="text-left mb-4 sm:mb-6">
+      <section className="site-container py-3 sm:py-4.5">
+        <div className="text-left mb-2 sm:mb-2.5">
           <p className="text-xs font-bold uppercase tracking-wider text-amber-600">From Our Community</p>
-          <h2 className="mt-0.5 font-display text-xl sm:text-2xl lg:text-3xl text-foreground font-bold">Loved by Readers Across India</h2>
+          <h2 className="mt-0.5 font-display text-lg sm:text-2xl lg:text-3xl text-foreground font-bold">Loved by Readers Across India</h2>
         </div>
-        <div className="grid gap-4 sm:gap-6 md:grid-cols-3">
+        <div className="grid gap-2.5 sm:gap-3.5 md:grid-cols-3">
           {[
             ["Ananya Roy, Kolkata", "Ordered via WhatsApp late at night, and received the books within 48 hours in beautiful eco-friendly packaging with a personalized bookmark."],
             ["Dr. Rohit Menon, Bangalore", "The book quality is genuine and pristine. You can tell the curators are actual bibliophiles who care deeply about literature."],
             ["Sara Khan, Delhi", "Fair pricing, instantaneous WhatsApp responses, and great recommendations. Success Book Hub is now my go-to online bookshop."],
           ].map(([name, quote]) => (
-            <figure key={name} className="rounded-xl border border-border bg-card p-5 shadow-xs flex flex-col justify-between">
+            <figure key={name} className="rounded-xl border border-border bg-card p-3.5 sm:p-4 shadow-xs flex flex-col justify-between">
               <div>
                 <div className="flex gap-1">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <Star key={i} className="h-3.5 w-3.5 fill-gold text-gold" />
                   ))}
                 </div>
-                <blockquote className="mt-3 text-xs sm:text-sm leading-relaxed text-muted-foreground">
+                <blockquote className="mt-2 text-xs sm:text-sm leading-relaxed text-muted-foreground">
                   “{quote}”
                 </blockquote>
               </div>
-              <figcaption className="mt-4 text-xs font-bold text-foreground border-t border-border pt-2.5">
+              <figcaption className="mt-2.5 text-xs font-bold text-foreground border-t border-border pt-2">
                 {name}
               </figcaption>
             </figure>

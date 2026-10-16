@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Clock, Mail, MapPin, MessageCircle, Phone, Send, CheckCircle2, Sparkles, ShieldCheck } from "lucide-react";
+import { Clock, Mail, MapPin, MessageCircle, Phone, Send, CheckCircle2, Sparkles, ShieldCheck, Package, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { STORE, WHATSAPP_NUMBER } from "@/lib/books";
 import { api } from "@/lib/api";
+import { OrderTrackerModal } from "@/components/order-tracker-modal";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/contact")({
@@ -33,6 +34,7 @@ function Contact() {
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
+  const [trackerOpen, setTrackerOpen] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,22 +98,42 @@ function Contact() {
     <main className="min-h-screen bg-background">
       {/* 1. Header Section (Left-Aligned, Tight Gaps) */}
       <section className="paper-texture border-b border-border bg-gradient-to-b from-amber-50/20 via-background to-background">
-        <div className="mx-auto max-w-7xl px-4 py-5 sm:py-7 sm:px-6 lg:px-8">
+        <div className="site-container py-3 sm:py-4.5">
           <p className="text-xs font-bold uppercase tracking-wider text-amber-600 flex items-center gap-1.5">
             <Sparkles className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
             Get in Touch
           </p>
-          <h1 className="mt-1.5 font-display text-2xl sm:text-3xl lg:text-4xl text-foreground font-bold">
+          <h1 className="mt-1 font-serif text-2xl sm:text-3xl lg:text-4xl text-foreground font-bold tracking-tight">
             Contact Success Book Hub
           </h1>
-          <p className="mt-2 max-w-4xl text-xs sm:text-sm leading-relaxed text-muted-foreground">
+          <p className="mt-1.5 max-w-4xl text-xs sm:text-sm leading-relaxed text-muted-foreground">
             Looking for a specific title, bulk book orders, custom recommendations, or order inquiries? Reach out to our College Street booksellers — we reply promptly.
           </p>
+
+          {/* Quick Order Enquiry Bar */}
+          <div className="mt-3.5 bg-amber-500/10 border border-amber-300/50 dark:border-amber-700/50 rounded-xl p-3 sm:p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 max-w-4xl shadow-2xs">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-amber-500/20 text-amber-800 dark:text-amber-300 shrink-0">
+                <Package className="h-4.5 w-4.5" />
+              </div>
+              <div>
+                <p className="font-bold text-xs text-foreground">Have an Existing Order to Enquire?</p>
+                <p className="text-[11px] text-muted-foreground">Check real-time dispatch progress, delivery address, or invoice with your unique Order ID.</p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              onClick={() => setTrackerOpen(true)}
+              className="rounded-full bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold gap-1.5 h-8.5 px-4 cursor-pointer shrink-0 shadow-xs btn-shimmer"
+            >
+              <Truck className="h-3.5 w-3.5" /> Track / Enquire Order
+            </Button>
+          </div>
         </div>
       </section>
 
       {/* 2. Content Grid (2 Columns, Tightened Padding & Clean Cards) */}
-      <section className="mx-auto grid max-w-7xl gap-5 sm:gap-6 px-4 py-5 sm:py-7 sm:px-6 lg:grid-cols-[1fr_1.15fr] lg:px-8 items-start">
+      <section className="site-container grid gap-3.5 sm:gap-4.5 py-3 sm:py-4.5 lg:grid-cols-[1fr_1.15fr] items-start">
         {/* Left Column: Direct Contact Info & Map */}
         <div className="space-y-3">
           {[
@@ -124,13 +146,13 @@ function Contact() {
             return (
               <div
                 key={title as string}
-                className="flex items-start gap-3.5 rounded-2xl border border-border/80 bg-card p-4 shadow-xs hover:border-amber-300 hover:shadow-md transition-all"
+                className="flex items-start gap-3 rounded-2xl border border-border/80 bg-card p-3 sm:p-3.5 shadow-xs hover:border-amber-300 hover:shadow-md transition-all"
               >
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-400/15 text-amber-700 dark:text-amber-400 font-bold border border-amber-300/40">
-                  <IconComponent className="h-5 w-5" />
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-400/15 text-amber-700 dark:text-amber-400 font-bold border border-amber-300/40">
+                  <IconComponent className="h-4.5 w-4.5" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-display text-base text-foreground font-bold leading-tight">
+                  <h3 className="font-display text-sm sm:text-base text-foreground font-bold leading-tight">
                     {title as string}
                   </h3>
                   <p className="mt-0.5 text-xs text-foreground font-semibold leading-relaxed">
@@ -149,14 +171,14 @@ function Contact() {
             <iframe
               title="Map to Success Book Hub"
               src="https://www.google.com/maps?q=College+Street,+Kolkata&output=embed"
-              className="h-48 w-full border-0"
+              className="h-40 w-full border-0"
               loading="lazy"
             />
           </div>
         </div>
 
         {/* Right Column: Contact Inquiry Form */}
-        <div className="rounded-2xl border border-border/80 bg-card p-5 sm:p-7 shadow-xs">
+        <div className="rounded-2xl border border-border/80 bg-card p-4 sm:p-5 shadow-xs">
           <div className="text-left space-y-1">
             <p className="text-xs font-bold uppercase tracking-wider text-amber-600 flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
@@ -186,26 +208,26 @@ function Contact() {
               </Button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="mt-5 space-y-3.5">
+            <form onSubmit={handleSubmit} className="mt-3.5 space-y-2.5">
               <div>
                 <label className="block text-xs font-bold text-foreground mb-1">Your Full Name *</label>
                 <input
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="h-10 w-full rounded-xl border border-border bg-background px-3.5 text-xs outline-none transition focus:border-amber-400 focus:ring-1 focus:ring-amber-400/20 text-foreground shadow-2xs"
+                  className="h-9.5 w-full rounded-xl border border-border bg-background px-3 text-xs outline-none transition focus:border-amber-400 focus:ring-1 focus:ring-amber-400/20 text-foreground shadow-2xs"
                   placeholder="e.g. Priya Sharma"
                 />
               </div>
 
-              <div className="grid sm:grid-cols-2 gap-3">
+              <div className="grid sm:grid-cols-2 gap-2.5">
                 <div>
                   <label className="block text-xs font-bold text-foreground mb-1">Phone Number</label>
                   <input
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="h-10 w-full rounded-xl border border-border bg-background px-3.5 text-xs outline-none transition focus:border-amber-400 focus:ring-1 focus:ring-amber-400/20 text-foreground shadow-2xs"
+                    className="h-9.5 w-full rounded-xl border border-border bg-background px-3 text-xs outline-none transition focus:border-amber-400 focus:ring-1 focus:ring-amber-400/20 text-foreground shadow-2xs"
                     placeholder="e.g. 9876543210"
                   />
                 </div>
@@ -215,7 +237,7 @@ function Contact() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="h-10 w-full rounded-xl border border-border bg-background px-3.5 text-xs outline-none transition focus:border-amber-400 focus:ring-1 focus:ring-amber-400/20 text-foreground shadow-2xs"
+                    className="h-9.5 w-full rounded-xl border border-border bg-background px-3 text-xs outline-none transition focus:border-amber-400 focus:ring-1 focus:ring-amber-400/20 text-foreground shadow-2xs"
                     placeholder="priya@example.com"
                   />
                 </div>
@@ -227,8 +249,8 @@ function Contact() {
                   required
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  rows={4}
-                  className="w-full rounded-xl border border-border bg-background p-3 text-xs outline-none transition focus:border-amber-400 focus:ring-1 focus:ring-amber-400/20 text-foreground shadow-2xs"
+                  rows={3}
+                  className="w-full rounded-xl border border-border bg-background p-2.5 text-xs outline-none transition focus:border-amber-400 focus:ring-1 focus:ring-amber-400/20 text-foreground shadow-2xs"
                   placeholder="Tell us about the book you are looking for, order assistance, or wholesale inquiries…"
                 />
               </div>
@@ -265,6 +287,9 @@ function Contact() {
           )}
         </div>
       </section>
+
+      {/* Order Tracker / Enquiry Modal */}
+      <OrderTrackerModal open={trackerOpen} onOpenChange={setTrackerOpen} />
     </main>
   );
 }
